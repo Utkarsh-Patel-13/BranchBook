@@ -9,6 +9,8 @@ import {
 } from "@trpc/server/adapters/fastify";
 import Fastify from "fastify";
 
+import { registerWorkspaceFeatures } from "./features/workspaces";
+
 const baseCorsConfig = {
 	origin: env.CORS_ORIGIN,
 	methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -23,6 +25,8 @@ const fastify = Fastify({
 
 fastify.register(fastifyCors, baseCorsConfig);
 
+registerWorkspaceFeatures(fastify);
+
 fastify.route({
 	method: ["GET", "POST"],
 	url: "/api/auth/*",
@@ -30,11 +34,11 @@ fastify.route({
 		try {
 			const url = new URL(request.url, `http://${request.headers.host}`);
 			const headers = new Headers();
-			Object.entries(request.headers).forEach(([key, value]) => {
+			for (const [key, value] of Object.entries(request.headers)) {
 				if (value) {
 					headers.append(key, value.toString());
 				}
-			});
+			}
 			const req = new Request(url.toString(), {
 				method: request.method,
 				headers,
@@ -42,7 +46,9 @@ fastify.route({
 			});
 			const response = await auth.handler(req);
 			reply.status(response.status);
-			response.headers.forEach((value, key) => reply.header(key, value));
+			for (const [key, value] of response.headers) {
+				reply.header(key, value);
+			}
 			reply.send(response.body ? await response.text() : null);
 		} catch (error) {
 			fastify.log.error({ err: error }, "Authentication Error:");
@@ -65,7 +71,7 @@ fastify.register(fastifyTRPCPlugin, {
 	} satisfies FastifyTRPCPluginOptions<AppRouter>["trpcOptions"],
 });
 
-fastify.get("/", async () => {
+fastify.get("/", () => {
 	return "OK";
 });
 
