@@ -278,9 +278,7 @@ function WorkspaceListItemCard({
 					</Link>
 				</CardTitle>
 				<CardDescription>
-					{workspace.description
-						? workspace.description
-						: "No description provided."}
+					{workspace.description ?? "No description provided."}
 				</CardDescription>
 				<CardAction className="text-[11px] text-muted-foreground">
 					<div className="flex flex-col items-end gap-0.5 sm:flex-row sm:items-center sm:gap-3">

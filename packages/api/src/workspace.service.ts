@@ -63,12 +63,18 @@ export const listWorkspaces = async (
 	const sortBy = input.sortBy ?? "lastUpdated";
 	const sortDirection = input.sortDirection ?? "desc";
 
-	const orderBy =
-		sortBy === "name"
-			? { name: sortDirection }
-			: sortBy === "createdAt"
-				? { createdAt: sortDirection }
-				: { updatedAt: sortDirection };
+	type OrderByOption =
+		| { name: typeof sortDirection }
+		| { createdAt: typeof sortDirection }
+		| { updatedAt: typeof sortDirection };
+	let orderBy: OrderByOption;
+	if (sortBy === "name") {
+		orderBy = { name: sortDirection };
+	} else if (sortBy === "createdAt") {
+		orderBy = { createdAt: sortDirection };
+	} else {
+		orderBy = { updatedAt: sortDirection };
+	}
 
 	const workspaces = await prisma.workspace.findMany({
 		where: {
@@ -96,6 +102,7 @@ export const getWorkspaceById = async (
 		where: {
 			id: input.workspaceId,
 			ownerId,
+			deletedAt: null,
 		},
 	});
 
@@ -123,9 +130,11 @@ export const updateWorkspace = async (
 		return null;
 	}
 
-	const workspace = await prisma.workspace.update({
+	const updateResult = await prisma.workspace.updateMany({
 		where: {
 			id: input.workspaceId,
+			ownerId,
+			deletedAt: null,
 		},
 		data: {
 			name: input.name ?? existing.name,
@@ -135,6 +144,19 @@ export const updateWorkspace = async (
 					: existing.description,
 		},
 	});
+
+	if (updateResult.count !== 1) {
+		return null;
+	}
+
+	const workspace = {
+		...existing,
+		name: input.name ?? existing.name,
+		description:
+			input.description !== undefined
+				? input.description
+				: existing.description,
+	};
 
 	if (logger) {
 		const { logWorkspaceUpdated } = await import("./workspace.logging");
