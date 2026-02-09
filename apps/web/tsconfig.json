@@ -12,7 +12,8 @@
     "rootDirs": ["."],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@nexus/types": ["../../packages/types/src/index.ts"]
     }
   }
 }

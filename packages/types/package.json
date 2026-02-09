@@ -1,0 +1,17 @@
+{
+  "name": "@nexus/types",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@nexus/config": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

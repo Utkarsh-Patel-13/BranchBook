@@ -1,6 +1,10 @@
 {
   "extends": "@nexus/config/tsconfig.base.json",
   "compilerOptions": {
-    "strictNullChecks": true
+    "strictNullChecks": true,
+    "baseUrl": ".",
+    "paths": {
+      "@nexus/types": ["packages/types/src/index.ts"]
+    }
   }
 }
