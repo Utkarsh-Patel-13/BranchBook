@@ -49,8 +49,8 @@ description: "Task list template for feature implementation"
 **Purpose**: Project initialization and basic structure
 
 - [ ] T001 Create project structure per implementation plan
-- [ ] T002 Initialize [language] project with [framework] dependencies
-- [ ] T003 [P] Configure linting and formatting tools
+- [ ] T002 Initialize [language] project with [framework] dependencies (for Nexus: TypeScript strict mode, React/TanStack Router/Fastify/tRPC/Prisma where applicable)
+- [ ] T003 [P] Configure linting and formatting tools (for Nexus: Biome/Ultracite via `bun x ultracite check` or `bun run check`)
 
 ---
 
@@ -68,6 +68,7 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] T007 Create base models/entities that all stories depend on
 - [ ] T008 Configure error handling and logging infrastructure
 - [ ] T009 Setup environment configuration management
+ - [ ] T010 Ensure React Query + tRPC data fetching patterns and Zustand store conventions are in place for this feature area (no ad-hoc `fetch` or global state)
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -83,17 +84,17 @@ Examples of foundational tasks (adjust based on your project):
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T010 [P] [US1] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T011 [P] [US1] Integration test for [user journey] in tests/integration/test_[name].py
+- [ ] T011 [P] [US1] Contract test for [endpoint]/tRPC procedure in tests/contract/test_[name].ts
+- [ ] T012 [P] [US1] Integration test for [user journey] in tests/integration/test_[name].ts
 
 ### Implementation for User Story 1
 
-- [ ] T012 [P] [US1] Create [Entity1] model in src/models/[entity1].py
-- [ ] T013 [P] [US1] Create [Entity2] model in src/models/[entity2].py
-- [ ] T014 [US1] Implement [Service] in src/services/[service].py (depends on T012, T013)
-- [ ] T015 [US1] Implement [endpoint/feature] in src/[location]/[file].py
-- [ ] T016 [US1] Add validation and error handling
-- [ ] T017 [US1] Add logging for user story 1 operations
+- [ ] T013 [P] [US1] Create [Entity1] model in src/models/[entity1].ts
+- [ ] T014 [P] [US1] Create [Entity2] model in src/models/[entity2].ts
+- [ ] T015 [US1] Implement [Service] in src/services/[service].ts (depends on T013, T014)
+- [ ] T016 [US1] Implement [endpoint/feature] via typed tRPC procedure in src/[location]/[file].ts
+- [ ] T017 [US1] Add validation and error handling
+- [ ] T018 [US1] Add logging for user story 1 operations
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 

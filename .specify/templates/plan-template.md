@@ -31,7 +31,24 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- **Monorepo boundaries**: Feature files MUST live in the appropriate app (`apps/web`, `apps/native`,
+  `apps/server`, desktop under `apps/web`) and/or shared package (`packages/*`) with no direct
+  cross-app imports. Document which apps and packages are affected.
+- **Type safety & contracts**: Confirm TypeScript strict mode is enabled for affected projects and
+  that all new/changed APIs are expressed via tRPC routers and shared types in `packages/api`,
+  `packages/db`, or related packages. Note any unavoidable `unknown` boundaries and how they will be
+  narrowed and tested.
+- **Design system & responsiveness**: Describe how TailwindCSS + shadcn/ui will be used. For any UI
+  work, outline the mobile-first layout approach and accessibility considerations.
+- **State management**: Explain how React Query (for server state) and Zustand (for shared client
+  state) will be used. Call out any state that might tempt ad-hoc solutions and how the plan avoids
+  them.
+- **Canvas/editor performance (if applicable)**: For features involving React Flow, Lexical, or
+  other canvas/editor surfaces, record the expected node/edge counts and target frame rate. Note
+  how performance will be measured and tuned to meet the "50+ nodes at interactive fps" budget.
+- **Quality tooling & tests**: Confirm that Biome/Ultracite (`bun x ultracite check` or `bun run check`)
+  and TypeScript checks will run clean. List the test types (unit, integration, contract, and, if
+  applicable, canvas/editor behavior tests) that will be added or updated as part of this feature.
 
 ## Project Structure
 

@@ -1,3 +1,7 @@
+# Runtime and Package Manager
+
+Project uses `bun` as central tool for package management, runtime, execution etc. Must use this only.
+
 # Ultracite Code Standards
 
 This project uses **Ultracite**, a zero-config preset that enforces strict code quality standards through automated formatting and linting.
