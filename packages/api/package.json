@@ -1,0 +1,27 @@
+{
+  "name": "@nexus/api",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@nexus/auth": "workspace:*",
+    "@nexus/db": "workspace:*",
+    "@nexus/env": "workspace:*",
+    "@trpc/client": "catalog:",
+    "@trpc/server": "catalog:",
+    "better-auth": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@nexus/config": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

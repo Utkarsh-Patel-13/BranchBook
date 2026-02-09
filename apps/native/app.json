@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "scheme": "nexus",
+    "userInterfaceStyle": "automatic",
+    "orientation": "default",
+    "web": {
+      "bundler": "metro"
+    },
+    "name": "nexus",
+    "slug": "nexus",
+    "plugins": ["expo-font"],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
