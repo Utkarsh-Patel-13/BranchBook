@@ -1,0 +1,410 @@
+import prisma from "@nexus/db";
+import type {
+	CreateNodeInput,
+	DeleteNodeInput,
+	GetNodeByIdInput,
+	GetTreeInput,
+	ListNodesInput,
+	Node,
+	NodeListItem,
+	NodeTree,
+	UpdateNodeInput,
+} from "@nexus/types";
+import { TRPCError } from "@trpc/server";
+
+const toNode = (record: {
+	id: string;
+	workspaceId: string;
+	parentId: string | null;
+	title: string;
+	createdAt: Date;
+	updatedAt: Date;
+	deletedAt: Date | null;
+}): Node => record;
+
+const toNodeListItem = (
+	record: {
+		id: string;
+		workspaceId: string;
+		parentId: string | null;
+		title: string;
+		createdAt: Date;
+		updatedAt: Date;
+		deletedAt: Date | null;
+	},
+	childCount: number
+): NodeListItem => ({
+	...record,
+	childCount,
+});
+
+// Validate that setting parentId doesn't create a circular reference
+export const validateNoCircularRef = async (
+	nodeId: string,
+	newParentId: string | null
+): Promise<void> => {
+	if (!newParentId) {
+		return;
+	}
+
+	// Cannot be parent of itself
+	if (nodeId === newParentId) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: "A node cannot be its own parent",
+		});
+	}
+
+	// Walk up the parent chain to ensure new parent is not a descendant
+	let currentId: string | null = newParentId;
+	const visited = new Set<string>();
+
+	while (currentId) {
+		if (currentId === nodeId) {
+			throw new TRPCError({
+				code: "BAD_REQUEST",
+				message: "Circular reference detected: new parent is a descendant",
+			});
+		}
+
+		if (visited.has(currentId)) {
+			throw new TRPCError({
+				code: "INTERNAL_SERVER_ERROR",
+				message: "Circular reference detected in existing tree",
+			});
+		}
+
+		visited.add(currentId);
+
+		const parent: { parentId: string | null } | null =
+			await prisma.node.findUnique({
+				where: { id: currentId },
+				select: { parentId: true },
+			});
+
+		currentId = parent?.parentId ?? null;
+	}
+};
+
+export const createNode = async (
+	userId: string,
+	input: CreateNodeInput
+): Promise<Node> => {
+	// Verify workspace ownership
+	const workspace = await prisma.workspace.findFirst({
+		where: {
+			id: input.workspaceId,
+			ownerId: userId,
+			deletedAt: null,
+		},
+	});
+
+	if (!workspace) {
+		throw new TRPCError({
+			code: "NOT_FOUND",
+			message: "Workspace not found or access denied",
+		});
+	}
+
+	// If parentId provided, validate it exists in the same workspace
+	if (input.parentId) {
+		const parent = await prisma.node.findFirst({
+			where: {
+				id: input.parentId,
+				workspaceId: input.workspaceId,
+				deletedAt: null,
+			},
+		});
+
+		if (!parent) {
+			throw new TRPCError({
+				code: "NOT_FOUND",
+				message: "Parent node not found in this workspace",
+			});
+		}
+	}
+
+	const node = await prisma.node.create({
+		data: {
+			workspaceId: input.workspaceId,
+			parentId: input.parentId ?? null,
+			title: input.title,
+		},
+	});
+
+	return toNode(node);
+};
+
+export const listNodes = async (
+	userId: string,
+	input: ListNodesInput
+): Promise<NodeListItem[]> => {
+	// Verify workspace ownership
+	const workspace = await prisma.workspace.findFirst({
+		where: {
+			id: input.workspaceId,
+			ownerId: userId,
+			deletedAt: null,
+		},
+	});
+
+	if (!workspace) {
+		throw new TRPCError({
+			code: "NOT_FOUND",
+			message: "Workspace not found or access denied",
+		});
+	}
+
+	const nodes = await prisma.node.findMany({
+		where: {
+			workspaceId: input.workspaceId,
+			deletedAt: null,
+		},
+		orderBy: {
+			createdAt: "asc",
+		},
+	});
+
+	// Get child counts for each node
+	const nodesWithCounts = await Promise.all(
+		nodes.map(async (node) => {
+			const childCount = await prisma.node.count({
+				where: {
+					parentId: node.id,
+					deletedAt: null,
+				},
+			});
+			return toNodeListItem(node, childCount);
+		})
+	);
+
+	return nodesWithCounts;
+};
+
+export const getNodeById = async (
+	userId: string,
+	input: GetNodeByIdInput
+): Promise<
+	| (Node & {
+			breadcrumb: Node[];
+			children: Node[];
+	  })
+	| null
+> => {
+	const node = await prisma.node.findUnique({
+		where: {
+			id: input.nodeId,
+		},
+	});
+
+	if (!node || node.deletedAt) {
+		return null;
+	}
+
+	// Verify workspace ownership
+	const workspace = await prisma.workspace.findFirst({
+		where: {
+			id: node.workspaceId,
+			ownerId: userId,
+			deletedAt: null,
+		},
+	});
+
+	if (!workspace) {
+		return null;
+	}
+
+	// Build breadcrumb trail
+	const breadcrumb: Node[] = [toNode(node)];
+	let currentParentId = node.parentId;
+
+	while (currentParentId) {
+		const parent = await prisma.node.findUnique({
+			where: { id: currentParentId },
+		});
+
+		if (!parent || parent.deletedAt) {
+			break;
+		}
+
+		breadcrumb.unshift(toNode(parent));
+		currentParentId = parent.parentId;
+	}
+
+	// Get direct children (ordered by creation)
+	const children = await prisma.node.findMany({
+		where: {
+			parentId: node.id,
+			deletedAt: null,
+		},
+		orderBy: {
+			createdAt: "asc",
+		},
+	});
+
+	return {
+		...toNode(node),
+		breadcrumb,
+		children: children.map(toNode),
+	};
+};
+
+export const updateNode = async (
+	userId: string,
+	input: UpdateNodeInput
+): Promise<Node | null> => {
+	const existing = await prisma.node.findUnique({
+		where: { id: input.nodeId },
+	});
+
+	if (!existing || existing.deletedAt) {
+		return null;
+	}
+
+	// Verify workspace ownership
+	const workspace = await prisma.workspace.findFirst({
+		where: {
+			id: existing.workspaceId,
+			ownerId: userId,
+			deletedAt: null,
+		},
+	});
+
+	if (!workspace) {
+		return null;
+	}
+
+	const node = await prisma.node.update({
+		where: { id: input.nodeId },
+		data: {
+			title: input.title ?? existing.title,
+		},
+	});
+
+	return toNode(node);
+};
+
+export const deleteNodeCascade = async (
+	userId: string,
+	input: DeleteNodeInput
+): Promise<{ deletedCount: number } | null> => {
+	const node = await prisma.node.findUnique({
+		where: { id: input.nodeId },
+	});
+
+	if (!node || node.deletedAt) {
+		return null;
+	}
+
+	// Verify workspace ownership
+	const workspace = await prisma.workspace.findFirst({
+		where: {
+			id: node.workspaceId,
+			ownerId: userId,
+			deletedAt: null,
+		},
+	});
+
+	if (!workspace) {
+		return null;
+	}
+
+	// Get all descendants recursively
+	const getDescendants = async (parentId: string): Promise<string[]> => {
+		const children = await prisma.node.findMany({
+			where: {
+				parentId,
+				deletedAt: null,
+			},
+			select: { id: true },
+		});
+
+		const childIds = children.map((c) => c.id);
+		const descendants = [...childIds];
+
+		for (const childId of childIds) {
+			const subDescendants = await getDescendants(childId);
+			descendants.push(...subDescendants);
+		}
+
+		return descendants;
+	};
+
+	const descendantIds = await getDescendants(input.nodeId);
+	const allNodeIds = [input.nodeId, ...descendantIds];
+
+	// Soft delete all nodes
+	await prisma.node.updateMany({
+		where: {
+			id: { in: allNodeIds },
+		},
+		data: {
+			deletedAt: new Date(),
+		},
+	});
+
+	return { deletedCount: allNodeIds.length };
+};
+
+export const getNodeTree = async (
+	userId: string,
+	input: GetTreeInput
+): Promise<NodeTree[]> => {
+	// Verify workspace ownership
+	const workspace = await prisma.workspace.findFirst({
+		where: {
+			id: input.workspaceId,
+			ownerId: userId,
+			deletedAt: null,
+		},
+	});
+
+	if (!workspace) {
+		throw new TRPCError({
+			code: "NOT_FOUND",
+			message: "Workspace not found or access denied",
+		});
+	}
+
+	// Fetch all non-deleted nodes in the workspace
+	const allNodes = await prisma.node.findMany({
+		where: {
+			workspaceId: input.workspaceId,
+			deletedAt: null,
+		},
+		orderBy: {
+			createdAt: "asc",
+		},
+	});
+
+	// Build tree structure
+	const nodeMap = new Map<string, NodeTree>();
+	const rootNodes: NodeTree[] = [];
+
+	// Initialize all nodes in the map
+	for (const node of allNodes) {
+		nodeMap.set(node.id, {
+			...toNode(node),
+			children: [],
+		});
+	}
+
+	// Build parent-child relationships
+	for (const node of allNodes) {
+		const treeNode = nodeMap.get(node.id);
+		if (!treeNode) {
+			continue;
+		}
+
+		if (node.parentId) {
+			const parent = nodeMap.get(node.parentId);
+			if (parent) {
+				parent.children.push(treeNode);
+			}
+		} else {
+			rootNodes.push(treeNode);
+		}
+	}
+
+	return rootNodes;
+};

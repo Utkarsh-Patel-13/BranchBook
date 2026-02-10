@@ -1,4 +1,5 @@
 import { protectedProcedure, publicProcedure, router } from "../index";
+import { nodeRouter } from "../nodes";
 import { workspaceRouter } from "../workspaces";
 
 export const appRouter = router({
@@ -12,5 +13,6 @@ export const appRouter = router({
 		};
 	}),
 	workspace: workspaceRouter,
+	node: nodeRouter,
 });
 export type AppRouter = typeof appRouter;
