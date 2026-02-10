@@ -11,6 +11,8 @@ interface CanvasState {
 	};
 	collapsedNodeIds: Set<string>;
 	interactionMode: InteractionMode;
+	expandedNodeIds: Set<string>;
+	sidePanelNodeId: string | null;
 
 	// Actions
 	setSelectedNodeIds: (ids: Set<string>) => void;
@@ -19,6 +21,8 @@ interface CanvasState {
 	setViewport: (viewport: { x: number; y: number; zoom: number }) => void;
 	toggleCollapsed: (id: string) => void;
 	setInteractionMode: (mode: InteractionMode) => void;
+	toggleExpandedNode: (id: string) => void;
+	setSidePanelNodeId: (id: string | null) => void;
 }
 
 export const useCanvasStore = create<CanvasState>((set) => ({
@@ -26,6 +30,8 @@ export const useCanvasStore = create<CanvasState>((set) => ({
 	viewport: { x: 0, y: 0, zoom: 1 },
 	collapsedNodeIds: new Set(),
 	interactionMode: "select",
+	expandedNodeIds: new Set(),
+	sidePanelNodeId: null,
 
 	setSelectedNodeIds: (ids) => set({ selectedNodeIds: ids }),
 	toggleNodeSelection: (id) =>
@@ -51,4 +57,20 @@ export const useCanvasStore = create<CanvasState>((set) => ({
 			return { collapsedNodeIds: newCollapsed };
 		}),
 	setInteractionMode: (mode) => set({ interactionMode: mode }),
+	toggleExpandedNode: (id) =>
+		set((state) => {
+			const newExpanded = new Set(state.expandedNodeIds);
+			if (newExpanded.has(id)) {
+				newExpanded.delete(id);
+				// Close side panel if it was showing this node
+				return {
+					expandedNodeIds: newExpanded,
+					sidePanelNodeId:
+						state.sidePanelNodeId === id ? null : state.sidePanelNodeId,
+				};
+			}
+			newExpanded.add(id);
+			return { expandedNodeIds: newExpanded };
+		}),
+	setSidePanelNodeId: (id) => set({ sidePanelNodeId: id }),
 }));
