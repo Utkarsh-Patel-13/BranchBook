@@ -1,27 +1,18 @@
 import type { WorkspaceId } from "@nexus/types";
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { ReactFlowProvider } from "@xyflow/react";
+import { Plus } from "lucide-react";
+import { useCallback, useState } from "react";
+import { CreateNodeDialog } from "@/components/nodes/create-node-dialog";
+import { NodeCanvas } from "@/components/nodes/node-canvas";
+import { NodeSidebar } from "@/components/nodes/node-sidebar";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import { useWorkspaceByIdQuery } from "@/hooks/useWorkspaces";
+import { useNodeTree } from "@/hooks/use-nodes";
 import { authClient } from "@/lib/auth-client";
-
-function formatDate(
-	value: Date | string | number,
-	options: Intl.DateTimeFormatOptions
-) {
-	const date = value instanceof Date ? value : new Date(value);
-	return new Intl.DateTimeFormat(undefined, options).format(date);
-}
+import { useCanvasStore } from "@/stores/canvas-store";
 
 export const Route = createFileRoute("/workspaces/$workspaceId")({
-	component: WorkspaceDetailRouteComponent,
+	component: WorkspaceCanvasRouteComponent,
 	beforeLoad: async ({ location }) => {
 		const session = await authClient.getSession();
 		if (!session.data) {
@@ -36,70 +27,99 @@ export const Route = createFileRoute("/workspaces/$workspaceId")({
 	},
 });
 
-function WorkspaceDetailRouteComponent() {
+function WorkspaceCanvasRouteComponent() {
 	const { workspaceId } = Route.useParams() as { workspaceId: WorkspaceId };
-	const workspaceQuery = useWorkspaceByIdQuery(workspaceId);
+	const nodeTreeQuery = useNodeTree(workspaceId);
+	const selectedNodeIds = useCanvasStore((state) => state.selectedNodeIds);
+	const clearSelection = useCanvasStore((state) => state.clearSelection);
 
-	const workspace = workspaceQuery.data;
+	// Derive the first selected node id from canvas store for the sidebar
+	const canvasSelectedNodeId =
+		selectedNodeIds.size > 0 ? [...selectedNodeIds][0] : null;
+
+	const [sidebarNodeId, setSidebarNodeId] = useState<string | null>(null);
+	const [createDialogOpen, setCreateDialogOpen] = useState(false);
+	const [createDialogParentId, setCreateDialogParentId] = useState<
+		string | null
+	>(null);
+
+	// Canvas selection takes priority; fallback to sidebar manual selection
+	const selectedNodeId = canvasSelectedNodeId ?? sidebarNodeId;
+
+	const handleAddChild = useCallback((parentId: string) => {
+		setCreateDialogParentId(parentId);
+		setCreateDialogOpen(true);
+	}, []);
+
+	const handleNewRootNode = useCallback(() => {
+		setCreateDialogParentId(null);
+		setCreateDialogOpen(true);
+	}, []);
+
+	const handleNodeDeleted = useCallback(() => {
+		setSidebarNodeId(null);
+		clearSelection();
+	}, [clearSelection]);
+
+	const tree = nodeTreeQuery.data ?? [];
+	const isLoading = nodeTreeQuery.isLoading;
+	const isEmpty = !isLoading && tree.length === 0;
 
 	return (
-		<div className="container mx-auto flex max-w-3xl flex-col gap-4 px-4 py-4">
-			<div className="flex items-center justify-between gap-2">
-				<h1 className="font-semibold text-lg">Workspace details</h1>
-				<Link to="/workspaces">
-					<Button size="sm" variant="outline">
-						Back to workspaces
-					</Button>
-				</Link>
+		<div className="flex h-full w-full overflow-hidden">
+			<div className="relative flex-1">
+				{isLoading && (
+					<div className="flex h-full items-center justify-center">
+						<p className="text-muted-foreground text-sm">Loading canvas…</p>
+					</div>
+				)}
+
+				{isEmpty && (
+					<div className="flex h-full flex-col items-center justify-center gap-4">
+						<p className="text-muted-foreground text-sm">
+							Create your first root node to start exploring
+						</p>
+						<Button onClick={handleNewRootNode} size="sm">
+							<Plus className="mr-1 size-4" />
+							New Root Node
+						</Button>
+					</div>
+				)}
+
+				{!(isLoading || isEmpty) && (
+					<>
+						<div className="absolute top-4 left-4 z-10">
+							<Button onClick={handleNewRootNode} size="sm">
+								<Plus className="mr-1 size-4" />
+								New Root Node
+							</Button>
+						</div>
+						<ReactFlowProvider>
+							<NodeCanvas
+								onAddChild={handleAddChild}
+								tree={tree}
+								workspaceId={workspaceId}
+							/>
+						</ReactFlowProvider>
+					</>
+				)}
 			</div>
 
-			{workspaceQuery.isLoading && (
-				<p className="text-muted-foreground text-sm">Loading workspace…</p>
-			)}
+			<NodeSidebar
+				onDeleted={handleNodeDeleted}
+				onSelectNode={setSidebarNodeId}
+				selectedNodeId={selectedNodeId}
+				tree={tree}
+				workspaceId={workspaceId}
+			/>
 
-			{!(workspaceQuery.isLoading || workspace) && (
-				<p className="text-muted-foreground text-sm">
-					Workspace not found or you do not have access to it.
-				</p>
-			)}
-
-			{workspace && (
-				<Card>
-					<CardHeader>
-						<CardTitle>{workspace.name}</CardTitle>
-						<CardDescription>
-							{workspace.description
-								? workspace.description
-								: "No description provided."}
-						</CardDescription>
-					</CardHeader>
-					<CardContent className="space-y-1 text-muted-foreground text-xs">
-						<p>
-							<span className="font-medium">Workspace ID:</span> {workspace.id}
-						</p>
-						<p>
-							<span className="font-medium">Created:</span>{" "}
-							{formatDate(workspace.createdAt, {
-								month: "short",
-								day: "numeric",
-								year: "numeric",
-								hour: "2-digit",
-								minute: "2-digit",
-							})}
-						</p>
-						<p>
-							<span className="font-medium">Last updated:</span>{" "}
-							{formatDate(workspace.updatedAt, {
-								month: "short",
-								day: "numeric",
-								year: "numeric",
-								hour: "2-digit",
-								minute: "2-digit",
-							})}
-						</p>
-					</CardContent>
-				</Card>
-			)}
+			<CreateNodeDialog
+				isRoot={createDialogParentId === null}
+				onOpenChange={setCreateDialogOpen}
+				open={createDialogOpen}
+				parentId={createDialogParentId}
+				workspaceId={workspaceId}
+			/>
 		</div>
 	);
 }

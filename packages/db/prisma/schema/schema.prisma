@@ -18,8 +18,27 @@ model Workspace {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   deletedAt   DateTime?
+  nodes       Node[]
 
   @@index([ownerId])
   @@map("workspace")
+}
+
+model Node {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parentId    String?
+  parent      Node?     @relation("NodeChildren", fields: [parentId], references: [id], onDelete: NoAction)
+  children    Node[]    @relation("NodeChildren")
+  title       String    @db.VarChar(100)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@index([workspaceId])
+  @@index([parentId])
+  @@index([deletedAt])
+  @@map("node")
 }
 
