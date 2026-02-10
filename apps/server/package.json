@@ -11,6 +11,7 @@
     "knip": "knip"
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.23",
     "@fastify/cors": "^11.0.1",
     "@hono/trpc-server": "^0.4.0",
     "@nexus/api": "workspace:*",
@@ -19,6 +20,7 @@
     "@nexus/env": "workspace:*",
     "@nexus/types": "workspace:*",
     "@trpc/server": "catalog:",
+    "ai": "^6.0.78",
     "better-auth": "catalog:",
     "dotenv": "catalog:",
     "fastify": "^5.3.3",

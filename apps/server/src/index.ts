@@ -8,8 +8,8 @@ import {
 	fastifyTRPCPlugin,
 } from "@trpc/server/adapters/fastify";
 import Fastify from "fastify";
-
 import { registerWorkspaceFeatures } from "./features/workspaces";
+import { registerChatRoute } from "./routes/chat";
 
 const baseCorsConfig = {
 	origin: env.CORS_ORIGIN,
@@ -26,6 +26,7 @@ const fastify = Fastify({
 fastify.register(fastifyCors, baseCorsConfig);
 
 registerWorkspaceFeatures(fastify);
+registerChatRoute(fastify);
 
 fastify.route({
 	method: ["GET", "POST"],

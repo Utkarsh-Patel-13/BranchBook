@@ -1,6 +1,7 @@
 import type { NodeTree } from "@nexus/types";
 import { ChevronRight, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { NodeChatPanel } from "../chat/node-chat-panel";
 import { Button } from "../ui/button";
 import { DeleteNodeDialog } from "./delete-node-dialog";
 
@@ -85,7 +86,7 @@ export function NodeSidebar({
 				</Button>
 			</div>
 
-			<div className="flex-1 space-y-4 overflow-y-auto p-4">
+			<div className="space-y-4 overflow-y-auto p-4">
 				{/* Breadcrumb */}
 				<div>
 					<h3 className="mb-2 font-medium text-muted-foreground text-xs uppercase">
@@ -169,6 +170,8 @@ export function NodeSidebar({
 					</div>
 				)}
 			</div>
+
+			<NodeChatPanel nodeId={node.id} />
 
 			<DeleteNodeDialog
 				node={node}
