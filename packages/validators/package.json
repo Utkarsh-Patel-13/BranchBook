@@ -9,17 +9,13 @@
       "default": "./src/*.ts"
     }
   },
-  "scripts": {
-    "test": "vitest run",
-    "test:watch": "vitest"
-  },
+  "scripts": {},
   "dependencies": {
     "@nexus/types": "workspace:*",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@nexus/config": "workspace:*",
-    "typescript": "catalog:",
-    "vitest": "^4.0.18"
+    "typescript": "catalog:"
   }
 }

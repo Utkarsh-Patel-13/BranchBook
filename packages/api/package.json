@@ -9,10 +9,7 @@
       "default": "./src/*.ts"
     }
   },
-  "scripts": {
-    "test": "vitest run --passWithNoTests",
-    "test:watch": "vitest"
-  },
+  "scripts": {},
   "dependencies": {
     "@nexus/auth": "workspace:*",
     "@nexus/db": "workspace:*",
@@ -27,7 +24,6 @@
   },
   "devDependencies": {
     "@nexus/config": "workspace:*",
-    "typescript": "catalog:",
-    "vitest": "^4.0.18"
+    "typescript": "catalog:"
   }
 }

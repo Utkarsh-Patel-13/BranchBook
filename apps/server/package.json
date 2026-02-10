@@ -8,10 +8,6 @@
     "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server",
     "dev": "bun run --hot src/index.ts",
     "start": "bun run dist/index.mjs",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage",
     "knip": "knip"
   },
   "dependencies": {
@@ -35,7 +31,6 @@
     "@vitest/coverage-v8": "4.0.18",
     "knip": "^5.83.1",
     "tsdown": "^0.16.5",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.18"
+    "typescript": "^5.9.3"
   }
 }
