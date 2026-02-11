@@ -272,7 +272,7 @@ function WorkspaceListItemCard({
 					<Link
 						className="inline-flex items-center gap-2 underline-offset-2 hover:underline"
 						params={{ workspaceId: workspace.id }}
-						to="/workspaces/$workspaceId"
+						to="/workspaces/new/$workspaceId"
 					>
 						<span>{workspace.name}</span>
 					</Link>
