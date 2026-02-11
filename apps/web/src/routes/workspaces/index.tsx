@@ -17,9 +17,9 @@ import {
 import { Button } from "@/components/ui/button";
 import {
 	Card,
-	CardAction,
 	CardContent,
 	CardDescription,
+	CardFooter,
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
@@ -204,7 +204,7 @@ function WorkspacesListRouteComponent() {
 			)}
 			{!(isLoading || hasWorkspaces) && <EmptyState />}
 			{!isLoading && hasWorkspaces && (
-				<section className="grid gap-3">
+				<section className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
 					{workspaces.map((workspace) => (
 						<WorkspaceListItemCard
 							key={workspace.id}
@@ -266,81 +266,74 @@ function WorkspaceListItemCard({
 	};
 
 	return (
-		<Card>
+		<Card className="flex h-full flex-col transition-all hover:bg-muted/20">
 			<CardHeader>
-				<CardTitle>
+				<CardTitle className="line-clamp-1">
 					<Link
-						className="inline-flex items-center gap-2 underline-offset-2 hover:underline"
+						className="underline-offset-2 hover:underline"
 						params={{ workspaceId: workspace.id }}
 						to="/workspaces/new/$workspaceId"
 					>
-						<span>{workspace.name}</span>
+						{workspace.name}
 					</Link>
 				</CardTitle>
-				<CardDescription>
+				<CardDescription className="line-clamp-2 min-h-[2.5em]">
 					{workspace.description ?? "No description provided."}
 				</CardDescription>
-				<CardAction className="text-[11px] text-muted-foreground">
-					<div className="flex flex-col items-end gap-0.5 sm:flex-row sm:items-center sm:gap-3">
-						<div className="flex flex-col items-end gap-0.5">
-							<span>
-								Updated{" "}
-								{formatDate(workspace.updatedAt, {
-									month: "short",
-									day: "numeric",
-									year: "numeric",
-								})}
-							</span>
-							<span>
-								Created{" "}
-								{formatDate(workspace.createdAt, {
-									month: "short",
-									day: "numeric",
-									year: "numeric",
-								})}
-							</span>
-						</div>
-						<AlertDialog
-							onOpenChange={setIsDeleteDialogOpen}
-							open={isDeleteDialogOpen}
-						>
-							<AlertDialogTrigger
-								className="mt-2 inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-md bg-transparent px-3 font-medium text-sm ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 sm:mt-0"
-								disabled={deleteMutation.isPending}
-							>
-								<Trash2Icon className="mr-1 size-3" />
-								Delete
-							</AlertDialogTrigger>
-							<AlertDialogContent>
-								<AlertDialogHeader>
-									<AlertDialogTitle>Delete workspace?</AlertDialogTitle>
-									<AlertDialogDescription>
-										Are you sure you want to delete "{workspace.name}"? This
-										workspace will be soft deleted and can be recovered within
-										30 days.
-									</AlertDialogDescription>
-								</AlertDialogHeader>
-								<AlertDialogFooter>
-									<AlertDialogCancel
-										onClick={() => setIsDeleteDialogOpen(false)}
-									>
-										Cancel
-									</AlertDialogCancel>
-									<AlertDialogAction
-										disabled={deleteMutation.isPending}
-										onClick={handleDelete}
-									>
-										{deleteMutation.isPending
-											? "Deleting…"
-											: "Delete workspace"}
-									</AlertDialogAction>
-								</AlertDialogFooter>
-							</AlertDialogContent>
-						</AlertDialog>
-					</div>
-				</CardAction>
 			</CardHeader>
-			<CardContent />
+			<CardContent className="flex-1" />
+			<CardFooter className="flex items-center justify-between gap-2 border-t bg-muted/20 px-4 py-3 text-muted-foreground text-xs">
+				<div className="flex flex-col gap-0.5">
+					<span>
+						Updated{" "}
+						{formatDate(workspace.updatedAt, {
+							month: "short",
+							day: "numeric",
+							year: "numeric",
+						})}
+					</span>
+				</div>
+
+				<div className="flex items-center gap-2">
+					<AlertDialog
+						onOpenChange={setIsDeleteDialogOpen}
+						open={isDeleteDialogOpen}
+					>
+						<AlertDialogTrigger asChild>
+							<Button
+								className="h-7 w-7 text-muted-foreground hover:text-destructive"
+								disabled={deleteMutation.isPending}
+								size="icon"
+								variant="ghost"
+							>
+								<Trash2Icon className="size-4" />
+								<span className="sr-only">Delete</span>
+							</Button>
+						</AlertDialogTrigger>
+						<AlertDialogContent>
+							<AlertDialogHeader>
+								<AlertDialogTitle>Delete workspace?</AlertDialogTitle>
+								<AlertDialogDescription>
+									Are you sure you want to delete "{workspace.name}"? This
+									workspace will be soft deleted and can be recovered within 30
+									days.
+								</AlertDialogDescription>
+							</AlertDialogHeader>
+							<AlertDialogFooter>
+								<AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>
+									Cancel
+								</AlertDialogCancel>
+								<AlertDialogAction
+									disabled={deleteMutation.isPending}
+									onClick={handleDelete}
+								>
+									{deleteMutation.isPending ? "Deleting…" : "Delete workspace"}
+								</AlertDialogAction>
+							</AlertDialogFooter>
+						</AlertDialogContent>
+					</AlertDialog>
+				</div>
+			</CardFooter>
 		</Card>
 	);
 }
