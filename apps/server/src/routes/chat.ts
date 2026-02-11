@@ -83,13 +83,25 @@ export const registerChatRoute = (fastify: FastifyInstance): void => {
 					},
 				},
 			}),
-			onFinish: async ({ text }) => {
+			onFinish: async ({ text, reasoningText, sources }) => {
 				if (text) {
+					const urlSources = sources.filter((s) => s.sourceType === "url");
+					const sourcesData =
+						urlSources.length > 0
+							? urlSources.map((s) => ({
+									sourceId: s.id,
+									url: s.url,
+									title: s.title ?? null,
+								}))
+							: null;
 					await prisma.message.create({
 						data: {
 							nodeId,
 							role: "ASSISTANT",
 							content: text,
+							reasoning: reasoningText ?? null,
+							// biome-ignore lint/suspicious/noExplicitAny: Prisma Json type requires cast
+							sources: sourcesData as any,
 						},
 					});
 				}

@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta content="width=device-width, initial-scale=1.0" name="viewport">
+		<title>Main Study Workspace - Variant 1</title>
+		<script
+			src="https://cdn.tailwindcss.com?plugins=forms,container-queries"
+		></script>
+		<link
+			href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;display=swap"
+			rel="stylesheet"
+		>
+		<link
+			href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+			rel="stylesheet"
+		>
+		<script id="tailwind-config"></script>
+		<style></style>
+	</head>
+	<body
+		class="bg-paper-white text-navy-900 h-screen overflow-hidden flex flex-col antialiased"
+	>
+		<header
+			class="h-12 border-b border-paper-border bg-white flex items-center justify-between px-4 z-20"
+		>
+			<div class="flex items-center gap-4">
+				<button class="p-1.5 hover:bg-bg-subtle rounded text-navy-600">
+					<span class="material-symbols-outlined text-xl">menu</span>
+				</button>
+				<div class="flex items-center gap-2">
+					<span class="material-symbols-outlined text-navy-900 text-xl"
+						>auto_stories</span
+					>
+					<h1 class="font-semibold text-navy-900 text-base tracking-tight">
+						Study<span class="font-normal text-navy-600">Sync</span>
+					</h1>
+				</div>
+			</div>
+			<div class="flex items-center gap-4">
+				<nav class="hidden md:flex gap-6 text-sm">
+					<button
+						class="font-medium text-navy-900 border-b-2 border-navy-900 py-3.5"
+					>
+						Workspace
+					</button>
+					<button
+						class="font-medium text-navy-600 hover:text-navy-900 py-3.5 transition-colors"
+					>
+						Library
+					</button>
+				</nav>
+				<div class="h-4 w-[1px] bg-paper-border mx-2"></div>
+				<div class="flex items-center gap-3">
+					<button
+						class="text-xs font-medium text-navy-600 hover:text-navy-900 flex items-center gap-1.5"
+					>
+						<span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+						AI Active
+					</button>
+					<div
+						class="w-7 h-7 rounded-full bg-navy-100 border border-paper-border overflow-hidden"
+					>
+						<img
+							alt="Profile"
+							class="w-full h-full object-cover"
+							src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmAyXA5w_gpT1zLJkHPo5V_gaIaLzeU-kbvs7Jsg7Os60lBaFk2BTcpURCqAbsYhzGpMsuW60WaijmfExXADdEupKarAgzU92i_fBrSRd3z1v5Irh6CzwmNUc0W40ExmwO3cSrNF-91X2BhR4Ty8vkMFYgo81LKLq5a1DLNl76S7vi4H9CSku7MHyUpIFI7V0ggyVv82CQbN0_3TSlEDwec8_F_WPXP4Y2y-2ChZ6Z3NU1R9DxSkDNdYhpBIa2ieWTMdg45zWSBRdY"
+						>
+					</div>
+				</div>
+			</div>
+		</header>
+		<main class="flex-1 flex overflow-hidden">
+			<aside
+				class="w-16 border-r border-paper-border bg-bg-subtle flex flex-col items-center py-4 gap-4 flex-shrink-0"
+			>
+				<button
+					class="w-10 h-10 flex items-center justify-center bg-white border border-paper-border rounded-lg text-navy-900 hover:border-navy-900 hover:shadow-sm transition-all"
+					title="New Topic"
+				>
+					<span class="material-symbols-outlined text-xl">add</span>
+				</button>
+				<div class="w-8 h-[1px] bg-paper-border my-1"></div>
+				<div class="flex flex-col gap-3 w-full items-center">
+					<button
+						class="w-10 h-10 flex items-center justify-center rounded-lg bg-white border border-navy-200 text-navy-900 shadow-sm-soft relative group"
+					>
+						<span class="material-symbols-outlined text-xl">folder_open</span>
+						<span
+							class="absolute left-12 bg-navy-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none"
+							>Biology 101</span
+						>
+					</button>
+					<button
+						class="w-10 h-10 flex items-center justify-center rounded-lg text-navy-600 hover:bg-white hover:text-navy-900 transition-colors relative group"
+					>
+						<span class="material-symbols-outlined text-xl">folder</span>
+						<span
+							class="absolute left-12 bg-navy-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none"
+							>Philosophy 202</span
+						>
+					</button>
+					<button
+						class="w-10 h-10 flex items-center justify-center rounded-lg text-navy-600 hover:bg-white hover:text-navy-900 transition-colors relative group"
+					>
+						<span class="material-symbols-outlined text-xl">star</span>
+						<span
+							class="absolute left-12 bg-navy-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none"
+							>Favorites</span
+						>
+					</button>
+				</div>
+				<div class="mt-auto flex flex-col gap-3 w-full items-center">
+					<button
+						class="w-10 h-10 flex items-center justify-center rounded-lg text-navy-600 hover:bg-white hover:text-navy-900 transition-colors"
+					>
+						<span class="material-symbols-outlined text-xl">settings</span>
+					</button>
+				</div>
+			</aside>
+			<section class="flex-1 flex overflow-hidden">
+				<div
+					class="w-5/12 flex flex-col border-r border-paper-border bg-white relative max-w-[600px]"
+				>
+					<div
+						class="h-14 flex items-center justify-between px-6 border-b border-paper-border/50 bg-white sticky top-0 z-10"
+					>
+						<div class="flex items-center gap-2">
+							<span class="material-symbols-outlined text-navy-600 text-lg"
+								>chat</span
+							>
+							<h2 class="text-sm font-medium text-navy-900">
+								Research Assistant
+							</h2>
+						</div>
+						<button class="text-navy-400 hover:text-navy-900 transition-colors">
+							<span class="material-symbols-outlined text-lg">more_horiz</span>
+						</button>
+					</div>
+					<div class="flex-1 overflow-y-auto px-6 py-6 space-y-8 scroll-smooth">
+						<div class="flex justify-center">
+							<span
+								class="text-[10px] font-medium text-navy-400 uppercase tracking-widest bg-bg-subtle px-3 py-1 rounded-full"
+								>Today, 10:42 AM</span
+							>
+						</div>
+						<div class="flex flex-col items-end gap-2">
+							<div
+								class="bg-bg-subtle border border-paper-border text-navy-900 px-4 py-3 rounded-2xl rounded-tr-sm max-w-[90%] text-sm leading-relaxed"
+							>
+								Can you explain the key stages of the Krebs Cycle and why it's
+								vital for cellular respiration?
+							</div>
+						</div>
+						<div class="flex flex-col items-start gap-4">
+							<div class="flex items-start gap-3 max-w-full">
+								<div
+									class="w-6 h-6 rounded-full bg-navy-900 flex-shrink-0 flex items-center justify-center mt-1"
+								>
+									<span class="material-symbols-outlined text-white text-xs"
+										>smart_toy</span
+									>
+								</div>
+								<div class="space-y-4 w-full">
+									<div class="text-navy-800 text-sm leading-7">
+										<p class="mb-3">
+											The <strong class="text-navy-900">Krebs Cycle</strong> (or
+											Citric Acid Cycle) is the second major stage of cellular
+											respiration. It takes place in the mitochondrial matrix
+											and is essential because it produces high-energy electron
+											carriers that power the Electron Transport Chain.
+										</p>
+										<p class="mb-2 font-semibold text-navy-900">Key Stages:</p>
+										<ul
+											class="list-disc pl-4 space-y-1 mb-3 text-navy-700 marker:text-navy-400"
+										>
+											<li>
+												<span class="font-medium text-navy-900"
+													>Citrate Formation:</span
+												>
+												Acetyl-CoA joins with Oxaloacetate.
+											</li>
+											<li>
+												<span class="font-medium text-navy-900"
+													>Isomerization:</span
+												>
+												Citrate is rearranged to Isocitrate.
+											</li>
+											<li>
+												<span class="font-medium text-navy-900"
+													>Alpha-Ketoglutarate:</span
+												>
+												Oxidation and CO₂ release.
+											</li>
+											<li>
+												<span class="font-medium text-navy-900"
+													>ATP Generation:</span
+												>
+												Direct production of GTP/ATP.
+											</li>
+										</ul>
+									</div>
+									<div
+										class="flex items-center gap-4 border-t border-paper-border pt-3"
+									>
+										<button
+											class="group flex items-center gap-1.5 text-xs font-medium text-navy-500 hover:text-accent-blue transition-colors"
+										>
+											<span class="material-symbols-outlined text-[16px]"
+												>note_add</span
+											>
+											<span
+												class="underline decoration-transparent group-hover:decoration-accent-blue underline-offset-4 transition-all"
+												>Convert to Note</span
+											>
+										</button>
+										<button
+											class="group flex items-center gap-1.5 text-xs font-medium text-navy-500 hover:text-accent-blue transition-colors"
+										>
+											<span class="material-symbols-outlined text-[16px]"
+												>account_tree</span
+											>
+											<span
+												class="underline decoration-transparent group-hover:decoration-accent-blue underline-offset-4 transition-all"
+												>Create Sub-topic</span
+											>
+										</button>
+										<button class="ml-auto text-navy-400 hover:text-navy-600">
+											<span class="material-symbols-outlined text-[16px]"
+												>content_copy</span
+											>
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="pl-9 flex flex-wrap gap-2">
+							<button
+								class="text-xs px-3 py-1.5 rounded border border-paper-border text-navy-600 hover:border-navy-400 hover:text-navy-900 transition-all bg-white"
+							>
+								Tell me about ATP yield
+							</button>
+							<button
+								class="text-xs px-3 py-1.5 rounded border border-paper-border text-navy-600 hover:border-navy-400 hover:text-navy-900 transition-all bg-white"
+							>
+								Where does it occur?
+							</button>
+						</div>
+						<div class="h-6"></div>
+					</div>
+					<div class="p-4 bg-white border-t border-paper-border">
+						<div class="relative max-w-2xl mx-auto">
+							<textarea
+								class="w-full bg-white border border-paper-border rounded-lg px-4 py-3 pr-12 focus:ring-1 focus:ring-navy-900 focus:border-navy-900 outline-none text-sm resize-none placeholder-navy-300 transition-shadow shadow-sm"
+								placeholder="Ask a follow up..."
+								rows="1"
+							></textarea>
+							<button
+								class="absolute right-2 bottom-2 p-1.5 text-navy-400 hover:text-navy-900 transition-colors"
+							>
+								<span class="material-symbols-outlined text-xl"
+									>arrow_upward</span
+								>
+							</button>
+						</div>
+					</div>
+				</div>
+				<div class="flex-1 flex flex-col bg-bg-subtle relative overflow-hidden">
+					<div
+						class="h-14 flex items-center justify-between px-8 border-b border-paper-border/50 bg-bg-subtle/80 backdrop-blur-sm sticky top-0 z-10"
+					>
+						<div class="flex items-center gap-2 text-navy-400">
+							<span
+								class="text-xs uppercase tracking-wider font-semibold text-navy-500"
+								>Biology 101</span
+							>
+							<span class="material-symbols-outlined text-xs"
+								>chevron_right</span
+							>
+							<span class="text-xs text-navy-900 font-medium"
+								>Cellular Biology</span
+							>
+						</div>
+						<div class="flex items-center gap-2">
+							<button
+								class="p-1.5 hover:bg-black/5 rounded text-navy-500 hover:text-navy-900 transition-colors"
+							>
+								<span class="material-symbols-outlined text-lg">edit_note</span>
+							</button>
+							<button
+								class="p-1.5 hover:bg-black/5 rounded text-navy-500 hover:text-navy-900 transition-colors"
+							>
+								<span class="material-symbols-outlined text-lg">download</span>
+							</button>
+							<button
+								class="p-1.5 hover:bg-black/5 rounded text-navy-500 hover:text-navy-900 transition-colors"
+							>
+								<span class="material-symbols-outlined text-lg">share</span>
+							</button>
+						</div>
+					</div>
+					<div class="flex-1 overflow-y-auto px-12 py-10">
+						<article
+							class="max-w-3xl mx-auto bg-white shadow-sm border border-paper-border min-h-[800px] p-12 md:p-16 notebook-content"
+						>
+							<div class="mb-10 pb-6 border-b border-paper-border">
+								<h1
+									class="text-4xl font-serif font-bold text-navy-900 mb-4 leading-tight"
+								>
+									The Krebs Cycle
+								</h1>
+								<div
+									class="flex items-center gap-4 text-xs text-navy-500 font-sans"
+								>
+									<span class="flex items-center gap-1.5">
+										<span class="material-symbols-outlined text-sm"
+											>schedule</span
+										>
+										Oct 24, 2023
+									</span>
+									<span class="flex items-center gap-1.5">
+										<span class="material-symbols-outlined text-sm"
+											>person</span
+										>
+										AI Assistant
+									</span>
+								</div>
+							</div>
+							<div class="space-y-6 text-navy-800 leading-8 text-lg font-serif">
+								<p>
+									The Citric Acid Cycle is the critical engine of metabolism,
+									converting the chemical energy of acetyl CoA into the reducing
+									power of NADH and FADH₂. It represents a convergent point in
+									the cellular respiration pathway.
+								</p>
+								<figure
+									class="my-10 p-6 bg-bg-subtle border border-paper-border rounded-sm"
+								>
+									<blockquote
+										class="text-lg italic text-navy-700 border-l-2 border-navy-900 pl-4"
+									>
+										"The total yield from one molecule of glucose through the
+										cycle is 6 NADH, 2 FADH₂, and 2 ATP (or GTP)."
+									</blockquote>
+								</figure>
+								<h2
+									class="text-2xl font-bold text-navy-900 mt-10 mb-4 border-b border-paper-border/60 pb-2 inline-block"
+								>
+									Core Mechanism
+								</h2>
+								<div class="space-y-6 my-6 font-sans text-base">
+									<div class="flex gap-4 group">
+										<div
+											class="w-8 text-right font-serif font-bold text-navy-400 text-xl group-hover:text-navy-900 transition-colors"
+										>
+											1.
+										</div>
+										<div>
+											<h3 class="font-bold text-navy-900 mb-1">
+												Oxaloacetate Binding
+											</h3>
+											<p class="text-navy-600 leading-relaxed">
+												The 4-carbon oxaloacetate molecule combines with the
+												2-carbon acetyl group of acetyl-CoA.
+											</p>
+										</div>
+									</div>
+									<div class="flex gap-4 group">
+										<div
+											class="w-8 text-right font-serif font-bold text-navy-400 text-xl group-hover:text-navy-900 transition-colors"
+										>
+											2.
+										</div>
+										<div>
+											<h3 class="font-bold text-navy-900 mb-1">
+												Citrate Rearrangement
+											</h3>
+											<p class="text-navy-600 leading-relaxed">
+												A water molecule is removed and then added back to
+												reposition the hydroxyl group.
+											</p>
+										</div>
+									</div>
+									<div class="flex gap-4 group">
+										<div
+											class="w-8 text-right font-serif font-bold text-navy-400 text-xl group-hover:text-navy-900 transition-colors"
+										>
+											3.
+										</div>
+										<div>
+											<h3 class="font-bold text-navy-900 mb-1">
+												Oxidative Decarboxylation
+											</h3>
+											<p class="text-navy-600 leading-relaxed">
+												NAD+ is reduced to NADH and CO₂ is released in two
+												separate steps.
+											</p>
+										</div>
+									</div>
+								</div>
+								<div class="my-10 border border-paper-border p-1 bg-white">
+									<div
+										class="relative grayscale hover:grayscale-0 transition-all duration-500 overflow-hidden"
+									>
+										<img
+											alt="Mitochondria Diagram"
+											class="w-full h-64 object-cover"
+											data-alt="Scientific diagram of cellular mitochondria structure"
+											src="https://lh3.googleusercontent.com/aida-public/AB6AXuDEW9lM0Fr80nTE1kQ1XXCVJfveeIzl7p3bCPCJnQqzjOIl2VqTpZpM_i3A0h3khIL-V5WXa-HoMa6R3Gi4ELgaWTogEmgwT-qNf-V1ShWfm3VQOxsfbMDOmA3siIyXDwT-X7av8sW65iaRhkKHPOIeNxYfWZAIvPW9JQc2XzTl6FLEO5wW26QwNC2OpUKS1NuE2cT7Dg5lmLieHnKBZi-8EZlB-MmaRphr1-hPVwdKbDlqO33fUDa18boRjQGALKVXcJVMlFfsjzZU"
+										>
+									</div>
+									<div
+										class="p-3 bg-white text-xs font-sans text-navy-500 text-center border-t border-paper-border"
+									>
+										Figure 4.2: Mitochondrial Matrix Interaction
+									</div>
+								</div>
+								<h3 class="text-xl font-bold text-navy-900 mt-8 mb-4">
+									Metabolic Significance
+								</h3>
+								<p>
+									Beyond energy production, the Krebs cycle provides precursors
+									for certain amino acids, as well as the reducing agent NADH
+									that is used in numerous other biochemical reactions. This
+									dual role makes it a central hub in cellular metabolism.
+								</p>
+							</div>
+							<div
+								class="mt-16 pt-8 border-t border-paper-border flex justify-between items-center font-sans text-xs text-navy-400"
+							>
+								<span>Page 1 of 3</span>
+								<span>Last edited 2 minutes ago</span>
+							</div>
+						</article>
+						<div class="h-24"></div>
+					</div>
+				</div>
+			</section>
+		</main>
+		<div class="fixed bottom-8 right-8 z-30">
+			<button
+				class="w-12 h-12 bg-navy-900 text-white rounded-full shadow-lg hover:shadow-xl hover:bg-navy-800 transition-all flex items-center justify-center"
+			>
+				<span class="material-symbols-outlined">edit</span>
+			</button>
+		</div>
+	</body>
+</html>

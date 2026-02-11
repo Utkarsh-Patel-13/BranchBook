@@ -54,6 +54,8 @@ model Message {
   node      Node        @relation(fields: [nodeId], references: [id], onDelete: Cascade)
   role      MessageRole
   content   String      @db.Text
+  reasoning String?     @db.Text
+  sources   Json?
   createdAt DateTime    @default(now())
 
   @@index([nodeId, createdAt])

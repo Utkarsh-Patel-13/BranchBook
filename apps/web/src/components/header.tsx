@@ -36,21 +36,21 @@ export default function Header() {
 
 	const logo = (
 		<Link
-			className="flex items-center gap-2 transition-opacity hover:opacity-80"
+			className="flex items-center gap-1.5 transition-opacity hover:opacity-80"
 			to="/"
 		>
-			<span className="material-symbols-outlined text-2xl text-primary">
+			<span className="material-symbols-outlined text-primary text-xl">
 				auto_stories
 			</span>
-			<span className="font-semibold text-lg tracking-tight">Nexus</span>
+			<span className="font-semibold text-base tracking-tight">Nexus</span>
 		</Link>
 	);
 
 	return (
 		<nav className="sticky top-0 z-50 border-border border-b bg-background/80 backdrop-blur-md">
-			<div className="mx-auto h-16 max-w-7xl items-center px-6">
+			<div className="mx-auto h-14 max-w-7xl items-center px-4 sm:px-5">
 				<div className="flex h-full items-center justify-between">
-					<div className="flex items-center gap-4 sm:gap-8">
+					<div className="flex items-center gap-3 sm:gap-6">
 						{logo}
 						<NavigationMenu>
 							<NavigationMenuList>
@@ -58,7 +58,7 @@ export default function Header() {
 							</NavigationMenuList>
 						</NavigationMenu>
 					</div>
-					<div className="flex items-center gap-3 sm:gap-4">
+					<div className="flex items-center gap-2.5 sm:gap-3.5">
 						<ModeToggle />
 						<UserMenu />
 					</div>
@@ -90,7 +90,7 @@ const renderMenuItem = (item: MenuItem) => {
 				render={
 					<Link
 						activeProps={{ className: "bg-muted text-primary" }}
-						className="group inline-flex h-10 w-max items-center justify-center rounded-md px-4 py-2 font-medium text-sm transition-colors hover:bg-muted hover:text-accent-foreground"
+						className="group inline-flex h-9 w-max items-center justify-center rounded-md px-3.5 py-1.5 font-medium text-xs transition-colors hover:bg-muted hover:text-accent-foreground sm:text-sm"
 						to={item.url}
 					>
 						{item.title}
@@ -106,14 +106,14 @@ const SubMenuLink = ({ item }: { item: MenuItem }) => {
 		<NavigationMenuLink
 			render={
 				<Link
-					className="flex select-none flex-row gap-4 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-muted hover:text-accent-foreground"
+					className="flex select-none flex-row gap-3 rounded-md p-2.5 leading-none no-underline outline-none transition-colors hover:bg-muted hover:text-accent-foreground"
 					to={item.url}
 				>
 					{item.icon && <div className="text-foreground">{item.icon}</div>}
 					<div>
-						<div className="font-semibold text-sm">{item.title}</div>
+						<div className="font-semibold text-xs sm:text-sm">{item.title}</div>
 						{item.description && (
-							<p className="mt-1 text-muted-foreground text-sm leading-snug">
+							<p className="mt-1 text-muted-foreground text-xs leading-snug sm:text-sm">
 								{item.description}
 							</p>
 						)}

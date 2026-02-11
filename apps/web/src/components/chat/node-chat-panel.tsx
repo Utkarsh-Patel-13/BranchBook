@@ -6,8 +6,10 @@ import type { UIMessage } from "ai";
 import { DefaultChatTransport, isReasoningUIPart, isTextUIPart } from "ai";
 import { formatDistanceToNow } from "date-fns";
 import {
+	BookmarkIcon,
 	CheckIcon,
 	CopyIcon,
+	GitBranchIcon,
 	GlobeIcon,
 	LightbulbIcon,
 	MessageSquareIcon,
@@ -18,7 +20,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	Conversation,
 	ConversationContent,
-	ConversationEmptyState,
 	ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
 import {
@@ -165,10 +166,7 @@ function ChatMessage({
 		<Message from={msg.role} key={msg.id}>
 			{reasoningText && msg.role === "assistant" && (
 				<Reasoning isStreaming={isReasoningStreaming}>
-					<ReasoningTrigger
-						duration={undefined}
-						isStreaming={isReasoningStreaming}
-					/>
+					<ReasoningTrigger />
 					<ReasoningContent>{reasoningText}</ReasoningContent>
 				</Reasoning>
 			)}
@@ -188,18 +186,42 @@ function ChatMessage({
 				</Sources>
 			)}
 
-			<MessageActions
-				className={cn(
-					"flex flex-row items-center gap-2",
-					msg.role === "user" ? "justify-end" : "justify-start"
-				)}
-			>
-				{msg.role === "assistant" && <SpeakButton content={content} />}
-				<CopyButton content={content} />
-				{createdAt && (
-					<span className="text-muted-foreground text-xs">{createdAt}</span>
-				)}
-			</MessageActions>
+			{msg.role === "assistant" ? (
+				<div className="mt-1 flex items-center gap-3 border-t pt-3">
+					<button
+						className="group flex items-center gap-1.5 font-medium text-muted-foreground text-xs transition-colors hover:text-primary"
+						type="button"
+					>
+						<BookmarkIcon className="size-3.5 shrink-0" />
+						<span className="underline decoration-transparent underline-offset-4 transition-all group-hover:decoration-primary">
+							Convert to Note
+						</span>
+					</button>
+					<button
+						className="group flex items-center gap-1.5 font-medium text-muted-foreground text-xs transition-colors hover:text-primary"
+						type="button"
+					>
+						<GitBranchIcon className="size-3.5 shrink-0" />
+						<span className="underline decoration-transparent underline-offset-4 transition-all group-hover:decoration-primary">
+							Create Sub-topic
+						</span>
+					</button>
+					<div className="ml-auto flex items-center gap-1">
+						<SpeakButton content={content} />
+						<CopyButton content={content} />
+						{createdAt && (
+							<span className="text-muted-foreground text-xs">{createdAt}</span>
+						)}
+					</div>
+				</div>
+			) : (
+				<MessageActions className="flex flex-row items-center justify-end gap-1">
+					<CopyButton content={content} />
+					{createdAt && (
+						<span className="text-muted-foreground text-xs">{createdAt}</span>
+					)}
+				</MessageActions>
+			)}
 		</Message>
 	);
 }
@@ -208,12 +230,34 @@ function ChatContent({ nodeId, dbMessages }: ChatContentProps) {
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional snapshot — useChat initialises state once at mount
 	const initialMessages = useMemo<UIMessage[]>(
 		() =>
-			dbMessages.map((msg) => ({
-				id: msg.id,
-				role: msg.role === "USER" ? ("user" as const) : ("assistant" as const),
-				parts: [{ type: "text" as const, text: msg.content }],
-				metadata: { createdAt: msg.createdAt },
-			})),
+			dbMessages.map((msg) => {
+				const parts: UIMessage["parts"] = [];
+
+				if (msg.role === "ASSISTANT" && msg.reasoning) {
+					parts.push({ type: "reasoning", text: msg.reasoning, state: "done" });
+				}
+
+				parts.push({ type: "text", text: msg.content });
+
+				if (msg.role === "ASSISTANT" && msg.sources) {
+					for (const s of msg.sources) {
+						parts.push({
+							type: "source-url",
+							sourceId: s.sourceId,
+							url: s.url,
+							title: s.title,
+						});
+					}
+				}
+
+				return {
+					id: msg.id,
+					role:
+						msg.role === "USER" ? ("user" as const) : ("assistant" as const),
+					parts,
+					metadata: { createdAt: msg.createdAt },
+				};
+			}),
 		[]
 	);
 
@@ -251,40 +295,48 @@ function ChatContent({ nodeId, dbMessages }: ChatContentProps) {
 	return (
 		<div className="flex min-h-0 flex-1 flex-col">
 			<Conversation>
-				{messages.length === 0 && !isStreaming ? (
-					<ConversationEmptyState>
-						<div className="space-y-1">
-							<h3 className="font-medium text-sm">Start a conversation</h3>
-							<p className="text-muted-foreground text-xs">
-								Ask anything about this topic
-							</p>
-						</div>
-						<Suggestions className="mt-2">
-							{CHAT_SUGGESTIONS.map((s) => (
-								<Suggestion key={s} onClick={handleSubmit} suggestion={s} />
+				<ConversationContent
+					className={cn(
+						messages.length === 0 &&
+							!isStreaming &&
+							"min-h-full items-center justify-center"
+					)}
+				>
+					{messages.length === 0 && !isStreaming ? (
+						<>
+							<div className="space-y-1 text-center">
+								<h3 className="font-medium text-sm">Start a conversation</h3>
+								<p className="text-muted-foreground text-xs">
+									Ask anything about this topic
+								</p>
+							</div>
+							<Suggestions className="mt-2">
+								{CHAT_SUGGESTIONS.map((s) => (
+									<Suggestion key={s} onClick={handleSubmit} suggestion={s} />
+								))}
+							</Suggestions>
+						</>
+					) : (
+						<>
+							{messages.map((msg, i) => (
+								<ChatMessage
+									isLastStreaming={isStreaming && i === messages.length - 1}
+									key={msg.id}
+									msg={msg}
+								/>
 							))}
-						</Suggestions>
-					</ConversationEmptyState>
-				) : (
-					<ConversationContent>
-						{messages.map((msg, i) => (
-							<ChatMessage
-								isLastStreaming={isStreaming && i === messages.length - 1}
-								key={msg.id}
-								msg={msg}
-							/>
-						))}
-						{status === "submitted" && (
-							<Message from="assistant">
-								<MessageContent>
-									<Shimmer as="span" className="text-sm">
-										{webSearch ? "Searching the web…" : "Thinking…"}
-									</Shimmer>
-								</MessageContent>
-							</Message>
-						)}
-					</ConversationContent>
-				)}
+							{status === "submitted" && (
+								<Message from="assistant">
+									<MessageContent>
+										<Shimmer as="span" className="text-sm">
+											{webSearch ? "Searching the web…" : "Thinking…"}
+										</Shimmer>
+									</MessageContent>
+								</Message>
+							)}
+						</>
+					)}
+				</ConversationContent>
 				<ConversationScrollButton />
 			</Conversation>
 
@@ -294,46 +346,47 @@ function ChatContent({ nodeId, dbMessages }: ChatContentProps) {
 				</div>
 			)}
 
-			<PromptInput
-				className="shrink-0 rounded-none border-0 border-t shadow-none"
-				onSubmit={({ text }) => {
-					if (text.trim()) {
-						handleSubmit(text);
-					}
-				}}
-			>
-				<PromptInputTextarea
-					className="max-h-32 min-h-10 px-3 py-2 text-sm"
-					disabled={isStreaming}
-					maxLength={4000}
-					placeholder="Ask anything…"
-				/>
-				<PromptInputFooter className="px-2 pb-2">
-					<PromptInputTools>
-						<PromptInputButton
-							className={cn(thinking && "bg-primary/10 text-primary")}
-							onClick={() => setThinking((v) => !v)}
-							tooltip={{
-								content: thinking ? "Thinking on" : "Enable thinking",
-								side: "top",
-							}}
-						>
-							<LightbulbIcon className="size-3.5" />
-						</PromptInputButton>
-						<PromptInputButton
-							className={cn(webSearch && "bg-primary/10 text-primary")}
-							onClick={() => setWebSearch((v) => !v)}
-							tooltip={{
-								content: webSearch ? "Web search on" : "Enable web search",
-								side: "top",
-							}}
-						>
-							<GlobeIcon className="size-3.5" />
-						</PromptInputButton>
-					</PromptInputTools>
-					<PromptInputSubmit status={status} />
-				</PromptInputFooter>
-			</PromptInput>
+			<div className="shrink-0 border-t bg-background px-3 pt-2 pb-3">
+				<PromptInput
+					onSubmit={({ text }) => {
+						if (text.trim()) {
+							handleSubmit(text);
+						}
+					}}
+				>
+					<PromptInputTextarea
+						className="max-h-32 min-h-10 text-sm"
+						disabled={isStreaming}
+						maxLength={4000}
+						placeholder="Ask a follow up…"
+					/>
+					<PromptInputFooter className="px-2 pb-1.5">
+						<PromptInputTools>
+							<PromptInputButton
+								className={cn(thinking && "bg-primary/10 text-primary")}
+								onClick={() => setThinking((v) => !v)}
+								tooltip={{
+									content: thinking ? "Thinking on" : "Enable thinking",
+									side: "top",
+								}}
+							>
+								<LightbulbIcon className="size-3.5" />
+							</PromptInputButton>
+							<PromptInputButton
+								className={cn(webSearch && "bg-primary/10 text-primary")}
+								onClick={() => setWebSearch((v) => !v)}
+								tooltip={{
+									content: webSearch ? "Web search on" : "Enable web search",
+									side: "top",
+								}}
+							>
+								<GlobeIcon className="size-3.5" />
+							</PromptInputButton>
+						</PromptInputTools>
+						<PromptInputSubmit status={status} />
+					</PromptInputFooter>
+				</PromptInput>
+			</div>
 		</div>
 	);
 }
@@ -374,7 +427,7 @@ export function NodeChatPanel({ nodeId }: NodeChatPanelProps) {
 					</div>
 				</div>
 			) : (
-				<ChatContent dbMessages={dbMessages} nodeId={nodeId} />
+				<ChatContent dbMessages={dbMessages} key={nodeId} nodeId={nodeId} />
 			)}
 		</div>
 	);

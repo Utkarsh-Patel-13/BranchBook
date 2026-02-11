@@ -37,7 +37,8 @@ export const createMessage = async (
 		},
 	});
 
-	return message;
+	// biome-ignore lint/suspicious/noExplicitAny: Prisma Json type requires cast
+	return message as any;
 };
 
 export const listMessages = async (
@@ -46,8 +47,11 @@ export const listMessages = async (
 ): Promise<MessageType[]> => {
 	await verifyNodeOwnership(input.nodeId, input.userId);
 
-	return db.message.findMany({
+	const messages = await db.message.findMany({
 		where: { nodeId: input.nodeId },
 		orderBy: { createdAt: "asc" },
 	});
+
+	// biome-ignore lint/suspicious/noExplicitAny: Prisma Json type requires cast
+	return messages as any;
 };

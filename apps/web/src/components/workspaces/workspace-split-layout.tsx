@@ -3,11 +3,6 @@ import { MessageSquareDashedIcon } from "lucide-react";
 import { useEffect } from "react";
 import { NodeChatPanel } from "@/components/chat/node-chat-panel";
 import {
-	ResizableHandle,
-	ResizablePanel,
-	ResizablePanelGroup,
-} from "@/components/ui/resizable";
-import {
 	Sidebar,
 	SidebarContent,
 	SidebarHeader,
@@ -16,7 +11,6 @@ import {
 	SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { useNodeTree } from "@/hooks/use-nodes";
-import { getLayout, setLayout } from "@/lib/workspace-layout-storage";
 import { useWorkspaceLayoutStore } from "@/stores/workspace-layout-store";
 import { WorkspaceNodeTree } from "./workspace-node-tree";
 import { WorkspaceNotesPlaceholder } from "./workspace-notes-placeholder";
@@ -61,7 +55,6 @@ export function WorkspaceSplitLayout({
 		selectedNodeId,
 		initLayout,
 		setSidebarOpen,
-		setPanelSizes,
 		setSelectedNodeId,
 	} = useWorkspaceLayoutStore();
 
@@ -82,20 +75,8 @@ export function WorkspaceSplitLayout({
 		}
 	}, [tree, selectedNodeId, setSelectedNodeId]);
 
-	const storedSizes = getLayout(workspaceId).panelSizes;
-	const defaultChatSize = storedSizes[0] ?? 50;
-	const defaultNotesSize = storedSizes[1] ?? 50;
-
 	const handleSidebarOpenChange = (open: boolean) => {
 		setSidebarOpen(open);
-	};
-
-	const handlePanelLayout = (layout: Record<string, number>) => {
-		const sizes = Object.values(layout);
-		if (sizes.length === 2) {
-			setPanelSizes(sizes);
-			setLayout(workspaceId, { panelSizes: sizes });
-		}
 	};
 
 	const handleSelectNode = (nodeId: string) => {
@@ -103,8 +84,12 @@ export function WorkspaceSplitLayout({
 	};
 
 	return (
-		<SidebarProvider onOpenChange={handleSidebarOpenChange} open={sidebarOpen}>
-			<Sidebar collapsible="icon">
+		<SidebarProvider
+			className="h-full min-h-0"
+			onOpenChange={handleSidebarOpenChange}
+			open={sidebarOpen}
+		>
+			<Sidebar className="pt-16" collapsible="icon">
 				<SidebarHeader className="flex flex-row items-center gap-2 p-3 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:px-0">
 					<SidebarTrigger />
 					<span className="font-medium text-sm group-data-[collapsible=icon]:hidden">
@@ -121,34 +106,20 @@ export function WorkspaceSplitLayout({
 			</Sidebar>
 
 			<SidebarInset className="relative flex-1 overflow-hidden">
-				{/* absolute inset-0 gives the panel group a definite pixel height */}
+				{/* absolute inset-0 gives the flex container a definite pixel height */}
 				<div className="absolute inset-0">
-					<ResizablePanelGroup
-						direction="horizontal"
-						onLayoutChanged={handlePanelLayout}
-					>
-						<ResizablePanel
-							defaultSize={defaultChatSize}
-							maxSize={80}
-							minSize={20}
-						>
+					<div className="flex h-full">
+						<div className="flex w-[60%] flex-col overflow-hidden border-r">
 							{selectedNodeId ? (
 								<NodeChatPanel nodeId={selectedNodeId} />
 							) : (
 								<ChatEmptyState />
 							)}
-						</ResizablePanel>
-
-						<ResizableHandle withHandle />
-
-						<ResizablePanel
-							defaultSize={defaultNotesSize}
-							maxSize={80}
-							minSize={20}
-						>
+						</div>
+						<div className="w-[40%] overflow-hidden">
 							<WorkspaceNotesPlaceholder />
-						</ResizablePanel>
-					</ResizablePanelGroup>
+						</div>
+					</div>
 				</div>
 			</SidebarInset>
 		</SidebarProvider>
