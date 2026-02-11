@@ -1,110 +1,78 @@
-import { ChevronRightIcon, ExternalLinkIcon, GlobeIcon } from "lucide-react";
+"use client";
+
 import type { ComponentProps } from "react";
-import { createContext, useContext, useState } from "react";
+
 import {
-	Collapsible,
-	CollapsibleContent,
-	CollapsibleTrigger,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
+import { BookIcon, ChevronDownIcon } from "lucide-react";
 
-interface SourcesContextValue {
-	open: boolean;
-}
+export type SourcesProps = ComponentProps<"div">;
 
-const SourcesContext = createContext<SourcesContextValue>({ open: false });
+export const Sources = ({ className, ...props }: SourcesProps) => (
+  <Collapsible
+    className={cn("not-prose mb-4 text-primary text-xs", className)}
+    {...props}
+  />
+);
 
-export type SourcesProps = ComponentProps<typeof Collapsible>;
+export type SourcesTriggerProps = ComponentProps<typeof CollapsibleTrigger> & {
+  count: number;
+};
 
-export function Sources({ children, className, ...props }: SourcesProps) {
-	const [open, setOpen] = useState(false);
-
-	return (
-		<SourcesContext.Provider value={{ open }}>
-			<Collapsible
-				className={cn("w-full", className)}
-				onOpenChange={setOpen}
-				open={open}
-				{...props}
-			>
-				{children}
-			</Collapsible>
-		</SourcesContext.Provider>
-	);
-}
-
-export interface SourcesTriggerProps
-	extends Omit<ComponentProps<typeof CollapsibleTrigger>, "children"> {
-	count: number;
-}
-
-export function SourcesTrigger({
-	count,
-	className,
-	...props
-}: SourcesTriggerProps) {
-	const { open } = useContext(SourcesContext);
-
-	return (
-		<CollapsibleTrigger
-			className={cn(
-				"flex items-center gap-1.5 rounded py-0.5 text-muted-foreground text-xs hover:text-foreground",
-				className
-			)}
-			{...props}
-		>
-			<GlobeIcon className="size-3.5 shrink-0" />
-			<span>
-				{count} {count === 1 ? "source" : "sources"}
-			</span>
-			<ChevronRightIcon
-				className={cn(
-					"size-3.5 shrink-0 transition-transform",
-					open && "rotate-90"
-				)}
-			/>
-		</CollapsibleTrigger>
-	);
-}
+export const SourcesTrigger = ({
+  className,
+  count,
+  children,
+  ...props
+}: SourcesTriggerProps) => (
+  <CollapsibleTrigger
+    className={cn("flex items-center gap-2", className)}
+    {...props}
+  >
+    {children ?? (
+      <>
+        <p className="font-medium">Used {count} sources</p>
+        <ChevronDownIcon className="h-4 w-4" />
+      </>
+    )}
+  </CollapsibleTrigger>
+);
 
 export type SourcesContentProps = ComponentProps<typeof CollapsibleContent>;
 
-export function SourcesContent({
-	children,
-	className,
-	...props
-}: SourcesContentProps) {
-	return (
-		<CollapsibleContent
-			className={cn("mt-1.5 overflow-hidden", className)}
-			{...props}
-		>
-			<div className="flex flex-col gap-1">{children}</div>
-		</CollapsibleContent>
-	);
-}
+export const SourcesContent = ({
+  className,
+  ...props
+}: SourcesContentProps) => (
+  <CollapsibleContent
+    className={cn(
+      "mt-3 flex w-fit flex-col gap-2",
+      "data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 outline-none data-[state=closed]:animate-out data-[state=open]:animate-in",
+      className
+    )}
+    {...props}
+  />
+);
 
-export interface SourceProps
-	extends Omit<ComponentProps<"a">, "target" | "rel"> {
-	title?: string;
-}
+export type SourceProps = ComponentProps<"a">;
 
-export function Source({ href, title, className, ...props }: SourceProps) {
-	const displayTitle = title ?? href ?? "Source";
-
-	return (
-		<a
-			className={cn(
-				"flex items-center gap-1.5 truncate rounded px-1.5 py-1 text-muted-foreground text-xs hover:bg-muted hover:text-foreground",
-				className
-			)}
-			href={href}
-			rel="noopener noreferrer"
-			target="_blank"
-			{...props}
-		>
-			<ExternalLinkIcon className="size-3 shrink-0" />
-			<span className="truncate">{displayTitle}</span>
-		</a>
-	);
-}
+export const Source = ({ href, title, children, ...props }: SourceProps) => (
+  <a
+    className="flex items-center gap-2"
+    href={href}
+    rel="noreferrer"
+    target="_blank"
+    {...props}
+  >
+    {children ?? (
+      <>
+        <BookIcon className="h-4 w-4" />
+        <span className="block font-medium">{title}</span>
+      </>
+    )}
+  </a>
+);

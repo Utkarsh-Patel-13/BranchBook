@@ -299,17 +299,19 @@ function WorkspaceListItemCard({
 						onOpenChange={setIsDeleteDialogOpen}
 						open={isDeleteDialogOpen}
 					>
-						<AlertDialogTrigger asChild>
-							<Button
-								className="h-7 w-7 text-muted-foreground hover:text-destructive"
-								disabled={deleteMutation.isPending}
-								size="icon"
-								variant="ghost"
-							>
-								<Trash2Icon className="size-4" />
-								<span className="sr-only">Delete</span>
-							</Button>
-						</AlertDialogTrigger>
+						<AlertDialogTrigger
+							render={
+								<Button
+									className="h-7 w-7 text-muted-foreground hover:text-destructive"
+									disabled={deleteMutation.isPending}
+									size="icon"
+									variant="ghost"
+								>
+									<Trash2Icon className="size-4" />
+									<span className="sr-only">Delete</span>
+								</Button>
+							}
+						/>
 						<AlertDialogContent>
 							<AlertDialogHeader>
 								<AlertDialogTitle>Delete workspace?</AlertDialogTitle>

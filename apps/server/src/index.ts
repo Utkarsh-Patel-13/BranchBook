@@ -2,7 +2,6 @@ import fastifyCors from "@fastify/cors";
 import { createContext } from "@nexus/api/context";
 import { type AppRouter, appRouter } from "@nexus/api/routers/index";
 import { auth } from "@nexus/auth";
-import { env } from "@nexus/env/server";
 import {
 	type FastifyTRPCPluginOptions,
 	fastifyTRPCPlugin,
@@ -12,7 +11,17 @@ import { registerWorkspaceFeatures } from "./features/workspaces";
 import { registerChatRoute } from "./routes/chat";
 
 const baseCorsConfig = {
-	origin: env.CORS_ORIGIN,
+	// origin: env.CORS_ORIGIN,
+	origin: (origin: any, cb: any) => {
+		const hostname = new URL(origin).hostname;
+		if (hostname === "localhost") {
+			//  Request from localhost will pass
+			cb(null, true);
+			return;
+		}
+		// Generate an error on other origins, disabling access
+		cb(new Error("Not allowed"), false);
+	},
 	methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 	allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
 	credentials: true,

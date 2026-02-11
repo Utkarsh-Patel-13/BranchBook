@@ -25,6 +25,7 @@
     "dev": "turbo dev",
     "build": "turbo build",
     "check-types": "turbo check-types",
+    "dev:ws": "turbo -F web -F server dev",
     "dev:native": "turbo -F native dev",
     "dev:web": "turbo -F web dev",
     "dev:server": "turbo -F server dev",
