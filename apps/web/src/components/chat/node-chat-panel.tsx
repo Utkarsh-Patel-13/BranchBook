@@ -3,15 +3,18 @@ import { env } from "@nexus/env/web";
 import type { MessageType } from "@nexus/types";
 import { useMutation } from "@tanstack/react-query";
 import type { UIMessage } from "ai";
-import { DefaultChatTransport } from "ai";
+import { DefaultChatTransport, isReasoningUIPart, isTextUIPart } from "ai";
 import { formatDistanceToNow } from "date-fns";
 import {
 	CheckIcon,
 	CopyIcon,
+	GlobeIcon,
+	LightbulbIcon,
 	MessageSquareIcon,
-	RefreshCwIcon,
+	Volume2Icon,
+	VolumeXIcon,
 } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	Conversation,
 	ConversationContent,
@@ -27,15 +30,36 @@ import {
 } from "@/components/ai-elements/message";
 import {
 	PromptInput,
+	PromptInputButton,
 	PromptInputFooter,
 	PromptInputSubmit,
 	PromptInputTextarea,
+	PromptInputTools,
 } from "@/components/ai-elements/prompt-input";
+import {
+	Reasoning,
+	ReasoningContent,
+	ReasoningTrigger,
+} from "@/components/ai-elements/reasoning";
 import { Shimmer } from "@/components/ai-elements/shimmer";
+import {
+	Source,
+	Sources,
+	SourcesContent,
+	SourcesTrigger,
+} from "@/components/ai-elements/sources";
+import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
 import { useListMessages } from "@/hooks/use-messages";
 import { useNodeById } from "@/hooks/use-nodes";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
+
+const CHAT_SUGGESTIONS = [
+	"Summarize this topic",
+	"What are the key concepts?",
+	"Give me related questions to explore",
+	"Create a study outline",
+];
 
 interface ChatContentProps {
 	nodeId: string;
@@ -66,6 +90,120 @@ function CopyButton({ content }: { content: string }) {
 	);
 }
 
+function SpeakButton({ content }: { content: string }) {
+	const [speaking, setSpeaking] = useState(false);
+
+	const handleSpeak = useCallback(() => {
+		if (!("speechSynthesis" in window)) {
+			return;
+		}
+
+		if (speaking) {
+			window.speechSynthesis.cancel();
+			setSpeaking(false);
+			return;
+		}
+
+		const utterance = new SpeechSynthesisUtterance(content);
+		utterance.onstart = () => setSpeaking(true);
+		utterance.onend = () => setSpeaking(false);
+		utterance.onerror = () => setSpeaking(false);
+		window.speechSynthesis.speak(utterance);
+	}, [content, speaking]);
+
+	useEffect(() => {
+		return () => {
+			window.speechSynthesis.cancel();
+		};
+	}, []);
+
+	return (
+		<MessageAction
+			label={speaking ? "Stop speaking" : "Read aloud"}
+			onClick={handleSpeak}
+			tooltip={speaking ? "Stop" : "Read aloud"}
+		>
+			{speaking ? (
+				<VolumeXIcon className="size-3.5" />
+			) : (
+				<Volume2Icon className="size-3.5" />
+			)}
+		</MessageAction>
+	);
+}
+
+function ChatMessage({
+	msg,
+	isLastStreaming,
+}: {
+	msg: UIMessage;
+	isLastStreaming: boolean;
+}) {
+	const textPart = msg.parts.find(isTextUIPart);
+	const content = textPart?.text ?? "";
+
+	const reasoningPart = msg.parts.find(isReasoningUIPart);
+	const reasoningText = reasoningPart?.text;
+	const isReasoningStreaming =
+		isLastStreaming && reasoningPart?.state === "streaming";
+
+	const sourceParts = msg.parts.filter(
+		(p) => p.type === "source-url"
+	) as Array<{
+		type: "source-url";
+		sourceId: string;
+		url: string;
+		title?: string;
+	}>;
+
+	const meta = msg.metadata as { createdAt?: Date | string } | undefined;
+	const createdAt = meta?.createdAt
+		? formatDistanceToNow(new Date(meta.createdAt), { addSuffix: true })
+		: undefined;
+
+	return (
+		<Message from={msg.role} key={msg.id}>
+			{reasoningText && msg.role === "assistant" && (
+				<Reasoning isStreaming={isReasoningStreaming}>
+					<ReasoningTrigger
+						duration={undefined}
+						isStreaming={isReasoningStreaming}
+					/>
+					<ReasoningContent>{reasoningText}</ReasoningContent>
+				</Reasoning>
+			)}
+
+			<MessageContent>
+				<MessageResponse>{content}</MessageResponse>
+			</MessageContent>
+
+			{sourceParts.length > 0 && (
+				<Sources>
+					<SourcesTrigger count={sourceParts.length} />
+					<SourcesContent>
+						{sourceParts.map((p) => (
+							<Source href={p.url} key={p.sourceId} title={p.title ?? p.url} />
+						))}
+					</SourcesContent>
+				</Sources>
+			)}
+
+			<MessageActions
+				className={cn(
+					"flex flex-row items-center gap-2",
+					msg.role === "user" ? "justify-end" : "justify-start"
+				)}
+			>
+				{msg.role === "assistant" && <SpeakButton content={content} />}
+				<CopyButton content={content} />
+				{createdAt && (
+					<span className="text-muted-foreground text-xs">{createdAt}</span>
+				)}
+			</MessageActions>
+		</Message>
+	);
+}
+
 function ChatContent({ nodeId, dbMessages }: ChatContentProps) {
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional snapshot — useChat initialises state once at mount
 	const initialMessages = useMemo<UIMessage[]>(
@@ -83,13 +221,24 @@ function ChatContent({ nodeId, dbMessages }: ChatContentProps) {
 		trpc.message.create.mutationOptions()
 	);
 
+	const [thinking, setThinking] = useState(false);
+	const [webSearch, setWebSearch] = useState(false);
+	const chatOptionsRef = useRef({ thinking: false, webSearch: false });
+	chatOptionsRef.current = { thinking, webSearch };
+
+	const transport = useMemo(
+		() =>
+			new DefaultChatTransport({
+				api: `${env.VITE_SERVER_URL}/api/chat`,
+				credentials: "include",
+				body: () => ({ nodeId, options: chatOptionsRef.current }),
+			}),
+		[nodeId]
+	);
+
 	const { messages, status, sendMessage, error } = useChat({
 		messages: initialMessages,
-		transport: new DefaultChatTransport({
-			api: `${env.VITE_SERVER_URL}/api/chat`,
-			body: { nodeId },
-			credentials: "include",
-		}),
+		transport,
 	});
 
 	const isStreaming = status === "streaming" || status === "submitted";
@@ -103,51 +252,33 @@ function ChatContent({ nodeId, dbMessages }: ChatContentProps) {
 		<div className="flex min-h-0 flex-1 flex-col">
 			<Conversation>
 				{messages.length === 0 && !isStreaming ? (
-					<ConversationEmptyState
-						description="Ask anything about this topic"
-						title="Start a conversation"
-					/>
+					<ConversationEmptyState>
+						<div className="space-y-1">
+							<h3 className="font-medium text-sm">Start a conversation</h3>
+							<p className="text-muted-foreground text-xs">
+								Ask anything about this topic
+							</p>
+						</div>
+						<Suggestions className="mt-2">
+							{CHAT_SUGGESTIONS.map((s) => (
+								<Suggestion key={s} onClick={handleSubmit} suggestion={s} />
+							))}
+						</Suggestions>
+					</ConversationEmptyState>
 				) : (
 					<ConversationContent>
-						{messages.map((msg) => {
-							const textPart = msg.parts.find((p) => p.type === "text");
-							const content =
-								textPart && "text" in textPart ? textPart.text : "";
-							const meta = msg.metadata as
-								| { createdAt?: Date | string }
-								| undefined;
-							const createdAt = meta?.createdAt
-								? formatDistanceToNow(new Date(meta.createdAt), {
-										addSuffix: true,
-									})
-								: undefined;
-
-							return (
-								<Message from={msg.role} key={msg.id}>
-									<MessageContent>
-										<MessageResponse>{content}</MessageResponse>
-									</MessageContent>
-									<MessageActions
-										className={cn(
-											"flex flex-row items-center gap-2",
-											msg.role === "user" ? "justify-end" : "justify-start"
-										)}
-									>
-										<CopyButton content={content} />
-										{createdAt && (
-											<span className="text-muted-foreground text-xs">
-												{createdAt}
-											</span>
-										)}
-									</MessageActions>
-								</Message>
-							);
-						})}
-						{isStreaming && (
+						{messages.map((msg, i) => (
+							<ChatMessage
+								isLastStreaming={isStreaming && i === messages.length - 1}
+								key={msg.id}
+								msg={msg}
+							/>
+						))}
+						{status === "submitted" && (
 							<Message from="assistant">
 								<MessageContent>
 									<Shimmer as="span" className="text-sm">
-										Thinking…
+										{webSearch ? "Searching the web…" : "Thinking…"}
 									</Shimmer>
 								</MessageContent>
 							</Message>
@@ -159,7 +290,6 @@ function ChatContent({ nodeId, dbMessages }: ChatContentProps) {
 
 			{error && (
 				<div className="flex shrink-0 items-center gap-2 border-t bg-destructive/10 px-3 py-2 text-destructive text-xs">
-					<RefreshCwIcon className="size-3 shrink-0" />
 					<span>Something went wrong. Please try again.</span>
 				</div>
 			)}
@@ -179,7 +309,28 @@ function ChatContent({ nodeId, dbMessages }: ChatContentProps) {
 					placeholder="Ask anything…"
 				/>
 				<PromptInputFooter className="px-2 pb-2">
-					<div />
+					<PromptInputTools>
+						<PromptInputButton
+							className={cn(thinking && "bg-primary/10 text-primary")}
+							onClick={() => setThinking((v) => !v)}
+							tooltip={{
+								content: thinking ? "Thinking on" : "Enable thinking",
+								side: "top",
+							}}
+						>
+							<LightbulbIcon className="size-3.5" />
+						</PromptInputButton>
+						<PromptInputButton
+							className={cn(webSearch && "bg-primary/10 text-primary")}
+							onClick={() => setWebSearch((v) => !v)}
+							tooltip={{
+								content: webSearch ? "Web search on" : "Enable web search",
+								side: "top",
+							}}
+						>
+							<GlobeIcon className="size-3.5" />
+						</PromptInputButton>
+					</PromptInputTools>
 					<PromptInputSubmit status={status} />
 				</PromptInputFooter>
 			</PromptInput>
