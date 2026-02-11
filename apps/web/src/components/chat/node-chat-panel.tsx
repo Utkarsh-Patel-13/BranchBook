@@ -4,7 +4,13 @@ import type { MessageType } from "@nexus/types";
 import { useMutation } from "@tanstack/react-query";
 import type { UIMessage } from "ai";
 import { DefaultChatTransport } from "ai";
-import { CheckIcon, CopyIcon, RefreshCwIcon } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import {
+	CheckIcon,
+	CopyIcon,
+	MessageSquareIcon,
+	RefreshCwIcon,
+} from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import {
 	Conversation,
@@ -27,6 +33,7 @@ import {
 } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { useListMessages } from "@/hooks/use-messages";
+import { useNodeById } from "@/hooks/use-nodes";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
 
@@ -93,8 +100,8 @@ function ChatContent({ nodeId, dbMessages }: ChatContentProps) {
 	};
 
 	return (
-		<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-			<Conversation className="flex-1">
+		<div className="flex min-h-0 flex-1 flex-col">
+			<Conversation>
 				{messages.length === 0 && !isStreaming ? (
 					<ConversationEmptyState
 						description="Ask anything about this topic"
@@ -106,14 +113,14 @@ function ChatContent({ nodeId, dbMessages }: ChatContentProps) {
 							const textPart = msg.parts.find((p) => p.type === "text");
 							const content =
 								textPart && "text" in textPart ? textPart.text : "";
-							// const meta = msg.metadata as
-							// 	| { createdAt?: Date | string }
-							// 	| undefined;
-							// const createdAt = meta?.createdAt
-							// 	? formatDistanceToNow(new Date(meta.createdAt), {
-							// 			addSuffix: true,
-							// 		})
-							// 	: undefined;
+							const meta = msg.metadata as
+								| { createdAt?: Date | string }
+								| undefined;
+							const createdAt = meta?.createdAt
+								? formatDistanceToNow(new Date(meta.createdAt), {
+										addSuffix: true,
+									})
+								: undefined;
 
 							return (
 								<Message from={msg.role} key={msg.id}>
@@ -122,17 +129,17 @@ function ChatContent({ nodeId, dbMessages }: ChatContentProps) {
 									</MessageContent>
 									<MessageActions
 										className={cn(
-											"flex flex-row items-center",
+											"flex flex-row items-center gap-2",
 											msg.role === "user" ? "justify-end" : "justify-start"
 										)}
 									>
 										<CopyButton content={content} />
-									</MessageActions>
-									{/* {createdAt && (
+										{createdAt && (
 											<span className="text-muted-foreground text-xs">
 												{createdAt}
 											</span>
-										)} */}
+										)}
+									</MessageActions>
 								</Message>
 							);
 						})}
@@ -151,14 +158,14 @@ function ChatContent({ nodeId, dbMessages }: ChatContentProps) {
 			</Conversation>
 
 			{error && (
-				<div className="flex items-center gap-2 border-t bg-destructive/10 px-3 py-2 text-destructive text-xs">
+				<div className="flex shrink-0 items-center gap-2 border-t bg-destructive/10 px-3 py-2 text-destructive text-xs">
 					<RefreshCwIcon className="size-3 shrink-0" />
 					<span>Something went wrong. Please try again.</span>
 				</div>
 			)}
 
 			<PromptInput
-				className="rounded-none border-0 border-t shadow-none"
+				className="shrink-0 rounded-none border-0 border-t shadow-none"
 				onSubmit={({ text }) => {
 					if (text.trim()) {
 						handleSubmit(text);
@@ -185,13 +192,15 @@ interface NodeChatPanelProps {
 }
 
 export function NodeChatPanel({ nodeId }: NodeChatPanelProps) {
+	const { data: node } = useNodeById(nodeId);
 	const { data: dbMessages, isLoading } = useListMessages(nodeId);
 
 	return (
-		<div className="flex h-full flex-col border-t">
-			<div className="px-3 pt-3 pb-1">
-				<h3 className="font-medium text-muted-foreground text-xs uppercase">
-					Chat
+		<div className="flex h-full flex-col overflow-hidden">
+			<div className="flex shrink-0 items-center gap-2 border-b px-3 py-2">
+				<MessageSquareIcon className="size-3.5 shrink-0 text-muted-foreground" />
+				<h3 className="truncate font-medium text-sm">
+					{node?.title ?? "Chat"}
 				</h3>
 			</div>
 

@@ -1,5 +1,12 @@
 import type { NodeTree } from "@nexus/types";
-import { ChevronRightIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import {
+	ChevronRightIcon,
+	FileTextIcon,
+	FolderIcon,
+	FolderOpenIcon,
+	PlusIcon,
+	Trash2Icon,
+} from "lucide-react";
 import { useState } from "react";
 import { CreateNodeDialog } from "@/components/nodes/create-node-dialog";
 import { DeleteNodeDialog } from "@/components/nodes/delete-node-dialog";
@@ -43,6 +50,12 @@ function NodeRow({
 	const hasChildren = node.children.length > 0;
 	const isSelected = selectedNodeId === node.id;
 
+	const NodeIcon = hasChildren
+		? open
+			? FolderOpenIcon
+			: FolderIcon
+		: FileTextIcon;
+
 	return (
 		<>
 			<Collapsible onOpenChange={setOpen} open={open}>
@@ -61,11 +74,19 @@ function NodeRow({
 
 						<SidebarMenuButton
 							className={cn(
-								"flex-1",
+								"flex-1 gap-1.5",
 								isSelected && "bg-sidebar-accent font-medium"
 							)}
 							onClick={() => onSelectNode(node.id)}
 						>
+							<NodeIcon
+								className={cn(
+									"size-3.5 shrink-0",
+									hasChildren
+										? "text-muted-foreground"
+										: "text-muted-foreground/60"
+								)}
+							/>
 							<span className="truncate text-sm">{node.title}</span>
 						</SidebarMenuButton>
 

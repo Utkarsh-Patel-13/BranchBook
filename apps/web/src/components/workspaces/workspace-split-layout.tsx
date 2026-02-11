@@ -105,7 +105,7 @@ export function WorkspaceSplitLayout({
 	return (
 		<SidebarProvider onOpenChange={handleSidebarOpenChange} open={sidebarOpen}>
 			<Sidebar collapsible="icon">
-				<SidebarHeader className="flex flex-row items-center gap-2 p-3">
+				<SidebarHeader className="flex flex-row items-center gap-2 p-3 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:px-0">
 					<SidebarTrigger />
 					<span className="font-medium text-sm group-data-[collapsible=icon]:hidden">
 						Nodes
@@ -120,33 +120,36 @@ export function WorkspaceSplitLayout({
 				</SidebarContent>
 			</Sidebar>
 
-			<SidebarInset className="flex min-h-0 flex-1 flex-col overflow-hidden">
-				<ResizablePanelGroup
-					direction="horizontal"
-					onLayoutChanged={handlePanelLayout}
-				>
-					<ResizablePanel
-						defaultSize={defaultChatSize}
-						maxSize={80}
-						minSize={20}
+			<SidebarInset className="relative flex-1 overflow-hidden">
+				{/* absolute inset-0 gives the panel group a definite pixel height */}
+				<div className="absolute inset-0">
+					<ResizablePanelGroup
+						direction="horizontal"
+						onLayoutChanged={handlePanelLayout}
 					>
-						{selectedNodeId ? (
-							<NodeChatPanel nodeId={selectedNodeId} />
-						) : (
-							<ChatEmptyState />
-						)}
-					</ResizablePanel>
+						<ResizablePanel
+							defaultSize={defaultChatSize}
+							maxSize={80}
+							minSize={20}
+						>
+							{selectedNodeId ? (
+								<NodeChatPanel nodeId={selectedNodeId} />
+							) : (
+								<ChatEmptyState />
+							)}
+						</ResizablePanel>
 
-					<ResizableHandle withHandle />
+						<ResizableHandle withHandle />
 
-					<ResizablePanel
-						defaultSize={defaultNotesSize}
-						maxSize={80}
-						minSize={20}
-					>
-						<WorkspaceNotesPlaceholder />
-					</ResizablePanel>
-				</ResizablePanelGroup>
+						<ResizablePanel
+							defaultSize={defaultNotesSize}
+							maxSize={80}
+							minSize={20}
+						>
+							<WorkspaceNotesPlaceholder />
+						</ResizablePanel>
+					</ResizablePanelGroup>
+				</div>
 			</SidebarInset>
 		</SidebarProvider>
 	);
