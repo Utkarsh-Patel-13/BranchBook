@@ -1,9 +1,11 @@
 import type { NodeTree } from "@nexus/types";
 import { Handle, Position } from "@xyflow/react";
-import { Plus, Trash2 } from "lucide-react";
+import { Expand, PanelRight, Plus, Shrink, Trash2 } from "lucide-react";
 import { memo, useState } from "react";
 import { toast } from "sonner";
 import { useUpdateNode } from "../../hooks/use-nodes";
+import { useCanvasStore } from "../../stores/canvas-store";
+import { NodeChatPanel } from "../chat/node-chat-panel";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader } from "../ui/card";
 import { Input } from "../ui/input";
@@ -26,6 +28,18 @@ export const NodeCard = memo(({ data, selected }: NodeCardProps) => {
 	const [editTitle, setEditTitle] = useState(node.title);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const updateNode = useUpdateNode(workspaceId);
+
+	const expandedNodeIds = useCanvasStore((state) => state.expandedNodeIds);
+	const sidePanelNodeId = useCanvasStore((state) => state.sidePanelNodeId);
+	const toggleExpandedNode = useCanvasStore(
+		(state) => state.toggleExpandedNode
+	);
+	const setSidePanelNodeId = useCanvasStore(
+		(state) => state.setSidePanelNodeId
+	);
+
+	const isExpanded = expandedNodeIds.has(node.id);
+	const isSidePanel = sidePanelNodeId === node.id;
 
 	const handleTitleClick = () => {
 		setIsEditing(true);
@@ -79,6 +93,105 @@ export const NodeCard = memo(({ data, selected }: NodeCardProps) => {
 		}
 	};
 
+	if (isExpanded) {
+		return (
+			<div className="relative" style={{ width: 600, height: 500 }}>
+				<Handle
+					className="!bg-primary !border-primary"
+					position={Position.Top}
+					type="target"
+				/>
+
+				<Card
+					className={`flex h-full w-full flex-col overflow-hidden transition-all ${
+						selected ? "ring-2 ring-primary" : ""
+					}`}
+				>
+					<CardHeader className="shrink-0 py-2">
+						<div className="flex items-center justify-between gap-2">
+							{isEditing ? (
+								<Input
+									autoFocus
+									className="h-auto px-0 py-0 font-medium text-sm"
+									onBlur={handleTitleSave}
+									onChange={(e) => setEditTitle(e.target.value)}
+									onClick={(e) => e.stopPropagation()}
+									onKeyDown={handleTitleKeyDown}
+									value={editTitle}
+								/>
+							) : (
+								<button
+									className="min-w-0 flex-1 cursor-text truncate bg-transparent p-0 text-left font-medium text-sm"
+									onClick={(e) => {
+										e.stopPropagation();
+										handleTitleClick();
+									}}
+									type="button"
+								>
+									{node.title}
+								</button>
+							)}
+							<div className="flex shrink-0 items-center gap-1">
+								{isRoot && (
+									<span className="rounded-none bg-primary px-1.5 py-0.5 font-medium text-primary-foreground text-xs">
+										Root
+									</span>
+								)}
+								<Button
+									onClick={(e) => {
+										e.stopPropagation();
+										setSidePanelNodeId(isSidePanel ? null : node.id);
+									}}
+									size="xs"
+									title="Show as side panel"
+									variant={isSidePanel ? "default" : "ghost"}
+								>
+									<PanelRight className="size-3" />
+								</Button>
+								<Button
+									onClick={(e) => {
+										e.stopPropagation();
+										toggleExpandedNode(node.id);
+									}}
+									size="xs"
+									title="Collapse node"
+									variant="ghost"
+								>
+									<Shrink className="size-3" />
+								</Button>
+							</div>
+						</div>
+					</CardHeader>
+
+					<div className="min-h-0 flex-1 overflow-hidden">
+						{isSidePanel ? (
+							<div className="flex h-full items-center justify-center">
+								<p className="text-center text-muted-foreground text-sm">
+									Chat is open in the side panel
+								</p>
+							</div>
+						) : (
+							<NodeChatPanel nodeId={node.id} />
+						)}
+					</div>
+				</Card>
+
+				<Handle
+					className="!bg-primary !border-primary"
+					position={Position.Bottom}
+					type="source"
+				/>
+
+				<DeleteNodeDialog
+					node={node}
+					onOpenChange={setDeleteDialogOpen}
+					open={deleteDialogOpen}
+					workspaceId={workspaceId}
+				/>
+			</div>
+		);
+	}
+
 	return (
 		<div className="relative">
 			{!isRoot && (
@@ -90,7 +203,7 @@ export const NodeCard = memo(({ data, selected }: NodeCardProps) => {
 			)}
 
 			<Card
-				className={`min-w-[200px] max-w-[300px] transition-all ${
+				className={`w-[300px] transition-all ${
 					selected ? "ring-2 ring-primary" : ""
 				}`}
 			>
@@ -118,11 +231,24 @@ export const NodeCard = memo(({ data, selected }: NodeCardProps) => {
 								{node.title}
 							</button>
 						)}
-						{isRoot && (
-							<span className="shrink-0 rounded-none bg-primary px-1.5 py-0.5 font-medium text-primary-foreground text-xs">
-								Root
-							</span>
-						)}
+						<div className="flex shrink-0 items-center gap-1">
+							{isRoot && (
+								<span className="rounded-none bg-primary px-1.5 py-0.5 font-medium text-primary-foreground text-xs">
+									Root
+								</span>
+							)}
+							<Button
+								onClick={(e) => {
+									e.stopPropagation();
+									toggleExpandedNode(node.id);
+								}}
+								size="xs"
+								title="Expand to chat"
+								variant="ghost"
+							>
+								<Expand className="size-3" />
+							</Button>
+						</div>
 					</div>
 				</CardHeader>
 
