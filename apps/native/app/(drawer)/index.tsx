@@ -19,7 +19,6 @@ export default function Home() {
 	const mutedColor = useThemeColor("muted");
 	const successColor = useThemeColor("success");
 	const dangerColor = useThemeColor("danger");
-	const foregroundColor = useThemeColor("foreground");
 
 	return (
 		<Container className="p-6">
@@ -68,13 +67,6 @@ export default function Home() {
 							<Text className="mb-1 font-medium text-foreground">
 								TRPC Backend
 							</Text>
-							<Card.Description>
-								{isLoading
-									? "Checking connection..."
-									: isConnected
-										? "Connected to API"
-										: "API Disconnected"}
-							</Card.Description>
 						</View>
 						{isLoading && (
 							<Ionicons color={mutedColor} name="hourglass-outline" size={20} />

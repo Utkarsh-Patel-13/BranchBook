@@ -24,7 +24,9 @@
       "!**/.svelte-kit",
       "!**/wrangler.jsonc",
       "!**/.source",
-      "!**/convex/_generated"
+      "!**/convex/_generated",
+      "!**/apps/web/src/components/ui",
+      "!**/apps/web/src/components/ai-elements"
     ]
   },
   "formatter": {
@@ -64,7 +66,8 @@
         "noUnusedTemplateLiteral": "error",
         "useNumberNamespace": "error",
         "noInferrableTypes": "error",
-        "noUselessElse": "error"
+        "noUselessElse": "error",
+        "useFilenamingConvention": "off"
       }
     }
   },

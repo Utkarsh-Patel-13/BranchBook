@@ -50,11 +50,10 @@ function NodeRow({
 	const hasChildren = node.children.length > 0;
 	const isSelected = selectedNodeId === node.id;
 
-	const NodeIcon = hasChildren
-		? open
-			? FolderOpenIcon
-			: FolderIcon
-		: FileTextIcon;
+	let NodeIcon = FileTextIcon;
+	if (hasChildren) {
+		NodeIcon = open ? FolderOpenIcon : FolderIcon;
+	}
 
 	return (
 		<>

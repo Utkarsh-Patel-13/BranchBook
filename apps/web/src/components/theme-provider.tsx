@@ -8,4 +8,5 @@ export function ThemeProvider({
 	return <NextThemesProvider {...props}>{children}</NextThemesProvider>;
 }
 
+// biome-ignore lint/performance/noBarrelFile: we need to export the hook
 export { useTheme } from "next-themes";

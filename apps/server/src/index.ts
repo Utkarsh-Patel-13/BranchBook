@@ -12,6 +12,7 @@ import { registerChatRoute } from "./routes/chat";
 
 const baseCorsConfig = {
 	// origin: env.CORS_ORIGIN,
+	// biome-ignore lint/suspicious/noExplicitAny: we need to allow any origin
 	origin: (origin: any, cb: any) => {
 		const hostname = new URL(origin).hostname;
 		if (hostname === "localhost") {
