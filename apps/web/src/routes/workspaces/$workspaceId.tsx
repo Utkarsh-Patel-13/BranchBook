@@ -121,7 +121,7 @@ function WorkspaceCanvasRouteComponent() {
 	return (
 		<div className="flex h-full w-full overflow-hidden">
 			{sidePanelNodeId ? (
-				<ResizablePanelGroup direction="horizontal">
+				<ResizablePanelGroup dir="horizontal">
 					<ResizablePanel defaultSize={72} minSize={30}>
 						{canvas}
 					</ResizablePanel>

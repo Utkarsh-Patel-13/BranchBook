@@ -89,7 +89,7 @@ export function WorkspaceSplitLayout({
 			onOpenChange={handleSidebarOpenChange}
 			open={sidebarOpen}
 		>
-			<Sidebar className="pt-16" collapsible="icon">
+			<Sidebar className="pt-14" collapsible="icon">
 				<SidebarHeader className="flex flex-row items-center gap-2 p-3 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:px-0">
 					<SidebarTrigger />
 					<span className="font-medium text-sm group-data-[collapsible=icon]:hidden">

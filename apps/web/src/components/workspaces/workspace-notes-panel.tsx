@@ -32,7 +32,9 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FloatingTextFormatPlugin } from "@/components/notes/note-floating-toolbar";
 import { NoteToolbar } from "@/components/notes/note-toolbar";
+import { Switch } from "@/components/ui/switch";
 import { useNote, useUpsertNote } from "@/hooks/use-note";
+import { Label } from "../ui/label";
 
 const URL_MATCHER =
 	/((https?:\/\/(www\.)?)|(www\.))[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)/;
@@ -198,41 +200,41 @@ function NotesPanelHeader({
 }: NotesPanelHeaderProps) {
 	return (
 		<div className="flex shrink-0 items-center justify-between border-b px-4 py-2">
-			<div className="flex items-center gap-1.5">
+			<div className="flex items-center gap-2">
 				{isEditing ? (
-					<PencilIcon className="size-3.5 text-primary" />
+					<PencilIcon className="size-3.5 shrink-0 text-primary" />
 				) : (
-					<EyeIcon className="size-3.5 text-muted-foreground" />
+					<EyeIcon className="size-3.5 shrink-0 text-muted-foreground" />
 				)}
 				<span
 					className={
 						isEditing
-							? "font-semibold text-primary text-xs uppercase tracking-wide"
-							: "font-medium text-muted-foreground text-xs uppercase tracking-wide"
+							? "font-medium text-primary text-sm"
+							: "font-medium text-muted-foreground text-sm"
 					}
 				>
 					{isEditing ? "Editing" : "View"}
 				</span>
 				{isSaving && (
-					<span className="text-muted-foreground text-xs">· Saving…</span>
+					<span className="text-muted-foreground text-sm">· Saving…</span>
 				)}
 				{!isSaving && justSaved && (
-					<span className="text-emerald-600 text-xs dark:text-emerald-400">
+					<span className="text-emerald-600 text-sm dark:text-emerald-400">
 						· Saved ✓
 					</span>
 				)}
 			</div>
-			<button
-				className={
-					isEditing
-						? "rounded px-2 py-1 font-medium text-primary text-xs transition-colors hover:bg-primary/10"
-						: "rounded px-2 py-1 text-muted-foreground text-xs transition-colors hover:bg-muted hover:text-foreground"
-				}
-				onClick={onToggleMode}
-				type="button"
-			>
-				{isEditing ? "Done" : "Edit"}
-			</button>
+			<div className="flex items-center gap-4">
+				<Label htmlFor="edit-mode">View</Label>
+				<Switch
+					aria-label={isEditing ? "Switch to view mode" : "Switch to edit mode"}
+					checked={isEditing}
+					id="edit-mode"
+					onCheckedChange={() => onToggleMode()}
+					size="default"
+				/>
+				<Label htmlFor="edit-mode">Edit</Label>
+			</div>
 		</div>
 	);
 }

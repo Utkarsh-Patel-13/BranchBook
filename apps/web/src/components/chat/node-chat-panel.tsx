@@ -401,7 +401,7 @@ export function NodeChatPanel({ nodeId }: NodeChatPanelProps) {
 
 	return (
 		<div className="flex h-full flex-col overflow-hidden">
-			<div className="flex shrink-0 items-center gap-2 border-b px-3 py-2">
+			<div className="flex shrink-0 items-center gap-2 border-b px-4 py-2">
 				<MessageSquareIcon className="size-3.5 shrink-0 text-muted-foreground" />
 				<h3 className="truncate font-medium text-sm">
 					{node?.title ?? "Chat"}

@@ -48,7 +48,7 @@ export default function Header() {
 
 	return (
 		<nav className="sticky top-0 z-50 border-border border-b bg-background/80 backdrop-blur-md">
-			<div className="mx-auto h-14 max-w-7xl items-center px-4 sm:px-5">
+			<div className="h-14 items-center px-4 sm:px-5">
 				<div className="flex h-full items-center justify-between">
 					<div className="flex items-center gap-3 sm:gap-6">
 						{logo}
@@ -58,7 +58,7 @@ export default function Header() {
 							</NavigationMenuList>
 						</NavigationMenu>
 					</div>
-					<div className="flex items-center gap-2.5 sm:gap-3.5">
+					<div className="flex items-center justify-end gap-2.5 sm:gap-3.5">
 						<ModeToggle />
 						<UserMenu />
 					</div>
