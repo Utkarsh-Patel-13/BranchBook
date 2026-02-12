@@ -1,30 +1,58 @@
 import type { NodeTree } from "@nexus/types";
-import { MessageSquareDashedIcon } from "lucide-react";
-import { useEffect } from "react";
+import {
+	MessageSquareDashedIcon,
+	MessageSquareIcon,
+	StickyNoteIcon,
+} from "lucide-react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { NodeChatPanel } from "@/components/chat/node-chat-panel";
 import {
-	Sidebar,
-	SidebarContent,
-	SidebarHeader,
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { Button } from "@/components/ui/button";
+import {
 	SidebarInset,
 	SidebarProvider,
 	SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { useNodeTree } from "@/hooks/use-nodes";
 import { useWorkspaceLayoutStore } from "@/stores/workspace-layout-store";
-import { WorkspaceNodeTree } from "./workspace-node-tree";
 import { WorkspaceNotesPanel } from "./workspace-notes-panel";
+import { WorkspaceSidebar } from "./workspace-sidebar";
 
-function findNodeInTree(tree: NodeTree[], nodeId: string): boolean {
+function findNodeInTree(tree: NodeTree[], nodeId: string): NodeTree | null {
 	for (const node of tree) {
 		if (node.id === nodeId) {
-			return true;
+			return node;
 		}
-		if (findNodeInTree(node.children, nodeId)) {
-			return true;
+		const found = findNodeInTree(node.children, nodeId);
+		if (found) {
+			return found;
 		}
 	}
-	return false;
+	return null;
+}
+
+function buildBreadcrumbPath(
+	tree: NodeTree[],
+	nodeId: string,
+	path: NodeTree[] = []
+): NodeTree[] | null {
+	for (const node of tree) {
+		if (node.id === nodeId) {
+			return [...path, node];
+		}
+		const found = buildBreadcrumbPath(node.children, nodeId, [...path, node]);
+		if (found) {
+			return found;
+		}
+	}
+	return null;
 }
 
 function ChatEmptyState() {
@@ -59,6 +87,7 @@ export function WorkspaceSplitLayout({
 	} = useWorkspaceLayoutStore();
 
 	const { data: tree } = useNodeTree(workspaceId);
+	const [mobileView, setMobileView] = useState<"chat" | "notes">("chat");
 
 	useEffect(() => {
 		initLayout(workspaceId);
@@ -75,6 +104,13 @@ export function WorkspaceSplitLayout({
 		}
 	}, [tree, selectedNodeId, setSelectedNodeId]);
 
+	const breadcrumbPath = useMemo(() => {
+		if (!(tree && selectedNodeId)) {
+			return [];
+		}
+		return buildBreadcrumbPath(tree, selectedNodeId) ?? [];
+	}, [tree, selectedNodeId]);
+
 	const handleSidebarOpenChange = (open: boolean) => {
 		setSidebarOpen(open);
 	};
@@ -89,35 +125,97 @@ export function WorkspaceSplitLayout({
 			onOpenChange={handleSidebarOpenChange}
 			open={sidebarOpen}
 		>
-			<Sidebar className="pt-14" collapsible="icon">
-				<SidebarHeader className="flex flex-row items-center gap-2 p-3 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:px-0">
-					<SidebarTrigger />
-					<span className="font-medium text-sm group-data-[collapsible=icon]:hidden">
-						Nodes
-					</span>
-				</SidebarHeader>
-				<SidebarContent>
-					<WorkspaceNodeTree
-						onSelectNode={handleSelectNode}
-						selectedNodeId={selectedNodeId}
-						workspaceId={workspaceId}
-					/>
-				</SidebarContent>
-			</Sidebar>
+			<WorkspaceSidebar
+				className="pt-14"
+				onSelectNode={handleSelectNode}
+				selectedNodeId={selectedNodeId}
+				workspaceId={workspaceId}
+			/>
 
 			<SidebarInset className="relative flex-1 overflow-hidden">
+				<header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
+					<SidebarTrigger className="-ml-1" />
+					<Breadcrumb className="flex-1">
+						<BreadcrumbList>
+							{breadcrumbPath.length === 0 && (
+								<BreadcrumbItem>
+									<BreadcrumbPage className="text-muted-foreground">
+										No node selected
+									</BreadcrumbPage>
+								</BreadcrumbItem>
+							)}
+							{breadcrumbPath.map((node, index) => {
+								const isLast = index === breadcrumbPath.length - 1;
+								return (
+									<Fragment key={node.id}>
+										<BreadcrumbItem>
+											{isLast ? (
+												<BreadcrumbPage>{node.title}</BreadcrumbPage>
+											) : (
+												<BreadcrumbLink
+													className="cursor-pointer"
+													onClick={() => handleSelectNode(node.id)}
+												>
+													{node.title}
+												</BreadcrumbLink>
+											)}
+										</BreadcrumbItem>
+										{!isLast && <BreadcrumbSeparator />}
+									</Fragment>
+								);
+							})}
+						</BreadcrumbList>
+					</Breadcrumb>
+
+					{/* Mobile view toggle */}
+					<div className="flex gap-1 lg:hidden">
+						<Button
+							className="h-8 px-2"
+							onClick={() => setMobileView("chat")}
+							size="sm"
+							variant={mobileView === "chat" ? "default" : "ghost"}
+						>
+							<MessageSquareIcon className="size-4" />
+							<span className="ml-1.5 hidden sm:inline">Chat</span>
+						</Button>
+						<Button
+							className="h-8 px-2"
+							onClick={() => setMobileView("notes")}
+							size="sm"
+							variant={mobileView === "notes" ? "default" : "ghost"}
+						>
+							<StickyNoteIcon className="size-4" />
+							<span className="ml-1.5 hidden sm:inline">Notes</span>
+						</Button>
+					</div>
+				</header>
+
 				{/* absolute inset-0 gives the flex container a definite pixel height */}
-				<div className="absolute inset-0">
+				<div className="absolute inset-0 top-14">
 					<div className="flex h-full">
-						<div className="flex w-[50%] flex-col overflow-hidden border-r">
+						{/* Desktop: Split view */}
+						<div className="hidden w-[50%] flex-col overflow-hidden border-r lg:flex">
 							{selectedNodeId ? (
 								<NodeChatPanel nodeId={selectedNodeId} />
 							) : (
 								<ChatEmptyState />
 							)}
 						</div>
-						<div className="w-[50%] overflow-hidden">
+						<div className="hidden w-[50%] overflow-hidden lg:block">
 							<WorkspaceNotesPanel selectedNodeId={selectedNodeId} />
+						</div>
+
+						{/* Mobile/Tablet: Toggled view */}
+						<div className="flex w-full flex-col overflow-hidden lg:hidden">
+							{mobileView === "chat" &&
+								(selectedNodeId ? (
+									<NodeChatPanel nodeId={selectedNodeId} />
+								) : (
+									<ChatEmptyState />
+								))}
+							{mobileView === "notes" && (
+								<WorkspaceNotesPanel selectedNodeId={selectedNodeId} />
+							)}
 						</div>
 					</div>
 				</div>

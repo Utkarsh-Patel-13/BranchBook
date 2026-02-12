@@ -4,11 +4,10 @@ import type { MessageType } from "@nexus/types";
 import { useMutation } from "@tanstack/react-query";
 import type { UIMessage } from "ai";
 import { DefaultChatTransport, isReasoningUIPart, isTextUIPart } from "ai";
-import { formatDistanceToNow } from "date-fns";
 import {
-	BookmarkIcon,
 	CheckIcon,
 	CopyIcon,
+	FileTextIcon,
 	GitBranchIcon,
 	GlobeIcon,
 	LightbulbIcon,
@@ -16,7 +15,7 @@ import {
 	Volume2Icon,
 	VolumeXIcon,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	Conversation,
 	ConversationContent,
@@ -67,10 +66,13 @@ interface ChatContentProps {
 	dbMessages: MessageType[];
 }
 
-function CopyButton({ content }: { content: string }) {
-	const [copied, setCopied] = useState(false);
+interface CopyActionProps {
+	content: string;
+}
 
-	const handleCopy = useCallback(() => {
+const CopyAction = memo(({ content }: CopyActionProps) => {
+	const [copied, setCopied] = useState(false);
+	const handleClick = useCallback(() => {
 		navigator.clipboard.writeText(content);
 		setCopied(true);
 		setTimeout(() => setCopied(false), 2000);
@@ -78,9 +80,9 @@ function CopyButton({ content }: { content: string }) {
 
 	return (
 		<MessageAction
-			label={copied ? "Copied" : "Copy"}
-			onClick={handleCopy}
-			tooltip={copied ? "Copied!" : "Copy message"}
+			label="Copy"
+			onClick={handleClick}
+			tooltip="Copy to clipboard"
 		>
 			{copied ? (
 				<CheckIcon className="size-3.5" />
@@ -89,7 +91,47 @@ function CopyButton({ content }: { content: string }) {
 			)}
 		</MessageAction>
 	);
-}
+});
+
+CopyAction.displayName = "CopyAction";
+
+const ConvertToNoteAction = memo(() => {
+	const handleClick = useCallback(() => {
+		// TODO: Implement convert to note functionality
+		console.log("Convert to note clicked");
+	}, []);
+
+	return (
+		<MessageAction
+			label="Convert to Note"
+			onClick={handleClick}
+			tooltip="Convert to Note"
+		>
+			<FileTextIcon className="size-3.5" />
+		</MessageAction>
+	);
+});
+
+ConvertToNoteAction.displayName = "ConvertToNoteAction";
+
+const CreateSubTopicAction = memo(() => {
+	const handleClick = useCallback(() => {
+		// TODO: Implement create sub-topic functionality
+		console.log("Create sub-topic clicked");
+	}, []);
+
+	return (
+		<MessageAction
+			label="Create Sub-topic"
+			onClick={handleClick}
+			tooltip="Create Sub-topic"
+		>
+			<GitBranchIcon className="size-3.5" />
+		</MessageAction>
+	);
+});
+
+CreateSubTopicAction.displayName = "CreateSubTopicAction";
 
 function SpeakButton({ content }: { content: string }) {
 	const [speaking, setSpeaking] = useState(false);
@@ -157,11 +199,6 @@ function ChatMessage({
 		title?: string;
 	}>;
 
-	const meta = msg.metadata as { createdAt?: Date | string } | undefined;
-	const createdAt = meta?.createdAt
-		? formatDistanceToNow(new Date(meta.createdAt), { addSuffix: true })
-		: undefined;
-
 	return (
 		<Message from={msg.role} key={msg.id}>
 			{reasoningText && msg.role === "assistant" && (
@@ -172,7 +209,11 @@ function ChatMessage({
 			)}
 
 			<MessageContent>
-				<MessageResponse>{content}</MessageResponse>
+				{msg.role === "assistant" ? (
+					<MessageResponse>{content}</MessageResponse>
+				) : (
+					content
+				)}
 			</MessageContent>
 
 			{sourceParts.length > 0 && (
@@ -186,42 +227,21 @@ function ChatMessage({
 				</Sources>
 			)}
 
-			{msg.role === "assistant" ? (
-				<div className="mt-1 flex items-center gap-3 border-t pt-3">
-					<button
-						className="group flex items-center gap-1.5 font-medium text-muted-foreground text-xs transition-colors hover:text-primary"
-						type="button"
-					>
-						<BookmarkIcon className="size-3.5 shrink-0" />
-						<span className="underline decoration-transparent underline-offset-4 transition-all group-hover:decoration-primary">
-							Convert to Note
-						</span>
-					</button>
-					<button
-						className="group flex items-center gap-1.5 font-medium text-muted-foreground text-xs transition-colors hover:text-primary"
-						type="button"
-					>
-						<GitBranchIcon className="size-3.5 shrink-0" />
-						<span className="underline decoration-transparent underline-offset-4 transition-all group-hover:decoration-primary">
-							Create Sub-topic
-						</span>
-					</button>
-					<div className="ml-auto flex items-center gap-1">
-						<SpeakButton content={content} />
-						<CopyButton content={content} />
-						{createdAt && (
-							<span className="text-muted-foreground text-xs">{createdAt}</span>
-						)}
-					</div>
-				</div>
-			) : (
-				<MessageActions className="flex flex-row items-center justify-end gap-1">
-					<CopyButton content={content} />
-					{createdAt && (
-						<span className="text-muted-foreground text-xs">{createdAt}</span>
-					)}
-				</MessageActions>
-			)}
+			<MessageActions
+				className={cn(
+					"flex flex-row items-center gap-1",
+					msg.role === "user" && "justify-end"
+				)}
+			>
+				{msg.role === "assistant" && (
+					<>
+						<ConvertToNoteAction />
+						<CreateSubTopicAction />
+					</>
+				)}
+				<SpeakButton content={content} />
+				<CopyAction content={content} />
+			</MessageActions>
 		</Message>
 	);
 }

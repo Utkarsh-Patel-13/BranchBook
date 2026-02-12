@@ -46,7 +46,6 @@
     "@trpc/client": "catalog:",
     "@trpc/server": "catalog:",
     "@trpc/tanstack-react-query": "catalog:",
-    "@xyflow/react": "^12.3.6",
     "ai": "^6.0.79",
     "better-auth": "catalog:",
     "class-variance-authority": "^0.7.1",
