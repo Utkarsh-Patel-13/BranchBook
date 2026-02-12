@@ -164,3 +164,9 @@
 	border-bottom: 2px solid var(--primary-foreground);
 	transform: rotate(45deg);
 }
+
+/* Lexical hashtags */
+.notes-hashtag {
+	color: var(--sidebar-primary);
+	font-weight: 500;
+}

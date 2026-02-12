@@ -12,6 +12,10 @@ import {
 	$isHeadingNode,
 	$isQuoteNode,
 } from "@lexical/rich-text";
+import {
+	$getSelectionStyleValueForProperty,
+	$patchStyleText,
+} from "@lexical/selection";
 import { mergeRegister } from "@lexical/utils";
 import {
 	$createParagraphNode,
@@ -28,9 +32,12 @@ import {
 	BoldIcon,
 	CheckSquareIcon,
 	CodeIcon,
+	HighlighterIcon,
 	ItalicIcon,
 	ListIcon,
 	ListOrderedIcon,
+	MinusIcon,
+	PlusIcon,
 	QuoteIcon,
 	Redo2Icon,
 	StrikethroughIcon,
@@ -38,7 +45,7 @@ import {
 	Undo2Icon,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type BlockType =
 	| "paragraph"
@@ -49,6 +56,38 @@ type BlockType =
 	| "bullet"
 	| "number"
 	| "check";
+
+const FONT_FAMILIES = [
+	{ label: "Default", value: "" },
+	{ label: "Sans", value: "'Geist Variable', sans-serif" },
+	{ label: "Serif", value: "Lora, serif" },
+	{ label: "Mono", value: "ui-monospace, monospace" },
+] as const;
+
+const HIGHLIGHT_COLORS = [
+	{ label: "Remove highlight", value: "" },
+	{ label: "Yellow", value: "rgba(255, 212, 0, 0.45)" },
+	{ label: "Green", value: "rgba(77, 201, 77, 0.45)" },
+	{ label: "Blue", value: "rgba(77, 148, 255, 0.45)" },
+	{ label: "Pink", value: "rgba(255, 105, 180, 0.45)" },
+	{ label: "Orange", value: "rgba(255, 165, 0, 0.45)" },
+] as const;
+
+const FONT_SIZE_PRESETS = [
+	"8",
+	"10",
+	"12",
+	"14",
+	"16",
+	"18",
+	"20",
+	"24",
+	"28",
+	"32",
+	"36",
+	"48",
+	"72",
+];
 
 function Separator() {
 	return <div className="mx-0.5 h-4 w-px shrink-0 bg-border" />;
@@ -80,6 +119,7 @@ function ToolbarButton({
 			}`}
 			disabled={disabled}
 			onClick={onClick}
+			onMouseDown={(e) => e.preventDefault()}
 			type="button"
 		>
 			{children}
@@ -123,6 +163,128 @@ function readBlockType(setBlockType: (v: BlockType) => void) {
 	}
 }
 
+interface FontSizeControlProps {
+	value: string;
+	onDecrement: () => void;
+	onIncrement: () => void;
+	onCommit: (size: string) => void;
+}
+
+function FontSizeControl({
+	value,
+	onDecrement,
+	onIncrement,
+	onCommit,
+}: FontSizeControlProps) {
+	const numericStr = value.replace("px", "") || "16";
+	const [local, setLocal] = useState(numericStr);
+	const isFocusedRef = useRef(false);
+
+	useEffect(() => {
+		if (!isFocusedRef.current) {
+			setLocal(numericStr);
+		}
+	}, [numericStr]);
+
+	const handleCommit = () => {
+		const v = Number.parseInt(local, 10);
+		if (!Number.isNaN(v) && v >= 6 && v <= 144) {
+			onCommit(`${v}px`);
+		} else {
+			setLocal(numericStr);
+		}
+	};
+
+	return (
+		<div className="flex items-center">
+			<button
+				aria-label="Decrease font size"
+				className="flex h-7 w-5 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+				onClick={onDecrement}
+				onMouseDown={(e) => e.preventDefault()}
+				type="button"
+			>
+				<MinusIcon className="size-2.5" />
+			</button>
+			<input
+				aria-label="Font size"
+				className="h-7 w-9 rounded bg-transparent text-center text-muted-foreground text-xs outline-none [appearance:textfield] hover:bg-muted focus:bg-muted [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+				list="toolbar-font-size-list"
+				max={144}
+				min={6}
+				onBlur={() => {
+					isFocusedRef.current = false;
+					handleCommit();
+				}}
+				onChange={(e) => setLocal(e.target.value)}
+				onFocus={() => {
+					isFocusedRef.current = true;
+				}}
+				onKeyDown={(e) => {
+					if (e.key === "Enter") {
+						handleCommit();
+					}
+				}}
+				type="number"
+				value={local}
+			/>
+			<datalist id="toolbar-font-size-list">
+				{FONT_SIZE_PRESETS.map((s) => (
+					<option key={s} value={s} />
+				))}
+			</datalist>
+			<button
+				aria-label="Increase font size"
+				className="flex h-7 w-5 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+				onClick={onIncrement}
+				onMouseDown={(e) => e.preventDefault()}
+				type="button"
+			>
+				<PlusIcon className="size-2.5" />
+			</button>
+		</div>
+	);
+}
+
+interface HighlightPickerProps {
+	value: string;
+	onChange: (color: string) => void;
+}
+
+function HighlightPicker({ value, onChange }: HighlightPickerProps) {
+	return (
+		<div className="flex items-center gap-0.5">
+			<HighlighterIcon className="mr-0.5 size-3 shrink-0 text-muted-foreground" />
+			{HIGHLIGHT_COLORS.map((c) => (
+				<button
+					aria-label={c.label}
+					aria-pressed={value === c.value}
+					className={`flex size-4 items-center justify-center rounded-sm border transition-transform hover:scale-110 ${
+						value === c.value
+							? "ring-1 ring-ring ring-offset-1"
+							: "border-border/50"
+					}`}
+					key={c.value || "none"}
+					onClick={() => onChange(value === c.value ? "" : c.value)}
+					onMouseDown={(e) => e.preventDefault()}
+					style={
+						c.value
+							? { backgroundColor: c.value }
+							: { backgroundColor: "transparent" }
+					}
+					type="button"
+				>
+					{!c.value && (
+						<span className="text-[8px] text-muted-foreground leading-none">
+							✕
+						</span>
+					)}
+				</button>
+			))}
+		</div>
+	);
+}
+
 export function NoteToolbar() {
 	const [editor] = useLexicalComposerContext();
 	const [canUndo, setCanUndo] = useState(false);
@@ -133,6 +295,9 @@ export function NoteToolbar() {
 	const [isUnderline, setIsUnderline] = useState(false);
 	const [isStrikethrough, setIsStrikethrough] = useState(false);
 	const [isCode, setIsCode] = useState(false);
+	const [fontFamily, setFontFamily] = useState("");
+	const [fontSize, setFontSize] = useState("16px");
+	const [highlightColor, setHighlightColor] = useState("");
 
 	useEffect(() => {
 		return mergeRegister(
@@ -162,6 +327,15 @@ export function NoteToolbar() {
 						setIsUnderline(sel.hasFormat("underline"));
 						setIsStrikethrough(sel.hasFormat("strikethrough"));
 						setIsCode(sel.hasFormat("code"));
+						setFontFamily(
+							$getSelectionStyleValueForProperty(sel, "font-family", "")
+						);
+						setFontSize(
+							$getSelectionStyleValueForProperty(sel, "font-size", "16px")
+						);
+						setHighlightColor(
+							$getSelectionStyleValueForProperty(sel, "background-color", "")
+						);
 					}
 				});
 			})
@@ -218,6 +392,32 @@ export function NoteToolbar() {
 		[editor, blockType, applyBlockType]
 	);
 
+	const applyStyle = useCallback(
+		(styles: Record<string, string>) => {
+			editor.update(() => {
+				const selection = $getSelection();
+				if ($isRangeSelection(selection)) {
+					$patchStyleText(selection, styles);
+				}
+			});
+		},
+		[editor]
+	);
+
+	const applyFontSize = useCallback(
+		(size: string) => applyStyle({ "font-size": size }),
+		[applyStyle]
+	);
+
+	const adjustFontSize = useCallback(
+		(delta: number) => {
+			const current = Number.parseInt(fontSize, 10) || 16;
+			const next = Math.min(144, Math.max(6, current + delta));
+			applyFontSize(`${next}px`);
+		},
+		[fontSize, applyFontSize]
+	);
+
 	return (
 		<div className="flex shrink-0 flex-wrap items-center gap-0.5 border-b bg-background px-2 py-1">
 			<ToolbarButton
@@ -234,6 +434,28 @@ export function NoteToolbar() {
 			>
 				<Redo2Icon className="size-3.5" />
 			</ToolbarButton>
+
+			<Separator />
+
+			<select
+				aria-label="Font family"
+				className="h-7 cursor-pointer rounded bg-transparent px-1.5 text-muted-foreground text-xs outline-none hover:bg-muted hover:text-foreground focus:bg-muted"
+				onChange={(e) => applyStyle({ "font-family": e.target.value })}
+				value={fontFamily}
+			>
+				{FONT_FAMILIES.map((f) => (
+					<option key={f.value} value={f.value}>
+						{f.label}
+					</option>
+				))}
+			</select>
+
+			<FontSizeControl
+				onCommit={applyFontSize}
+				onDecrement={() => adjustFontSize(-1)}
+				onIncrement={() => adjustFontSize(1)}
+				value={fontSize}
+			/>
 
 			<Separator />
 
@@ -274,6 +496,13 @@ export function NoteToolbar() {
 			>
 				<CodeIcon className="size-3.5" />
 			</ToolbarButton>
+
+			<Separator />
+
+			<HighlightPicker
+				onChange={(color) => applyStyle({ "background-color": color })}
+				value={highlightColor}
+			/>
 
 			<Separator />
 

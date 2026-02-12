@@ -1,4 +1,5 @@
 import { CodeHighlightNode, CodeNode } from "@lexical/code";
+import { HashtagNode } from "@lexical/hashtag";
 import { AutoLinkNode, LinkNode } from "@lexical/link";
 import { ListItemNode, ListNode } from "@lexical/list";
 import { TRANSFORMERS } from "@lexical/markdown";
@@ -9,6 +10,7 @@ import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
+import { HashtagPlugin } from "@lexical/react/LexicalHashtagPlugin";
 import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { LinkPlugin } from "@lexical/react/LexicalLinkPlugin";
 import { ListPlugin } from "@lexical/react/LexicalListPlugin";
@@ -77,14 +79,13 @@ const NODES = [
 	TableNode,
 	TableCellNode,
 	TableRowNode,
+	HashtagNode,
 ];
 
 const DEBOUNCE_MS = 1000;
 const SAVED_FLASH_MS = 2000;
 const WORD_SPLIT_RE = /\s+/;
 
-// Theme: provides CSS classes for inline text formats and checklist items.
-// prose handles headings/blockquote/lists/em/strong via element selectors.
 const EDITOR_THEME = {
 	text: {
 		bold: "font-bold",
@@ -99,9 +100,9 @@ const EDITOR_THEME = {
 		listitemChecked: "notes-listitem-checked",
 		listitemUnchecked: "notes-listitem-unchecked",
 	},
+	hashtag: "notes-hashtag",
 };
 
-// Applies editable state and focuses editor when entering edit mode
 function EditabilityPlugin({ isEditing }: { isEditing: boolean }) {
 	const [editor] = useLexicalComposerContext();
 	useEffect(() => {
@@ -113,7 +114,6 @@ function EditabilityPlugin({ isEditing }: { isEditing: boolean }) {
 	return null;
 }
 
-// Live word count — only rendered when editing
 function WordCountPlugin({
 	onCount,
 }: {
@@ -133,7 +133,6 @@ function WordCountPlugin({
 	return null;
 }
 
-// T019: Skeleton loading state
 function NotesLoadingState() {
 	return (
 		<div className="flex h-full flex-col gap-3 p-4">
@@ -161,7 +160,6 @@ function NoNodeSelected() {
 	);
 }
 
-// T021: Inline load error state with retry
 function NotesErrorState({ onRetry }: { onRetry: () => void }) {
 	return (
 		<div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
@@ -185,7 +183,6 @@ function NotesErrorState({ onRetry }: { onRetry: () => void }) {
 	);
 }
 
-// T018 + T020: Header with clear mode indication and save feedback
 interface NotesPanelHeaderProps {
 	isEditing: boolean;
 	isSaving: boolean;
@@ -250,7 +247,6 @@ function NotesPanelContent({ nodeId }: NotesPanelContentProps) {
 	const { mutate: upsert, isPending: isSaving } = useUpsertNote(nodeId);
 	const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-	// T020: Flash "Saved ✓" briefly after each successful save
 	const [justSaved, setJustSaved] = useState(false);
 	const wasSavingRef = useRef(false);
 	useEffect(() => {
@@ -262,14 +258,11 @@ function NotesPanelContent({ nodeId }: NotesPanelContentProps) {
 		wasSavingRef.current = isSaving;
 	}, [isSaving]);
 
-	// T016/T022: Reset edit mode when switching nodes; auto-save timer captures
-	// nodeId in its closure so any pending save fires for the correct node.
 	// biome-ignore lint/correctness/useExhaustiveDependencies: nodeId is a prop; we intentionally reset when it changes
 	useEffect(() => {
 		setIsEditing(false);
 	}, [nodeId]);
 
-	// Flush debounce timer on unmount
 	useEffect(() => {
 		return () => {
 			if (saveTimerRef.current !== null) {
@@ -278,7 +271,6 @@ function NotesPanelContent({ nodeId }: NotesPanelContentProps) {
 		};
 	}, []);
 
-	// Word count state
 	const [wordCount, setWordCount] = useState({ words: 0, chars: 0 });
 	const handleCount = useCallback(
 		(words: number, chars: number) => setWordCount({ words, chars }),
@@ -293,7 +285,6 @@ function NotesPanelContent({ nodeId }: NotesPanelContentProps) {
 			if (saveTimerRef.current !== null) {
 				clearTimeout(saveTimerRef.current);
 			}
-			// T022: debounced auto-save — closure captures current nodeId
 			saveTimerRef.current = setTimeout(() => {
 				const content = JSON.stringify(editorState.toJSON());
 				upsert({ nodeId, content });
@@ -304,12 +295,10 @@ function NotesPanelContent({ nodeId }: NotesPanelContentProps) {
 
 	const toggleMode = useCallback(() => setIsEditing((prev) => !prev), []);
 
-	// T019: Loading skeleton
 	if (isLoading) {
 		return <NotesLoadingState />;
 	}
 
-	// T021: Inline error state with retry
 	if (isError) {
 		return <NotesErrorState onRetry={() => refetch()} />;
 	}
@@ -394,6 +383,7 @@ function NotesPanelContent({ nodeId }: NotesPanelContentProps) {
 			<HistoryPlugin />
 			<ListPlugin />
 			<CheckListPlugin />
+			<HashtagPlugin />
 			<LinkPlugin />
 			<AutoLinkPlugin matchers={AUTOLINK_MATCHERS} />
 			<ClickableLinkPlugin />
