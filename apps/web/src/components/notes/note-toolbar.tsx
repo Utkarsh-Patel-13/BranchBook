@@ -1,5 +1,6 @@
 import {
 	$isListNode,
+	INSERT_CHECK_LIST_COMMAND,
 	INSERT_ORDERED_LIST_COMMAND,
 	INSERT_UNORDERED_LIST_COMMAND,
 	REMOVE_LIST_COMMAND,
@@ -25,12 +26,14 @@ import {
 } from "lexical";
 import {
 	BoldIcon,
+	CheckSquareIcon,
 	CodeIcon,
 	ItalicIcon,
 	ListIcon,
 	ListOrderedIcon,
 	QuoteIcon,
 	Redo2Icon,
+	StrikethroughIcon,
 	UnderlineIcon,
 	Undo2Icon,
 } from "lucide-react";
@@ -44,7 +47,8 @@ type BlockType =
 	| "h3"
 	| "quote"
 	| "bullet"
-	| "number";
+	| "number"
+	| "check";
 
 function Separator() {
 	return <div className="mx-0.5 h-4 w-px shrink-0 bg-border" />;
@@ -83,35 +87,9 @@ function ToolbarButton({
 	);
 }
 
-function readSelectionState(
-	setIsBold: (v: boolean) => void,
-	setIsItalic: (v: boolean) => void,
-	setIsUnderline: (v: boolean) => void,
-	setIsCode: (v: boolean) => void,
-	setBlockType: (v: BlockType) => void
+function createBlockNode(
+	type: Exclude<BlockType, "bullet" | "number" | "check">
 ) {
-	const selection = $getSelection();
-	if (!$isRangeSelection(selection)) {
-		return;
-	}
-	setIsBold(selection.hasFormat("bold"));
-	setIsItalic(selection.hasFormat("italic"));
-	setIsUnderline(selection.hasFormat("underline"));
-	setIsCode(selection.hasFormat("code"));
-
-	const topElement = selection.anchor.getNode().getTopLevelElement();
-	if ($isHeadingNode(topElement)) {
-		setBlockType(topElement.getTag() as BlockType);
-	} else if ($isListNode(topElement)) {
-		setBlockType(topElement.getListType() === "bullet" ? "bullet" : "number");
-	} else if ($isQuoteNode(topElement)) {
-		setBlockType("quote");
-	} else {
-		setBlockType("paragraph");
-	}
-}
-
-function createBlockNode(type: Exclude<BlockType, "bullet" | "number">) {
 	if (type === "h1" || type === "h2" || type === "h3") {
 		return $createHeadingNode(type);
 	}
@@ -121,15 +99,40 @@ function createBlockNode(type: Exclude<BlockType, "bullet" | "number">) {
 	return $createParagraphNode();
 }
 
+function readBlockType(setBlockType: (v: BlockType) => void) {
+	const selection = $getSelection();
+	if (!$isRangeSelection(selection)) {
+		return;
+	}
+	const topElement = selection.anchor.getNode().getTopLevelElement();
+	if ($isHeadingNode(topElement)) {
+		setBlockType(topElement.getTag() as BlockType);
+	} else if ($isListNode(topElement)) {
+		const listType = topElement.getListType();
+		if (listType === "bullet") {
+			setBlockType("bullet");
+		} else if (listType === "number") {
+			setBlockType("number");
+		} else {
+			setBlockType("check");
+		}
+	} else if ($isQuoteNode(topElement)) {
+		setBlockType("quote");
+	} else {
+		setBlockType("paragraph");
+	}
+}
+
 export function NoteToolbar() {
 	const [editor] = useLexicalComposerContext();
 	const [canUndo, setCanUndo] = useState(false);
 	const [canRedo, setCanRedo] = useState(false);
+	const [blockType, setBlockType] = useState<BlockType>("paragraph");
 	const [isBold, setIsBold] = useState(false);
 	const [isItalic, setIsItalic] = useState(false);
 	const [isUnderline, setIsUnderline] = useState(false);
+	const [isStrikethrough, setIsStrikethrough] = useState(false);
 	const [isCode, setIsCode] = useState(false);
-	const [blockType, setBlockType] = useState<BlockType>("paragraph");
 
 	useEffect(() => {
 		return mergeRegister(
@@ -150,32 +153,32 @@ export function NoteToolbar() {
 				COMMAND_PRIORITY_CRITICAL
 			),
 			editor.registerUpdateListener(({ editorState }) => {
-				editorState.read(() =>
-					readSelectionState(
-						setIsBold,
-						setIsItalic,
-						setIsUnderline,
-						setIsCode,
-						setBlockType
-					)
-				);
+				editorState.read(() => {
+					readBlockType(setBlockType);
+					const sel = $getSelection();
+					if ($isRangeSelection(sel)) {
+						setIsBold(sel.hasFormat("bold"));
+						setIsItalic(sel.hasFormat("italic"));
+						setIsUnderline(sel.hasFormat("underline"));
+						setIsStrikethrough(sel.hasFormat("strikethrough"));
+						setIsCode(sel.hasFormat("code"));
+					}
+				});
 			})
 		);
 	}, [editor]);
 
 	const applyBlockType = useCallback(
-		(type: Exclude<BlockType, "bullet" | "number">) => {
+		(type: Exclude<BlockType, "bullet" | "number" | "check">) => {
 			editor.update(() => {
 				const selection = $getSelection();
 				if (!$isRangeSelection(selection)) {
 					return;
 				}
-
-				const anchorNode = selection.anchor.getNode();
-				const topElement = anchorNode.getTopLevelElementOrThrow();
-
+				const topElement = selection.anchor
+					.getNode()
+					.getTopLevelElementOrThrow();
 				const newNode = createBlockNode(type);
-
 				for (const child of topElement.getChildren()) {
 					newNode.append(child);
 				}
@@ -188,17 +191,26 @@ export function NoteToolbar() {
 	const formatBlock = useCallback(
 		(type: BlockType) => {
 			if (type === "bullet") {
-				if (blockType === "bullet") {
-					editor.dispatchCommand(REMOVE_LIST_COMMAND, undefined);
-				} else {
-					editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
-				}
+				editor.dispatchCommand(
+					blockType === "bullet"
+						? REMOVE_LIST_COMMAND
+						: INSERT_UNORDERED_LIST_COMMAND,
+					undefined
+				);
 			} else if (type === "number") {
-				if (blockType === "number") {
-					editor.dispatchCommand(REMOVE_LIST_COMMAND, undefined);
-				} else {
-					editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined);
-				}
+				editor.dispatchCommand(
+					blockType === "number"
+						? REMOVE_LIST_COMMAND
+						: INSERT_ORDERED_LIST_COMMAND,
+					undefined
+				);
+			} else if (type === "check") {
+				editor.dispatchCommand(
+					blockType === "check"
+						? REMOVE_LIST_COMMAND
+						: INSERT_CHECK_LIST_COMMAND,
+					undefined
+				);
 			} else {
 				applyBlockType(blockType === type ? "paragraph" : type);
 			}
@@ -245,6 +257,15 @@ export function NoteToolbar() {
 				onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "underline")}
 			>
 				<UnderlineIcon className="size-3.5" />
+			</ToolbarButton>
+			<ToolbarButton
+				active={isStrikethrough}
+				label="Strikethrough"
+				onClick={() =>
+					editor.dispatchCommand(FORMAT_TEXT_COMMAND, "strikethrough")
+				}
+			>
+				<StrikethroughIcon className="size-3.5" />
 			</ToolbarButton>
 			<ToolbarButton
 				active={isCode}
@@ -300,6 +321,13 @@ export function NoteToolbar() {
 				onClick={() => formatBlock("number")}
 			>
 				<ListOrderedIcon className="size-3.5" />
+			</ToolbarButton>
+			<ToolbarButton
+				active={blockType === "check"}
+				label="Checklist"
+				onClick={() => formatBlock("check")}
+			>
+				<CheckSquareIcon className="size-3.5" />
 			</ToolbarButton>
 		</div>
 	);
