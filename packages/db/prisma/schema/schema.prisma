@@ -36,11 +36,26 @@ model Node {
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
   messages    Message[]
+  note        Note?
 
   @@index([workspaceId])
   @@index([parentId])
   @@index([deletedAt])
   @@map("node")
+}
+
+model Note {
+  id        String    @id @default(cuid())
+  nodeId    String    @unique
+  node      Node      @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  content   String    @db.Text
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([nodeId])
+  @@index([deletedAt])
+  @@map("note")
 }
 
 enum MessageRole {

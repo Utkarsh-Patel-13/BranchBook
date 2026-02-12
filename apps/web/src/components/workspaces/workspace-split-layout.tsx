@@ -13,7 +13,7 @@ import {
 import { useNodeTree } from "@/hooks/use-nodes";
 import { useWorkspaceLayoutStore } from "@/stores/workspace-layout-store";
 import { WorkspaceNodeTree } from "./workspace-node-tree";
-import { WorkspaceNotesPlaceholder } from "./workspace-notes-placeholder";
+import { WorkspaceNotesPanel } from "./workspace-notes-panel";
 
 function findNodeInTree(tree: NodeTree[], nodeId: string): boolean {
 	for (const node of tree) {
@@ -109,15 +109,15 @@ export function WorkspaceSplitLayout({
 				{/* absolute inset-0 gives the flex container a definite pixel height */}
 				<div className="absolute inset-0">
 					<div className="flex h-full">
-						<div className="flex w-[60%] flex-col overflow-hidden border-r">
+						<div className="flex w-[50%] flex-col overflow-hidden border-r">
 							{selectedNodeId ? (
 								<NodeChatPanel nodeId={selectedNodeId} />
 							) : (
 								<ChatEmptyState />
 							)}
 						</div>
-						<div className="w-[40%] overflow-hidden">
-							<WorkspaceNotesPlaceholder />
+						<div className="w-[50%] overflow-hidden">
+							<WorkspaceNotesPanel selectedNodeId={selectedNodeId} />
 						</div>
 					</div>
 				</div>
