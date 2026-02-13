@@ -38,6 +38,14 @@ model Node {
   messages    Message[]
   note        Note?
 
+  // Context Engine
+  detailedSummary      String?  @db.Text
+  highLevelSummary     String?  @db.Text
+  summaryDraft         String?  @db.Text
+  summaryDraftCount    Int      @default(0)
+  inheritedContext     String?  @db.Text
+  branchPointMessageId String?
+
   @@index([workspaceId])
   @@index([parentId])
   @@index([deletedAt])
@@ -72,6 +80,10 @@ model Message {
   reasoning String?     @db.Text
   sources   Json?
   createdAt DateTime    @default(now())
+
+  // Context Engine
+  perMessageSummary String?  @db.Text
+  branchPoint       Boolean  @default(false)
 
   @@index([nodeId, createdAt])
   @@map("message")

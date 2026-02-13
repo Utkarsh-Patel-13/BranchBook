@@ -47,3 +47,14 @@ export const useDeleteNode = (workspaceId: string) =>
 		...trpc.node.delete.mutationOptions(),
 		onSuccess: () => invalidateNodeTree(workspaceId),
 	});
+
+export const useBranchFromMessage = (workspaceId: string) =>
+	useMutation({
+		...trpc.node.branchFromMessage.mutationOptions(),
+		onSuccess: () => invalidateNodeTree(workspaceId),
+	});
+
+export const useContextForPanel = (nodeId: string) =>
+	useQuery({
+		...trpc.node.getContextForPanel.queryOptions({ nodeId }),
+	});

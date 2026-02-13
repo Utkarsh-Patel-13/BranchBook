@@ -12,6 +12,12 @@ export const env = createEnv({
 		NODE_ENV: z
 			.enum(["development", "production", "test"])
 			.default("development"),
+		CONTEXT_SUMMARY_THRESHOLD: z.coerce
+			.number()
+			.int()
+			.positive()
+			.default(5)
+			.optional(),
 	},
 	runtimeEnv: process.env,
 	emptyStringAsUndefined: true,

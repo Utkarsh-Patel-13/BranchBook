@@ -14,6 +14,9 @@ export interface MessageType {
 	reasoning?: string | null;
 	sources?: MessageSource[] | null;
 	createdAt: Date | string;
+	// Context Engine fields
+	perMessageSummary?: string | null;
+	branchPoint?: boolean;
 }
 
 export interface CreateMessageInput {
