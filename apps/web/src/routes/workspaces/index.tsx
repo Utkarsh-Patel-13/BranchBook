@@ -126,14 +126,15 @@ export const Route = createFileRoute("/workspaces/")({
 function WorkspacesListRouteComponent() {
 	const { sort, setSort } = useWorkspaceStore();
 	const [searchQuery, setSearchQuery] = useState("");
-	const [createOpen, setCreateOpen] = useState(false);
-	const [createName, setCreateName] = useState("");
-	const [createDescription, setCreateDescription] = useState("");
-	const [editOpen, setEditOpen] = useState(false);
-	const [editingWorkspace, setEditingWorkspace] =
-		useState<WorkspaceItem | null>(null);
-	const [editName, setEditName] = useState("");
-	const [editDescription, setEditDescription] = useState("");
+
+	const [createDialogState, setCreateDialogState] = useState<WorkspaceItem>({
+		id: "",
+		name: "",
+		description: "",
+		updatedAt: "",
+		createdAt: "",
+	});
+	const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
 	const listQuery = useWorkspaceListQuery(sort);
 	const createMutation = useCreateWorkspaceMutation();
@@ -155,30 +156,70 @@ function WorkspacesListRouteComponent() {
 	const isLoading = listQuery.isLoading;
 	const hasWorkspaces = workspaces.length > 0;
 
+	const handleCreateDialogStateChange = (
+		field: keyof WorkspaceItem,
+		value: string
+	) => {
+		setCreateDialogState({ ...createDialogState, [field]: value });
+	};
+
 	const handleCreate = (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!createName.trim()) {
+		if (!createDialogState.name.trim()) {
 			toast.error("Workspace name is required");
 			return;
 		}
-		createMutation.mutate(
-			{
-				name: createName.trim(),
-				description: createDescription.trim() || null,
-			},
-			{
-				onSuccess: async () => {
-					setCreateName("");
-					setCreateDescription("");
-					setCreateOpen(false);
-					await listQuery.refetch();
-					toast.success("Workspace created successfully");
+		if (createDialogState.id) {
+			updateMutation.mutate(
+				{
+					workspaceId: createDialogState.id,
+					name: createDialogState.name.trim(),
+					description: createDialogState.description?.trim() || null,
 				},
-				onError: (error) => {
-					toast.error(error.message ?? "Failed to create workspace");
+				{
+					onSuccess: async () => {
+						setCreateDialogState({
+							id: "",
+							name: "",
+							description: "",
+							updatedAt: "",
+							createdAt: "",
+						});
+						setCreateDialogOpen(false);
+						await listQuery.refetch();
+						toast.success("Workspace updated successfully");
+					},
+					onError: (error) => {
+						toast.error(error.message ?? "Failed to update workspace");
+					},
+				}
+			);
+		} else {
+			createMutation.mutate(
+				{
+					name: createDialogState.name.trim(),
+					description: createDialogState.description?.trim() || null,
 				},
-			}
-		);
+				{
+					onSuccess: async () => {
+						setCreateDialogState({
+							id: "",
+							name: "",
+							description: "",
+							updatedAt: "",
+							createdAt: "",
+						});
+						setCreateDialogOpen(false);
+						await listQuery.refetch();
+						await listQuery.refetch();
+						toast.success("Workspace created successfully");
+					},
+					onError: (error) => {
+						toast.error(error.message ?? "Failed to create workspace");
+					},
+				}
+			);
+		}
 	};
 
 	const handleSortChange = (next: Partial<WorkspaceListInput>) => {
@@ -186,38 +227,15 @@ function WorkspacesListRouteComponent() {
 	};
 
 	const handleEdit = (workspace: WorkspaceItem) => {
-		setEditingWorkspace(workspace);
-		setEditName(workspace.name);
-		setEditDescription(workspace.description ?? "");
-		setEditOpen(true);
+		setCreateDialogState(workspace);
+		setCreateDialogOpen(true);
 	};
 
-	const handleUpdate = (e: React.FormEvent) => {
-		e.preventDefault();
-		if (!(editingWorkspace && editName.trim())) {
-			toast.error("Workspace name is required");
-			return;
+	const getCreateDialogButtonText = (isPending: boolean) => {
+		if (createDialogState.id) {
+			return isPending ? "Updating…" : "Update";
 		}
-		updateMutation.mutate(
-			{
-				workspaceId: editingWorkspace.id,
-				name: editName.trim(),
-				description: editDescription.trim() || null,
-			},
-			{
-				onSuccess: async () => {
-					setEditName("");
-					setEditDescription("");
-					setEditingWorkspace(null);
-					setEditOpen(false);
-					await listQuery.refetch();
-					toast.success("Workspace updated successfully");
-				},
-				onError: (error) => {
-					toast.error(error.message ?? "Failed to update workspace");
-				},
-			}
-		);
+		return isPending ? "Creating…" : "Create";
 	};
 
 	return (
@@ -313,12 +331,12 @@ function WorkspacesListRouteComponent() {
 			)}
 
 			{!(isLoading || hasWorkspaces) && (
-				<EmptyState onAdd={() => setCreateOpen(true)} />
+				<EmptyState onAdd={() => setCreateDialogOpen(true)} />
 			)}
 
 			{!isLoading && hasWorkspaces && (
 				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-					<AddWorkspaceCard onOpenModal={() => setCreateOpen(true)} />
+					<AddWorkspaceCard onOpenModal={() => setCreateDialogOpen(true)} />
 					{filtered.map((workspace) => (
 						<WorkspaceCard
 							key={workspace.id}
@@ -332,13 +350,18 @@ function WorkspacesListRouteComponent() {
 
 			<Dialog
 				onOpenChange={(open) => {
-					setCreateOpen(open);
+					setCreateDialogOpen(open);
 					if (!open) {
-						setCreateName("");
-						setCreateDescription("");
+						setCreateDialogState({
+							id: "",
+							name: "",
+							description: "",
+							updatedAt: "",
+							createdAt: "",
+						});
 					}
 				}}
-				open={createOpen}
+				open={createDialogOpen}
 			>
 				<DialogContent className="sm:max-w-sm" showCloseButton>
 					<form onSubmit={handleCreate}>
@@ -353,10 +376,12 @@ function WorkspacesListRouteComponent() {
 									disabled={createMutation.isPending}
 									id="create-workspace-name"
 									maxLength={100}
-									onChange={(e) => setCreateName(e.target.value)}
+									onChange={(e) =>
+										handleCreateDialogStateChange("name", e.target.value)
+									}
 									placeholder="Workspace name"
 									required
-									value={createName}
+									value={createDialogState.name}
 								/>
 							</div>
 							<div className="grid gap-2">
@@ -367,86 +392,35 @@ function WorkspacesListRouteComponent() {
 									disabled={createMutation.isPending}
 									id="create-workspace-description"
 									maxLength={500}
-									onChange={(e) => setCreateDescription(e.target.value)}
+									onChange={(e) =>
+										handleCreateDialogStateChange("description", e.target.value)
+									}
 									placeholder="Brief description"
 									rows={3}
-									value={createDescription}
+									value={createDialogState.description ?? ""}
 								/>
 							</div>
 						</div>
 						<DialogFooter showCloseButton={false}>
 							<Button
 								disabled={createMutation.isPending}
-								onClick={() => setCreateOpen(false)}
+								onClick={() => {
+									setCreateDialogOpen(false);
+									setCreateDialogState({
+										id: "",
+										name: "",
+										description: "",
+										updatedAt: "",
+										createdAt: "",
+									});
+								}}
 								type="button"
 								variant="outline"
 							>
 								Cancel
 							</Button>
 							<Button disabled={createMutation.isPending} type="submit">
-								{createMutation.isPending ? "Creating…" : "Create"}
-							</Button>
-						</DialogFooter>
-					</form>
-				</DialogContent>
-			</Dialog>
-
-			<Dialog
-				onOpenChange={(open) => {
-					setEditOpen(open);
-					if (!open) {
-						setEditName("");
-						setEditDescription("");
-						setEditingWorkspace(null);
-					}
-				}}
-				open={editOpen}
-			>
-				<DialogContent className="sm:max-w-sm" showCloseButton>
-					<form onSubmit={handleUpdate}>
-						<DialogHeader>
-							<DialogTitle>Edit Workspace</DialogTitle>
-						</DialogHeader>
-						<div className="grid gap-4 py-4">
-							<div className="grid gap-2">
-								<Label htmlFor="edit-workspace-name">Title</Label>
-								<Input
-									autoFocus
-									disabled={updateMutation.isPending}
-									id="edit-workspace-name"
-									maxLength={100}
-									onChange={(e) => setEditName(e.target.value)}
-									placeholder="Workspace name"
-									required
-									value={editName}
-								/>
-							</div>
-							<div className="grid gap-2">
-								<Label htmlFor="edit-workspace-description">
-									Description (optional)
-								</Label>
-								<Textarea
-									disabled={updateMutation.isPending}
-									id="edit-workspace-description"
-									maxLength={500}
-									onChange={(e) => setEditDescription(e.target.value)}
-									placeholder="Brief description"
-									rows={3}
-									value={editDescription}
-								/>
-							</div>
-						</div>
-						<DialogFooter showCloseButton={false}>
-							<Button
-								disabled={updateMutation.isPending}
-								onClick={() => setEditOpen(false)}
-								type="button"
-								variant="outline"
-							>
-								Cancel
-							</Button>
-							<Button disabled={updateMutation.isPending} type="submit">
-								{updateMutation.isPending ? "Updating…" : "Update"}
+								{getCreateDialogButtonText(createMutation.isPending)}
 							</Button>
 						</DialogFooter>
 					</form>
