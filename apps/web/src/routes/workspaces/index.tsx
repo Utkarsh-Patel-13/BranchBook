@@ -1,8 +1,16 @@
 import type { WorkspaceListInput } from "@nexus/types";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { FolderIcon, PlusIcon, Trash2Icon } from "lucide-react";
-import { useState } from "react";
+import {
+	EllipsisVerticalIcon,
+	FolderIcon,
+	PencilIcon,
+	PlusIcon,
+	SearchIcon,
+	Trash2Icon,
+} from "lucide-react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { WorkspaceGridSkeleton } from "@/components/skeletons/workspace-card-skeleton";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -12,33 +20,93 @@ import {
 	AlertDialogFooter,
 	AlertDialogHeader,
 	AlertDialogTitle,
-	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
+	CardAction,
 	CardContent,
-	CardDescription,
 	CardFooter,
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import {
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
+import {
 	useCreateWorkspaceMutation,
 	useDeleteWorkspaceMutation,
+	useUpdateWorkspaceMutation,
 	useWorkspaceListQuery,
 	useWorkspaceStore,
 } from "@/hooks/useWorkspaces";
 import { authClient } from "@/lib/auth-client";
 
-function formatDate(
-	value: Date | string | number,
-	options: Intl.DateTimeFormatOptions
-) {
+const SORT_BY_LABELS: Record<
+	NonNullable<WorkspaceListInput["sortBy"]>,
+	string
+> = {
+	lastUpdated: "Last updated",
+	createdAt: "Created date",
+	name: "Alphabetical",
+};
+
+const SORT_DIRECTION_LABELS: Record<
+	NonNullable<WorkspaceListInput["sortDirection"]>,
+	string
+> = {
+	desc: "Newest first",
+	asc: "Oldest first",
+};
+
+function formatRelativeTime(value: Date | string | number): string {
 	const date = value instanceof Date ? value : new Date(value);
-	return new Intl.DateTimeFormat(undefined, options).format(date);
+	const now = new Date();
+	const diffMs = now.getTime() - date.getTime();
+	const diffMins = Math.floor(diffMs / 60_000);
+	const diffHours = Math.floor(diffMs / 3_600_000);
+	const diffDays = Math.floor(diffMs / 86_400_000);
+
+	if (diffMins < 1) {
+		return "Just now";
+	}
+	if (diffMins < 60) {
+		return `${diffMins} min ago`;
+	}
+	if (diffHours < 24) {
+		return diffHours === 1 ? "1 hour ago" : `${diffHours} hours ago`;
+	}
+	if (diffDays === 1) {
+		return "Yesterday";
+	}
+	if (diffDays < 7) {
+		return `${diffDays} days ago`;
+	}
+	return new Intl.DateTimeFormat(undefined, {
+		month: "short",
+		day: "numeric",
+		year: "numeric",
+	}).format(date);
 }
 
 export const Route = createFileRoute("/workspaces/")({
@@ -48,9 +116,7 @@ export const Route = createFileRoute("/workspaces/")({
 		if (!session.data) {
 			redirect({
 				to: "/login",
-				search: {
-					redirect: location.href,
-				},
+				search: { redirect: location.href },
 				throw: true,
 			});
 		}
@@ -59,283 +125,506 @@ export const Route = createFileRoute("/workspaces/")({
 
 function WorkspacesListRouteComponent() {
 	const { sort, setSort } = useWorkspaceStore();
-	const [name, setName] = useState("");
-	const [description, setDescription] = useState("");
+	const [searchQuery, setSearchQuery] = useState("");
+	const [createOpen, setCreateOpen] = useState(false);
+	const [createName, setCreateName] = useState("");
+	const [createDescription, setCreateDescription] = useState("");
+	const [editOpen, setEditOpen] = useState(false);
+	const [editingWorkspace, setEditingWorkspace] =
+		useState<WorkspaceItem | null>(null);
+	const [editName, setEditName] = useState("");
+	const [editDescription, setEditDescription] = useState("");
 
 	const listQuery = useWorkspaceListQuery(sort);
 	const createMutation = useCreateWorkspaceMutation();
+	const updateMutation = useUpdateWorkspaceMutation();
 
-	const handleCreate = (event: React.FormEvent) => {
-		event.preventDefault();
-		if (!name.trim()) {
+	const workspaces = listQuery.data ?? [];
+	const filtered = useMemo(() => {
+		if (!searchQuery.trim()) {
+			return workspaces;
+		}
+		const q = searchQuery.trim().toLowerCase();
+		return workspaces.filter(
+			(w) =>
+				w.name.toLowerCase().includes(q) ||
+				(w.description?.toLowerCase().includes(q) ?? false)
+		);
+	}, [workspaces, searchQuery]);
+
+	const isLoading = listQuery.isLoading;
+	const hasWorkspaces = workspaces.length > 0;
+
+	const handleCreate = (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!createName.trim()) {
 			toast.error("Workspace name is required");
 			return;
 		}
-
 		createMutation.mutate(
 			{
-				name: name.trim(),
-				description: description.trim() || null,
+				name: createName.trim(),
+				description: createDescription.trim() || null,
 			},
 			{
 				onSuccess: async () => {
-					setName("");
-					setDescription("");
+					setCreateName("");
+					setCreateDescription("");
+					setCreateOpen(false);
 					await listQuery.refetch();
 					toast.success("Workspace created successfully");
 				},
 				onError: (error) => {
-					toast.error(error.message || "Failed to create workspace");
+					toast.error(error.message ?? "Failed to create workspace");
 				},
 			}
 		);
 	};
 
-	const handleSortChange = (nextSort: Partial<WorkspaceListInput>) => {
-		setSort(nextSort);
+	const handleSortChange = (next: Partial<WorkspaceListInput>) => {
+		setSort(next);
 	};
 
-	const workspaces = listQuery.data ?? [];
-	const hasWorkspaces = workspaces.length > 0;
-	const isLoading = listQuery.isLoading;
+	const handleEdit = (workspace: WorkspaceItem) => {
+		setEditingWorkspace(workspace);
+		setEditName(workspace.name);
+		setEditDescription(workspace.description ?? "");
+		setEditOpen(true);
+	};
+
+	const handleUpdate = (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!(editingWorkspace && editName.trim())) {
+			toast.error("Workspace name is required");
+			return;
+		}
+		updateMutation.mutate(
+			{
+				workspaceId: editingWorkspace.id,
+				name: editName.trim(),
+				description: editDescription.trim() || null,
+			},
+			{
+				onSuccess: async () => {
+					setEditName("");
+					setEditDescription("");
+					setEditingWorkspace(null);
+					setEditOpen(false);
+					await listQuery.refetch();
+					toast.success("Workspace updated successfully");
+				},
+				onError: (error) => {
+					toast.error(error.message ?? "Failed to update workspace");
+				},
+			}
+		);
+	};
 
 	return (
-		<div className="container mx-auto flex max-w-4xl flex-col gap-4 px-4 py-4 sm:py-6">
-			<header className="flex flex-col justify-between gap-3 md:flex-row md:items-end">
-				<div className="h-full">
-					<h1 className="font-semibold text-lg sm:text-xl">Workspaces</h1>
-					<p className="text-muted-foreground text-xs sm:text-sm">
-						Create and manage your workspaces.
-					</p>
+		<main className="mx-2 min-h-0 max-w-[1440px] flex-1 px-4 py-8 sm:px-6 sm:py-12 md:mx-4 lg:mx-6">
+			<div className="mb-8 sm:mb-12">
+				<h1 className="font-semibold font-serif text-2xl text-foreground tracking-tight sm:text-4xl md:text-5xl">
+					Workspaces
+				</h1>
+				<p className="mt-2 text-base text-muted-foreground sm:text-lg">
+					Create and manage your research environments.
+				</p>
+			</div>
+
+			<div className="mb-6 flex flex-col gap-4 sm:mb-8 md:flex-row md:items-center md:justify-between">
+				<div className="relative max-w-md flex-1">
+					<SearchIcon
+						aria-hidden
+						className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+					/>
+					<Input
+						aria-label="Search workspaces"
+						className="h-9 pr-4 pl-9 text-sm"
+						onChange={(e) => setSearchQuery(e.target.value)}
+						placeholder="Search workspaces..."
+						value={searchQuery}
+					/>
 				</div>
-				<form
-					className="grid gap-2 rounded-md border p-3 text-xs md:grid-cols-[2fr_3fr_auto]"
-					onSubmit={handleCreate}
-				>
-					<div className="space-y-1">
-						<Label htmlFor="workspace-name">Name</Label>
-						<Input
-							disabled={createMutation.isPending}
-							id="workspace-name"
-							onChange={(event) => setName(event.target.value)}
-							placeholder="Workspace name"
-							required
-							value={name}
-						/>
-					</div>
-					<div className="space-y-1">
-						<Label htmlFor="workspace-description">Description</Label>
-						<Input
-							disabled={createMutation.isPending}
-							id="workspace-description"
-							onChange={(event) => setDescription(event.target.value)}
-							placeholder="Optional description"
-							value={description}
-						/>
-					</div>
-					<div className="flex items-end justify-end">
-						<Button disabled={createMutation.isPending} size="sm" type="submit">
-							{createMutation.isPending ? (
-								"Creating…"
-							) : (
-								<>
-									<PlusIcon className="mr-1 size-3" />
-									Create
-								</>
-							)}
-						</Button>
-					</div>
-				</form>
-			</header>
-			{hasWorkspaces && (
-				<section className="flex flex-col items-start justify-between gap-2 text-xs sm:flex-row sm:items-center">
-					<div className="flex flex-wrap items-center gap-2">
+				<div className="flex flex-wrap items-center gap-2 text-sm sm:gap-4">
+					<div className="flex items-center gap-2">
 						<span className="text-muted-foreground">Sort by</span>
-						<select
-							className="h-8 rounded-md border bg-transparent px-2 text-xs"
+						<Select
 							disabled={isLoading}
-							onChange={(event) =>
+							onValueChange={(value) =>
+								value != null &&
 								handleSortChange({
-									sortBy: event.target.value as WorkspaceListInput["sortBy"],
+									sortBy: value as WorkspaceListInput["sortBy"],
 								})
 							}
 							value={sort.sortBy}
 						>
-							<option value="lastUpdated">Last updated</option>
-							<option value="createdAt">Created at</option>
-							<option value="name">Name</option>
-						</select>
-						<select
-							className="h-8 rounded-md border bg-transparent px-2 text-xs"
+							<SelectTrigger
+								aria-label="Sort by"
+								className="min-w-30"
+								size="default"
+							>
+								{SORT_BY_LABELS[sort.sortBy]}
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="lastUpdated">Last updated</SelectItem>
+								<SelectItem value="createdAt">Created date</SelectItem>
+								<SelectItem value="name">Alphabetical</SelectItem>
+							</SelectContent>
+						</Select>
+						<Select
 							disabled={isLoading}
-							onChange={(event) =>
+							onValueChange={(value) =>
+								value != null &&
 								handleSortChange({
-									sortDirection: event.target
-										.value as WorkspaceListInput["sortDirection"],
+									sortDirection: value as WorkspaceListInput["sortDirection"],
 								})
 							}
 							value={sort.sortDirection}
 						>
-							<option value="desc">Newest first</option>
-							<option value="asc">Oldest first</option>
-						</select>
+							<SelectTrigger
+								aria-label="Sort direction"
+								className="min-w-30"
+								size="default"
+							>
+								{SORT_DIRECTION_LABELS[sort.sortDirection]}
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="desc">Newest first</SelectItem>
+								<SelectItem value="asc">Oldest first</SelectItem>
+							</SelectContent>
+						</Select>
 					</div>
-					<div className="text-muted-foreground">
-						{isLoading ? (
-							<span className="animate-pulse">Loading workspaces…</span>
-						) : (
-							`${workspaces.length} workspace${workspaces.length === 1 ? "" : "s"}`
-						)}
-					</div>
-				</section>
-			)}
+					<div className="hidden h-4 w-px bg-border sm:block" />
+				</div>
+			</div>
+
 			{isLoading && (
-				<div className="flex flex-col gap-3">
-					{new Array(3).fill(null).map((_, i) => (
-						// biome-ignore lint/suspicious/noArrayIndexKey: skeleton items don't have stable IDs
-						<Card className="animate-pulse" key={i}>
-							<CardHeader>
-								<div className="h-5 w-48 rounded bg-muted" />
-								<div className="h-4 w-full rounded bg-muted" />
-							</CardHeader>
-						</Card>
-					))}
+				<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+					<div
+						aria-hidden
+						className="flex h-52 flex-col items-center justify-center rounded-xl border-2 border-border border-dashed p-8"
+					>
+						<Skeleton className="mb-4 size-12 rounded-full" />
+						<Skeleton className="mb-1 h-4 w-32" />
+						<Skeleton className="h-3 w-24" />
+					</div>
+					<WorkspaceGridSkeleton count={7} />
 				</div>
 			)}
-			{!(isLoading || hasWorkspaces) && <EmptyState />}
+
+			{!(isLoading || hasWorkspaces) && (
+				<EmptyState onAdd={() => setCreateOpen(true)} />
+			)}
+
 			{!isLoading && hasWorkspaces && (
-				<section className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-					{workspaces.map((workspace) => (
-						<WorkspaceListItemCard
+				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+					<AddWorkspaceCard onOpenModal={() => setCreateOpen(true)} />
+					{filtered.map((workspace) => (
+						<WorkspaceCard
 							key={workspace.id}
-							onDelete={() => listQuery.refetch()}
+							onDeleted={() => listQuery.refetch()}
+							onEdit={handleEdit}
 							workspace={workspace}
 						/>
 					))}
-				</section>
+				</div>
 			)}
+
+			<Dialog
+				onOpenChange={(open) => {
+					setCreateOpen(open);
+					if (!open) {
+						setCreateName("");
+						setCreateDescription("");
+					}
+				}}
+				open={createOpen}
+			>
+				<DialogContent className="sm:max-w-sm" showCloseButton>
+					<form onSubmit={handleCreate}>
+						<DialogHeader>
+							<DialogTitle>Add New Workspace</DialogTitle>
+						</DialogHeader>
+						<div className="grid gap-4 py-4">
+							<div className="grid gap-2">
+								<Label htmlFor="create-workspace-name">Title</Label>
+								<Input
+									autoFocus
+									disabled={createMutation.isPending}
+									id="create-workspace-name"
+									maxLength={100}
+									onChange={(e) => setCreateName(e.target.value)}
+									placeholder="Workspace name"
+									required
+									value={createName}
+								/>
+							</div>
+							<div className="grid gap-2">
+								<Label htmlFor="create-workspace-description">
+									Description (optional)
+								</Label>
+								<Textarea
+									disabled={createMutation.isPending}
+									id="create-workspace-description"
+									maxLength={500}
+									onChange={(e) => setCreateDescription(e.target.value)}
+									placeholder="Brief description"
+									rows={3}
+									value={createDescription}
+								/>
+							</div>
+						</div>
+						<DialogFooter showCloseButton={false}>
+							<Button
+								disabled={createMutation.isPending}
+								onClick={() => setCreateOpen(false)}
+								type="button"
+								variant="outline"
+							>
+								Cancel
+							</Button>
+							<Button disabled={createMutation.isPending} type="submit">
+								{createMutation.isPending ? "Creating…" : "Create"}
+							</Button>
+						</DialogFooter>
+					</form>
+				</DialogContent>
+			</Dialog>
+
+			<Dialog
+				onOpenChange={(open) => {
+					setEditOpen(open);
+					if (!open) {
+						setEditName("");
+						setEditDescription("");
+						setEditingWorkspace(null);
+					}
+				}}
+				open={editOpen}
+			>
+				<DialogContent className="sm:max-w-sm" showCloseButton>
+					<form onSubmit={handleUpdate}>
+						<DialogHeader>
+							<DialogTitle>Edit Workspace</DialogTitle>
+						</DialogHeader>
+						<div className="grid gap-4 py-4">
+							<div className="grid gap-2">
+								<Label htmlFor="edit-workspace-name">Title</Label>
+								<Input
+									autoFocus
+									disabled={updateMutation.isPending}
+									id="edit-workspace-name"
+									maxLength={100}
+									onChange={(e) => setEditName(e.target.value)}
+									placeholder="Workspace name"
+									required
+									value={editName}
+								/>
+							</div>
+							<div className="grid gap-2">
+								<Label htmlFor="edit-workspace-description">
+									Description (optional)
+								</Label>
+								<Textarea
+									disabled={updateMutation.isPending}
+									id="edit-workspace-description"
+									maxLength={500}
+									onChange={(e) => setEditDescription(e.target.value)}
+									placeholder="Brief description"
+									rows={3}
+									value={editDescription}
+								/>
+							</div>
+						</div>
+						<DialogFooter showCloseButton={false}>
+							<Button
+								disabled={updateMutation.isPending}
+								onClick={() => setEditOpen(false)}
+								type="button"
+								variant="outline"
+							>
+								Cancel
+							</Button>
+							<Button disabled={updateMutation.isPending} type="submit">
+								{updateMutation.isPending ? "Updating…" : "Update"}
+							</Button>
+						</DialogFooter>
+					</form>
+				</DialogContent>
+			</Dialog>
+		</main>
+	);
+}
+
+function EmptyState({ onAdd }: { onAdd: () => void }) {
+	return (
+		<div className="flex flex-col items-center justify-center rounded-xl border-2 border-border border-dashed bg-muted/20 py-16 text-center">
+			<div className="mb-4 rounded-full bg-muted p-4">
+				<FolderIcon className="size-8 text-muted-foreground" />
+			</div>
+			<h2 className="font-semibold font-serif text-foreground text-xl">
+				No workspaces yet
+			</h2>
+			<p className="mt-2 max-w-sm text-muted-foreground text-sm">
+				Create your first workspace to organize projects and keep work separate.
+			</p>
+			<Button className="mt-6" onClick={onAdd}>
+				<PlusIcon className="mr-2 size-4" />
+				Add New Workspace
+			</Button>
 		</div>
 	);
 }
 
-function EmptyState() {
+function AddWorkspaceCard({ onOpenModal }: { onOpenModal: () => void }) {
 	return (
-		<Card className="border-dashed">
-			<CardContent className="flex flex-col items-center justify-center py-12 text-center">
-				<div className="mb-4 rounded-full bg-muted p-3">
-					<FolderIcon className="size-8 text-muted-foreground" />
-				</div>
-				<CardTitle className="mb-2">No workspaces yet</CardTitle>
-				<CardDescription className="mb-4 max-w-sm">
-					Get started by creating your first workspace. Workspaces help you
-					organize your projects and keep your work separate.
-				</CardDescription>
-			</CardContent>
-		</Card>
+		<Button
+			aria-label="Add new workspace"
+			className="group flex h-52 flex-col items-center justify-center rounded-xl border-2 border-border border-dashed bg-card p-8 transition-colors hover:border-primary hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+			onClick={onOpenModal}
+			type="button"
+			variant="outline"
+		>
+			<div className="mb-4 flex size-12 items-center justify-center rounded-full bg-muted transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+				<PlusIcon className="size-6" />
+			</div>
+			<span className="font-semibold text-foreground">Add New Workspace</span>
+			<span className="mt-1 text-muted-foreground text-xs">
+				Start a new project
+			</span>
+		</Button>
 	);
 }
 
-interface WorkspaceListItemCardProps {
-	workspace: NonNullable<
-		ReturnType<typeof useWorkspaceListQuery>["data"]
-	>[number];
-	onDelete: () => void;
-}
+type WorkspaceItem = NonNullable<
+	ReturnType<typeof useWorkspaceListQuery>["data"]
+>[number];
 
-function WorkspaceListItemCard({
+function WorkspaceCard({
 	workspace,
-	onDelete,
-}: WorkspaceListItemCardProps) {
-	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+	onDeleted,
+	onEdit,
+}: {
+	workspace: WorkspaceItem;
+	onDeleted: () => void;
+	onEdit: (workspace: WorkspaceItem) => void;
+}) {
+	const [deleteOpen, setDeleteOpen] = useState(false);
 	const deleteMutation = useDeleteWorkspaceMutation();
 
-	const handleDelete = () => {
+	const handleDelete = (e: React.MouseEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
 		deleteMutation.mutate(
 			{ workspaceId: workspace.id },
 			{
 				onSuccess: () => {
 					toast.success("Workspace deleted successfully");
-					setIsDeleteDialogOpen(false);
-					onDelete();
+					setDeleteOpen(false);
+					onDeleted();
 				},
 				onError: (error) => {
-					toast.error(error.message || "Failed to delete workspace");
+					toast.error(error.message ?? "Failed to delete workspace");
 				},
 			}
 		);
 	};
 
 	return (
-		<Card className="flex h-full flex-col transition-all hover:bg-muted/20">
-			<CardHeader>
-				<CardTitle className="line-clamp-1">
-					<Link
-						className="underline-offset-2 hover:underline"
-						params={{ workspaceId: workspace.id }}
-						to="/workspaces/$workspaceId"
-					>
-						{workspace.name}
-					</Link>
-				</CardTitle>
-				<CardDescription className="line-clamp-2 min-h-[2.5em]">
-					{workspace.description ?? "No description provided."}
-				</CardDescription>
-			</CardHeader>
-			<CardContent className="flex-1" />
-			<CardFooter className="flex items-center justify-between gap-2 border-t bg-muted/20 px-4 py-3 text-muted-foreground text-xs">
-				<div className="flex flex-col gap-0.5">
-					<span>
-						Updated{" "}
-						{formatDate(workspace.updatedAt, {
-							month: "short",
-							day: "numeric",
-							year: "numeric",
-						})}
-					</span>
-				</div>
-
-				<div className="flex items-center gap-2">
-					<AlertDialog
-						onOpenChange={setIsDeleteDialogOpen}
-						open={isDeleteDialogOpen}
-					>
-						<AlertDialogTrigger
+		<Card className="flex h-52 flex-col">
+			<CardHeader className="flex flex-row items-center justify-between border-b">
+				<Link
+					aria-label={`Open workspace ${workspace.name}`}
+					className="flex-1 rounded-md"
+					params={{ workspaceId: workspace.id }}
+					to="/workspaces/$workspaceId"
+				>
+					<CardTitle className="line-clamp-2">{workspace.name}</CardTitle>
+				</Link>
+				<CardAction>
+					<DropdownMenu>
+						<DropdownMenuTrigger
 							render={
 								<Button
-									className="h-7 w-7 text-muted-foreground hover:text-destructive"
-									disabled={deleteMutation.isPending}
+									aria-label="Workspace options"
 									size="icon"
+									type="button"
 									variant="ghost"
 								>
-									<Trash2Icon className="size-4" />
-									<span className="sr-only">Delete</span>
+									<EllipsisVerticalIcon className="size-4" />
 								</Button>
 							}
 						/>
-						<AlertDialogContent>
-							<AlertDialogHeader>
-								<AlertDialogTitle>Delete workspace?</AlertDialogTitle>
-								<AlertDialogDescription>
-									Are you sure you want to delete "{workspace.name}"? This
-									workspace will be soft deleted and can be recovered within 30
-									days.
-								</AlertDialogDescription>
-							</AlertDialogHeader>
-							<AlertDialogFooter>
-								<AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>
-									Cancel
-								</AlertDialogCancel>
-								<AlertDialogAction
-									disabled={deleteMutation.isPending}
-									onClick={handleDelete}
-								>
-									{deleteMutation.isPending ? "Deleting…" : "Delete workspace"}
-								</AlertDialogAction>
-							</AlertDialogFooter>
-						</AlertDialogContent>
-					</AlertDialog>
-				</div>
+						<DropdownMenuContent align="end">
+							<DropdownMenuItem
+								onClick={(e) => {
+									e.preventDefault();
+									e.stopPropagation();
+									onEdit(workspace);
+								}}
+							>
+								<PencilIcon className="size-4" />
+								Edit
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={(e) => {
+									e.preventDefault();
+									e.stopPropagation();
+									setDeleteOpen(true);
+								}}
+								variant="destructive"
+							>
+								<Trash2Icon className="size-4" />
+								Delete
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</CardAction>
+			</CardHeader>
+			<Link
+				className="flex-1 rounded-md"
+				params={{ workspaceId: workspace.id }}
+				to="/workspaces/$workspaceId"
+			>
+				<CardContent className="line-clamp-2 min-h-0 flex-1">
+					{workspace.description ?? "No description."}
+				</CardContent>
+			</Link>
+			<CardFooter className="justify-between text-muted-foreground text-xs">
+				<span>Updated</span>
+				<span>{formatRelativeTime(workspace.updatedAt)}</span>
 			</CardFooter>
+			<AlertDialog onOpenChange={setDeleteOpen} open={deleteOpen}>
+				<AlertDialogContent onClick={(e) => e.stopPropagation()}>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Delete workspace?</AlertDialogTitle>
+						<AlertDialogDescription>
+							Are you sure you want to delete &quot;{workspace.name}&quot;? This
+							workspace will be soft deleted and can be recovered within 30
+							days.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel
+							onClick={(e) => {
+								e.stopPropagation();
+								setDeleteOpen(false);
+							}}
+						>
+							Cancel
+						</AlertDialogCancel>
+						<AlertDialogAction
+							disabled={deleteMutation.isPending}
+							onClick={(e) => {
+								e.stopPropagation();
+								handleDelete(e as unknown as React.MouseEvent);
+							}}
+						>
+							{deleteMutation.isPending ? "Deleting…" : "Delete workspace"}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</Card>
 	);
 }
