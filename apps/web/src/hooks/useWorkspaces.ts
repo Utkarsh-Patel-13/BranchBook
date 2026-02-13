@@ -34,6 +34,9 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set) => ({
 export const useWorkspaceListQuery = (input?: WorkspaceListInput) =>
 	useQuery(trpc.workspace.list.queryOptions(input ?? {}));
 
+export const useDeletedWorkspaceListQuery = (input?: WorkspaceListInput) =>
+	useQuery(trpc.workspace.listDeleted.queryOptions(input ?? {}));
+
 export const useWorkspaceByIdQuery = (workspaceId: WorkspaceId | null) =>
 	useQuery({
 		...trpc.workspace.getById.queryOptions({

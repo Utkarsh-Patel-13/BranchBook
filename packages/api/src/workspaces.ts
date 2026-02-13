@@ -10,11 +10,13 @@ import {
 	workspaceUpdateInputSchema,
 } from "@nexus/validators/workspaces";
 import { TRPCError } from "@trpc/server";
+import { z } from "zod";
 import { protectedProcedure, router } from "./index";
 import {
 	createWorkspace,
 	deleteWorkspace,
 	getWorkspaceById,
+	listDeletedWorkspaces,
 	listWorkspaces,
 	restoreWorkspace,
 	updateWorkspace,
@@ -47,6 +49,31 @@ export const workspaceRouter = router({
 			}
 
 			return listWorkspaces(ctx.session.user.id, input);
+		}),
+
+	listDeleted: protectedProcedure
+		.input(workspaceListInputSchema)
+		.output(
+			z.array(
+				z.object({
+					id: z.string(),
+					name: z.string(),
+					description: z.string().nullable(),
+					createdAt: z.date(),
+					updatedAt: z.date(),
+					deletedAt: z.date(),
+				})
+			)
+		)
+		.query(({ ctx, input }) => {
+			if (!ctx.session?.user?.id) {
+				throw new TRPCError({
+					code: "UNAUTHORIZED",
+					message: "Authentication required to list deleted workspaces.",
+				});
+			}
+
+			return listDeletedWorkspaces(ctx.session.user.id, input);
 		}),
 
 	getById: protectedProcedure

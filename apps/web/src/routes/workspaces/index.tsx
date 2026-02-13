@@ -279,12 +279,22 @@ function WorkspacesListRouteComponent() {
 	return (
 		<main className="mx-2 min-h-0 max-w-[1440px] flex-1 px-4 py-8 sm:px-6 sm:py-12 md:mx-4 lg:mx-6">
 			<div className="mb-8 sm:mb-12">
-				<h1 className="font-semibold font-serif text-2xl text-foreground tracking-tight sm:text-4xl md:text-5xl">
-					Workspaces
-				</h1>
-				<p className="mt-2 text-base text-muted-foreground sm:text-lg">
-					Create and manage your research environments.
-				</p>
+				<div className="flex items-center justify-between">
+					<div>
+						<h1 className="font-semibold font-serif text-2xl text-foreground tracking-tight sm:text-4xl md:text-5xl">
+							Workspaces
+						</h1>
+						<p className="mt-2 text-base text-muted-foreground sm:text-lg">
+							Create and manage your research environments.
+						</p>
+					</div>
+					<Link to="/workspaces/trash">
+						<Button variant="outline">
+							<Trash2Icon className="mr-2 size-4" />
+							Trash
+						</Button>
+					</Link>
+				</div>
 			</div>
 
 			<div className="mb-6 flex flex-col gap-4 sm:mb-8 md:flex-row md:items-center md:justify-between">
