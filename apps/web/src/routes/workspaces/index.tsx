@@ -79,6 +79,34 @@ const SORT_DIRECTION_LABELS: Record<
 	asc: "Oldest first",
 };
 
+function formatValidationErrorMessage(
+	raw: string | undefined,
+	fallback: string
+): string {
+	if (raw == null || raw === "") {
+		return fallback;
+	}
+	try {
+		const parsed = JSON.parse(raw) as unknown;
+		if (
+			Array.isArray(parsed) &&
+			parsed.length > 0 &&
+			typeof parsed[0] === "object" &&
+			parsed[0] !== null &&
+			"message" in parsed[0] &&
+			typeof (parsed[0] as { message: unknown }).message === "string"
+		) {
+			const messages = (parsed as { message: string }[])
+				.map((item) => item.message)
+				.filter(Boolean);
+			return messages.length > 0 ? messages.join(" ") : fallback;
+		}
+	} catch {
+		// not JSON or wrong shape
+	}
+	return raw ?? fallback;
+}
+
 function formatRelativeTime(value: Date | string | number): string {
 	const date = value instanceof Date ? value : new Date(value);
 	const now = new Date();
@@ -190,7 +218,12 @@ function WorkspacesListRouteComponent() {
 						toast.success("Workspace updated successfully");
 					},
 					onError: (error) => {
-						toast.error(error.message ?? "Failed to update workspace");
+						toast.error(
+							formatValidationErrorMessage(
+								error.message,
+								"Failed to update workspace"
+							)
+						);
 					},
 				}
 			);
@@ -215,7 +248,12 @@ function WorkspacesListRouteComponent() {
 						toast.success("Workspace created successfully");
 					},
 					onError: (error) => {
-						toast.error(error.message ?? "Failed to create workspace");
+						toast.error(
+							formatValidationErrorMessage(
+								error.message,
+								"Failed to create workspace"
+							)
+						);
 					},
 				}
 			);
@@ -498,7 +536,12 @@ function WorkspaceCard({
 					onDeleted();
 				},
 				onError: (error) => {
-					toast.error(error.message ?? "Failed to delete workspace");
+					toast.error(
+						formatValidationErrorMessage(
+							error.message,
+							"Failed to delete workspace"
+						)
+					);
 				},
 			}
 		);
