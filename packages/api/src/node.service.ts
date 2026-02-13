@@ -10,7 +10,9 @@ import type {
 	NodeTree,
 	UpdateNodeInput,
 } from "@nexus/types";
+import type { BranchFromMessageInput } from "@nexus/validators";
 import { TRPCError } from "@trpc/server";
+import { assembleContextPayload } from "./context-engine.service";
 
 const toNode = (record: {
 	id: string;
@@ -344,6 +346,67 @@ export const deleteNodeCascade = async (
 	});
 
 	return { deletedCount: allNodeIds.length };
+};
+
+export const createBranchFromMessage = async (
+	userId: string,
+	input: BranchFromMessageInput
+): Promise<Node> => {
+	const parentNode = await prisma.node.findUnique({
+		where: { id: input.nodeId },
+		include: { workspace: { select: { ownerId: true } } },
+	});
+
+	if (!parentNode || parentNode.deletedAt) {
+		throw new TRPCError({
+			code: "NOT_FOUND",
+			message: "Parent node not found",
+		});
+	}
+
+	if (parentNode.workspace.ownerId !== userId) {
+		throw new TRPCError({
+			code: "FORBIDDEN",
+			message: "Access denied",
+		});
+	}
+
+	const message = await prisma.message.findUnique({
+		where: { id: input.messageId },
+		select: { nodeId: true },
+	});
+
+	if (!message || message.nodeId !== input.nodeId) {
+		throw new TRPCError({
+			code: "NOT_FOUND",
+			message: "Message not found in this node",
+		});
+	}
+
+	const rawTitle = input.title ?? `Branch of ${parentNode.title}`;
+	const safeTitle = rawTitle.slice(0, 100);
+
+	const inheritedContext = await assembleContextPayload(
+		input.nodeId,
+		input.messageId
+	);
+
+	const childNode = await prisma.node.create({
+		data: {
+			workspaceId: parentNode.workspaceId,
+			parentId: input.nodeId,
+			title: safeTitle,
+			inheritedContext,
+			branchPointMessageId: input.messageId,
+		},
+	});
+
+	await prisma.message.update({
+		where: { id: input.messageId },
+		data: { branchPoint: true },
+	});
+
+	return toNode(childNode);
 };
 
 export const getNodeTree = async (

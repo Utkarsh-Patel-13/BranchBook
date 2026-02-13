@@ -83,6 +83,7 @@
         "@nexus/db": "workspace:*",
         "@nexus/env": "workspace:*",
         "@nexus/types": "workspace:*",
+        "@nexus/validators": "workspace:*",
         "@trpc/server": "catalog:",
         "ai": "^6.0.78",
         "better-auth": "catalog:",
@@ -181,6 +182,7 @@
       "name": "@nexus/api",
       "dependencies": {
         "@nexus/auth": "workspace:*",
+        "@nexus/config": "workspace:*",
         "@nexus/db": "workspace:*",
         "@nexus/env": "workspace:*",
         "@nexus/types": "workspace:*",
@@ -192,7 +194,6 @@
         "zod": "catalog:",
       },
       "devDependencies": {
-        "@nexus/config": "workspace:*",
         "typescript": "catalog:",
       },
     },

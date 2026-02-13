@@ -49,9 +49,15 @@ import {
 	SourcesTrigger,
 } from "@/components/ai-elements/sources";
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
+import { ContextPanel } from "@/components/context/ContextPanel";
 import { useListMessages } from "@/hooks/use-messages";
-import { useNodeById } from "@/hooks/use-nodes";
+import {
+	useBranchFromMessage,
+	useContextForPanel,
+	useNodeById,
+} from "@/hooks/use-nodes";
 import { cn } from "@/lib/utils";
+import { useWorkspaceLayoutStore } from "@/stores/workspace-layout-store";
 import { trpc } from "@/utils/trpc";
 
 const CHAT_SUGGESTIONS = [
@@ -64,6 +70,7 @@ const CHAT_SUGGESTIONS = [
 interface ChatContentProps {
 	nodeId: string;
 	dbMessages: MessageType[];
+	workspaceId: string;
 }
 
 interface CopyActionProps {
@@ -98,7 +105,6 @@ CopyAction.displayName = "CopyAction";
 const ConvertToNoteAction = memo(() => {
 	const handleClick = useCallback(() => {
 		// TODO: Implement convert to note functionality
-		console.log("Convert to note clicked");
 	}, []);
 
 	return (
@@ -114,24 +120,40 @@ const ConvertToNoteAction = memo(() => {
 
 ConvertToNoteAction.displayName = "ConvertToNoteAction";
 
-const CreateSubTopicAction = memo(() => {
-	const handleClick = useCallback(() => {
-		// TODO: Implement create sub-topic functionality
-		console.log("Create sub-topic clicked");
-	}, []);
+interface BranchActionProps {
+	messageId: string;
+	nodeId: string;
+	workspaceId: string;
+}
 
-	return (
-		<MessageAction
-			label="Create Sub-topic"
-			onClick={handleClick}
-			tooltip="Create Sub-topic"
-		>
-			<GitBranchIcon className="size-3.5" />
-		</MessageAction>
-	);
-});
+const BranchAction = memo(
+	({ messageId, nodeId, workspaceId }: BranchActionProps) => {
+		const setSelectedNodeId = useWorkspaceLayoutStore(
+			(s) => s.setSelectedNodeId
+		);
+		const { mutate, isPending } = useBranchFromMessage(workspaceId);
 
-CreateSubTopicAction.displayName = "CreateSubTopicAction";
+		const handleClick = useCallback(() => {
+			mutate(
+				{ nodeId, messageId },
+				{ onSuccess: (childNode) => setSelectedNodeId(childNode.id) }
+			);
+		}, [mutate, nodeId, messageId, setSelectedNodeId]);
+
+		return (
+			<MessageAction
+				disabled={isPending}
+				label="Branch from here"
+				onClick={handleClick}
+				tooltip="Branch from here"
+			>
+				<GitBranchIcon className="size-3.5" />
+			</MessageAction>
+		);
+	}
+);
+
+BranchAction.displayName = "BranchAction";
 
 function SpeakButton({ content }: { content: string }) {
 	const [speaking, setSpeaking] = useState(false);
@@ -178,9 +200,14 @@ function SpeakButton({ content }: { content: string }) {
 function ChatMessage({
 	msg,
 	isLastStreaming,
+	nodeId,
+	workspaceId,
 }: {
 	msg: UIMessage;
 	isLastStreaming: boolean;
+	nodeId: string;
+	workspaceId: string;
+	// isDbMessage: boolean;
 }) {
 	const textPart = msg.parts.find(isTextUIPart);
 	const content = textPart?.text ?? "";
@@ -236,7 +263,12 @@ function ChatMessage({
 				{msg.role === "assistant" && (
 					<>
 						<ConvertToNoteAction />
-						<CreateSubTopicAction />
+
+						<BranchAction
+							messageId={msg.id}
+							nodeId={nodeId}
+							workspaceId={workspaceId}
+						/>
 					</>
 				)}
 				<SpeakButton content={content} />
@@ -246,7 +278,12 @@ function ChatMessage({
 	);
 }
 
-function ChatContent({ nodeId, dbMessages }: ChatContentProps) {
+function ChatContent({ nodeId, dbMessages, workspaceId }: ChatContentProps) {
+	// const dbMessageIds = useMemo(
+	// 	() => new Set(dbMessages.map((m) => m.id)),
+	// 	[dbMessages]
+	// );
+
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional snapshot — useChat initialises state once at mount
 	const initialMessages = useMemo<UIMessage[]>(
 		() =>
@@ -340,9 +377,12 @@ function ChatContent({ nodeId, dbMessages }: ChatContentProps) {
 						<>
 							{messages.map((msg, i) => (
 								<ChatMessage
+									// isDbMessage={dbMessageIds.has(msg.id)}
 									isLastStreaming={isStreaming && i === messages.length - 1}
 									key={msg.id}
 									msg={msg}
+									nodeId={nodeId}
+									workspaceId={workspaceId}
 								/>
 							))}
 							{status === "submitted" && (
@@ -418,6 +458,7 @@ interface NodeChatPanelProps {
 export function NodeChatPanel({ nodeId }: NodeChatPanelProps) {
 	const { data: node } = useNodeById(nodeId);
 	const { data: dbMessages, isLoading } = useListMessages(nodeId);
+	const { data: contextData } = useContextForPanel(nodeId);
 
 	return (
 		<div className="flex h-full flex-col overflow-hidden">
@@ -428,7 +469,9 @@ export function NodeChatPanel({ nodeId }: NodeChatPanelProps) {
 				</h3>
 			</div>
 
-			{isLoading || !dbMessages ? (
+			{contextData && <ContextPanel data={contextData} />}
+
+			{isLoading || !dbMessages || !node ? (
 				<div className="flex flex-1 flex-col gap-6 p-4">
 					<div className="ml-auto flex max-w-[60%] flex-col gap-2">
 						<Shimmer as="span" className="h-4 text-sm">
@@ -447,7 +490,12 @@ export function NodeChatPanel({ nodeId }: NodeChatPanelProps) {
 					</div>
 				</div>
 			) : (
-				<ChatContent dbMessages={dbMessages} key={nodeId} nodeId={nodeId} />
+				<ChatContent
+					dbMessages={dbMessages}
+					key={nodeId}
+					nodeId={nodeId}
+					workspaceId={node.workspaceId}
+				/>
 			)}
 		</div>
 	);

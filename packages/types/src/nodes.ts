@@ -8,6 +8,13 @@ export interface Node {
 	createdAt: Date | string;
 	updatedAt: Date | string;
 	deletedAt: Date | string | null;
+	// Context Engine fields
+	detailedSummary?: string | null;
+	highLevelSummary?: string | null;
+	summaryDraft?: string | null;
+	summaryDraftCount?: number;
+	inheritedContext?: string | null;
+	branchPointMessageId?: string | null;
 }
 
 export interface NodeTree {

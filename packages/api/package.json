@@ -12,6 +12,7 @@
   "scripts": {},
   "dependencies": {
     "@nexus/auth": "workspace:*",
+    "@nexus/config": "workspace:*",
     "@nexus/db": "workspace:*",
     "@nexus/env": "workspace:*",
     "@nexus/validators": "workspace:*",
@@ -23,7 +24,6 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@nexus/config": "workspace:*",
     "typescript": "catalog:"
   }
 }

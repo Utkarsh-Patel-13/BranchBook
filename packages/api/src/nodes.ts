@@ -1,6 +1,9 @@
 import {
+	branchFromMessageSchema,
 	createNodeInputSchema,
 	deleteNodeInputSchema,
+	getContextForPanelInputSchema,
+	getContextForPanelOutputSchema,
 	getNodeByIdInputSchema,
 	getTreeInputSchema,
 	listNodesInputSchema,
@@ -10,8 +13,10 @@ import {
 } from "@nexus/validators";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { buildContextPanelData } from "./context-engine.service";
 import { protectedProcedure, router } from "./index";
 import {
+	createBranchFromMessage,
 	createNode,
 	deleteNodeCascade,
 	getNodeById,
@@ -145,5 +150,42 @@ export const nodeRouter = router({
 			}
 
 			return getNodeTree(ctx.session.user.id, input);
+		}),
+
+	branchFromMessage: protectedProcedure
+		.input(branchFromMessageSchema)
+		.output(nodeOutputSchema)
+		.mutation(({ ctx, input }) => {
+			if (!ctx.session?.user?.id) {
+				throw new TRPCError({
+					code: "UNAUTHORIZED",
+					message: "Authentication required.",
+				});
+			}
+
+			return createBranchFromMessage(ctx.session.user.id, input);
+		}),
+
+	getContextForPanel: protectedProcedure
+		.input(getContextForPanelInputSchema)
+		.output(getContextForPanelOutputSchema.nullable())
+		.query(async ({ ctx, input }) => {
+			if (!ctx.session?.user?.id) {
+				throw new TRPCError({
+					code: "UNAUTHORIZED",
+					message: "Authentication required.",
+				});
+			}
+
+			const node = await getNodeById(ctx.session.user.id, input);
+
+			if (!node) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Node not found.",
+				});
+			}
+
+			return buildContextPanelData(input.nodeId);
 		}),
 });
