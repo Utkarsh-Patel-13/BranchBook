@@ -6,7 +6,7 @@ import {
 	SearchIcon,
 	Trash2Icon,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useDeferredValue, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { WorkspaceGridSkeleton } from "@/components/skeletons/workspace-card-skeleton";
 import {
@@ -113,28 +113,32 @@ export const Route = createFileRoute("/workspaces/trash")({
 function WorkspacesTrashRouteComponent() {
 	const { sort, setSort } = useWorkspaceStore();
 	const [searchQuery, setSearchQuery] = useState("");
+	const deferredSearchQuery = useDeferredValue(searchQuery);
 
 	const listQuery = useDeletedWorkspaceListQuery(sort);
 
 	const workspaces = listQuery.data ?? [];
 	const filtered = useMemo(() => {
-		if (!searchQuery.trim()) {
+		if (!deferredSearchQuery.trim()) {
 			return workspaces;
 		}
-		const q = searchQuery.trim().toLowerCase();
+		const q = deferredSearchQuery.trim().toLowerCase();
 		return workspaces.filter(
 			(w) =>
 				w.name.toLowerCase().includes(q) ||
 				(w.description?.toLowerCase().includes(q) ?? false)
 		);
-	}, [workspaces, searchQuery]);
+	}, [workspaces, deferredSearchQuery]);
 
 	const isLoading = listQuery.isLoading;
 	const hasWorkspaces = workspaces.length > 0;
 
-	const handleSortChange = (next: Partial<WorkspaceListInput>) => {
-		setSort(next);
-	};
+	const handleSortChange = useCallback(
+		(next: Partial<WorkspaceListInput>) => {
+			setSort(next);
+		},
+		[setSort]
+	);
 
 	return (
 		<main className="mx-2 min-h-0 max-w-[1440px] flex-1 px-4 py-8 sm:px-6 sm:py-12 md:mx-4 lg:mx-6">
@@ -235,11 +239,7 @@ function WorkspacesTrashRouteComponent() {
 			{!isLoading && hasWorkspaces && (
 				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
 					{filtered.map((workspace) => (
-						<DeletedWorkspaceCard
-							key={workspace.id}
-							onRestored={() => listQuery.refetch()}
-							workspace={workspace}
-						/>
+						<DeletedWorkspaceCard key={workspace.id} workspace={workspace} />
 					))}
 				</div>
 			)}
@@ -276,10 +276,8 @@ type DeletedWorkspaceItem = NonNullable<
 
 function DeletedWorkspaceCard({
 	workspace,
-	onRestored,
 }: {
 	workspace: DeletedWorkspaceItem;
-	onRestored: () => void;
 }) {
 	const [restoreOpen, setRestoreOpen] = useState(false);
 	const restoreMutation = useRestoreWorkspaceMutation();
@@ -295,7 +293,6 @@ function DeletedWorkspaceCard({
 				onSuccess: () => {
 					toast.success("Workspace restored successfully");
 					setRestoreOpen(false);
-					onRestored();
 				},
 				onError: (error) => {
 					toast.error(

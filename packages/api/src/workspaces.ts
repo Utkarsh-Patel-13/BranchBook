@@ -22,33 +22,38 @@ import {
 	updateWorkspace,
 } from "./workspace.service";
 
+const requireUserId = (userId: string | undefined, message: string): string => {
+	if (!userId) {
+		throw new TRPCError({
+			code: "UNAUTHORIZED",
+			message,
+		});
+	}
+
+	return userId;
+};
+
 export const workspaceRouter = router({
 	create: protectedProcedure
 		.input(workspaceCreateInputSchema)
 		.output(workspaceSchema)
 		.mutation(({ ctx, input }) => {
-			if (!ctx.session?.user?.id) {
-				throw new TRPCError({
-					code: "UNAUTHORIZED",
-					message: "Authentication required to create workspaces.",
-				});
-			}
-
-			return createWorkspace(ctx.session.user.id, input, ctx.logger);
+			const userId = requireUserId(
+				ctx.session?.user?.id,
+				"Authentication required to create workspaces."
+			);
+			return createWorkspace(userId, input, ctx.logger);
 		}),
 
 	list: protectedProcedure
 		.input(workspaceListInputSchema)
 		.output(workspaceListOutputSchema)
 		.query(({ ctx, input }) => {
-			if (!ctx.session?.user?.id) {
-				throw new TRPCError({
-					code: "UNAUTHORIZED",
-					message: "Authentication required to list workspaces.",
-				});
-			}
-
-			return listWorkspaces(ctx.session.user.id, input);
+			const userId = requireUserId(
+				ctx.session?.user?.id,
+				"Authentication required to list workspaces."
+			);
+			return listWorkspaces(userId, input);
 		}),
 
 	listDeleted: protectedProcedure
@@ -66,28 +71,22 @@ export const workspaceRouter = router({
 			)
 		)
 		.query(({ ctx, input }) => {
-			if (!ctx.session?.user?.id) {
-				throw new TRPCError({
-					code: "UNAUTHORIZED",
-					message: "Authentication required to list deleted workspaces.",
-				});
-			}
-
-			return listDeletedWorkspaces(ctx.session.user.id, input);
+			const userId = requireUserId(
+				ctx.session?.user?.id,
+				"Authentication required to list deleted workspaces."
+			);
+			return listDeletedWorkspaces(userId, input);
 		}),
 
 	getById: protectedProcedure
 		.input(workspaceGetByIdInputSchema)
 		.output(workspaceSchema)
 		.query(async ({ ctx, input }) => {
-			if (!ctx.session?.user?.id) {
-				throw new TRPCError({
-					code: "UNAUTHORIZED",
-					message: "Authentication required to access workspaces.",
-				});
-			}
-
-			const workspace = await getWorkspaceById(ctx.session.user.id, input);
+			const userId = requireUserId(
+				ctx.session?.user?.id,
+				"Authentication required to access workspaces."
+			);
+			const workspace = await getWorkspaceById(userId, input);
 
 			if (!workspace) {
 				throw new TRPCError({
@@ -103,18 +102,12 @@ export const workspaceRouter = router({
 		.input(workspaceUpdateInputSchema)
 		.output(workspaceSchema)
 		.mutation(async ({ ctx, input }) => {
-			if (!ctx.session?.user?.id) {
-				throw new TRPCError({
-					code: "UNAUTHORIZED",
-					message: "Authentication required to update workspaces.",
-				});
-			}
-
-			const workspace = await updateWorkspace(
-				ctx.session.user.id,
-				input,
-				ctx.logger
+			const userId = requireUserId(
+				ctx.session?.user?.id,
+				"Authentication required to update workspaces."
 			);
+
+			const workspace = await updateWorkspace(userId, input, ctx.logger);
 
 			if (!workspace) {
 				throw new TRPCError({
@@ -130,18 +123,12 @@ export const workspaceRouter = router({
 		.input(workspaceDeleteInputSchema)
 		.output(workspaceDeleteOutputSchema)
 		.mutation(async ({ ctx, input }) => {
-			if (!ctx.session?.user?.id) {
-				throw new TRPCError({
-					code: "UNAUTHORIZED",
-					message: "Authentication required to delete workspaces.",
-				});
-			}
-
-			const workspace = await deleteWorkspace(
-				ctx.session.user.id,
-				input,
-				ctx.logger
+			const userId = requireUserId(
+				ctx.session?.user?.id,
+				"Authentication required to delete workspaces."
 			);
+
+			const workspace = await deleteWorkspace(userId, input, ctx.logger);
 
 			if (!workspace) {
 				throw new TRPCError({
@@ -160,18 +147,12 @@ export const workspaceRouter = router({
 		.input(workspaceRestoreInputSchema)
 		.output(workspaceSchema)
 		.mutation(async ({ ctx, input }) => {
-			if (!ctx.session?.user?.id) {
-				throw new TRPCError({
-					code: "UNAUTHORIZED",
-					message: "Authentication required to restore workspaces.",
-				});
-			}
-
-			const workspace = await restoreWorkspace(
-				ctx.session.user.id,
-				input,
-				ctx.logger
+			const userId = requireUserId(
+				ctx.session?.user?.id,
+				"Authentication required to restore workspaces."
 			);
+
+			const workspace = await restoreWorkspace(userId, input, ctx.logger);
 
 			if (!workspace) {
 				throw new TRPCError({

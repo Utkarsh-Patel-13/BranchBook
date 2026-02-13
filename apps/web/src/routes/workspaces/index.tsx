@@ -8,7 +8,7 @@ import {
 	SearchIcon,
 	Trash2Icon,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useDeferredValue, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { WorkspaceGridSkeleton } from "@/components/skeletons/workspace-card-skeleton";
 import {
@@ -154,6 +154,7 @@ export const Route = createFileRoute("/workspaces/")({
 function WorkspacesListRouteComponent() {
 	const { sort, setSort } = useWorkspaceStore();
 	const [searchQuery, setSearchQuery] = useState("");
+	const deferredSearchQuery = useDeferredValue(searchQuery);
 
 	const [createDialogState, setCreateDialogState] = useState<WorkspaceItem>({
 		id: "",
@@ -167,19 +168,20 @@ function WorkspacesListRouteComponent() {
 	const listQuery = useWorkspaceListQuery(sort);
 	const createMutation = useCreateWorkspaceMutation();
 	const updateMutation = useUpdateWorkspaceMutation();
+	const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
 	const workspaces = listQuery.data ?? [];
 	const filtered = useMemo(() => {
-		if (!searchQuery.trim()) {
+		if (!deferredSearchQuery.trim()) {
 			return workspaces;
 		}
-		const q = searchQuery.trim().toLowerCase();
+		const q = deferredSearchQuery.trim().toLowerCase();
 		return workspaces.filter(
 			(w) =>
 				w.name.toLowerCase().includes(q) ||
 				(w.description?.toLowerCase().includes(q) ?? false)
 		);
-	}, [workspaces, searchQuery]);
+	}, [workspaces, deferredSearchQuery]);
 
 	const isLoading = listQuery.isLoading;
 	const hasWorkspaces = workspaces.length > 0;
@@ -188,7 +190,7 @@ function WorkspacesListRouteComponent() {
 		field: keyof WorkspaceItem,
 		value: string
 	) => {
-		setCreateDialogState({ ...createDialogState, [field]: value });
+		setCreateDialogState((current) => ({ ...current, [field]: value }));
 	};
 
 	const handleCreate = (e: React.FormEvent) => {
@@ -205,7 +207,7 @@ function WorkspacesListRouteComponent() {
 					description: createDialogState.description?.trim() || null,
 				},
 				{
-					onSuccess: async () => {
+					onSuccess: () => {
 						setCreateDialogState({
 							id: "",
 							name: "",
@@ -214,7 +216,6 @@ function WorkspacesListRouteComponent() {
 							createdAt: "",
 						});
 						setCreateDialogOpen(false);
-						await listQuery.refetch();
 						toast.success("Workspace updated successfully");
 					},
 					onError: (error) => {
@@ -234,7 +235,7 @@ function WorkspacesListRouteComponent() {
 					description: createDialogState.description?.trim() || null,
 				},
 				{
-					onSuccess: async () => {
+					onSuccess: () => {
 						setCreateDialogState({
 							id: "",
 							name: "",
@@ -243,8 +244,6 @@ function WorkspacesListRouteComponent() {
 							createdAt: "",
 						});
 						setCreateDialogOpen(false);
-						await listQuery.refetch();
-						await listQuery.refetch();
 						toast.success("Workspace created successfully");
 					},
 					onError: (error) => {
@@ -260,14 +259,21 @@ function WorkspacesListRouteComponent() {
 		}
 	};
 
-	const handleSortChange = (next: Partial<WorkspaceListInput>) => {
-		setSort(next);
-	};
+	const handleSortChange = useCallback(
+		(next: Partial<WorkspaceListInput>) => {
+			setSort(next);
+		},
+		[setSort]
+	);
 
-	const handleEdit = (workspace: WorkspaceItem) => {
+	const handleEdit = useCallback((workspace: WorkspaceItem) => {
 		setCreateDialogState(workspace);
 		setCreateDialogOpen(true);
-	};
+	}, []);
+
+	const openCreateDialog = useCallback(() => {
+		setCreateDialogOpen(true);
+	}, []);
 
 	const getCreateDialogButtonText = (isPending: boolean) => {
 		if (createDialogState.id) {
@@ -378,17 +384,14 @@ function WorkspacesListRouteComponent() {
 				</div>
 			)}
 
-			{!(isLoading || hasWorkspaces) && (
-				<EmptyState onAdd={() => setCreateDialogOpen(true)} />
-			)}
+			{!(isLoading || hasWorkspaces) && <EmptyState onAdd={openCreateDialog} />}
 
 			{!isLoading && hasWorkspaces && (
 				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-					<AddWorkspaceCard onOpenModal={() => setCreateDialogOpen(true)} />
+					<AddWorkspaceCard onOpenModal={openCreateDialog} />
 					{filtered.map((workspace) => (
 						<WorkspaceCard
 							key={workspace.id}
-							onDeleted={() => listQuery.refetch()}
 							onEdit={handleEdit}
 							workspace={workspace}
 						/>
@@ -421,7 +424,7 @@ function WorkspacesListRouteComponent() {
 								<Label htmlFor="create-workspace-name">Title</Label>
 								<Input
 									autoFocus
-									disabled={createMutation.isPending}
+									disabled={isSubmitting}
 									id="create-workspace-name"
 									maxLength={100}
 									onChange={(e) =>
@@ -437,7 +440,7 @@ function WorkspacesListRouteComponent() {
 									Description (optional)
 								</Label>
 								<Textarea
-									disabled={createMutation.isPending}
+									disabled={isSubmitting}
 									id="create-workspace-description"
 									maxLength={500}
 									onChange={(e) =>
@@ -451,7 +454,7 @@ function WorkspacesListRouteComponent() {
 						</div>
 						<DialogFooter showCloseButton={false}>
 							<Button
-								disabled={createMutation.isPending}
+								disabled={isSubmitting}
 								onClick={() => {
 									setCreateDialogOpen(false);
 									setCreateDialogState({
@@ -467,8 +470,8 @@ function WorkspacesListRouteComponent() {
 							>
 								Cancel
 							</Button>
-							<Button disabled={createMutation.isPending} type="submit">
-								{getCreateDialogButtonText(createMutation.isPending)}
+							<Button disabled={isSubmitting} type="submit">
+								{getCreateDialogButtonText(isSubmitting)}
 							</Button>
 						</DialogFooter>
 					</form>
@@ -524,11 +527,9 @@ type WorkspaceItem = NonNullable<
 
 function WorkspaceCard({
 	workspace,
-	onDeleted,
 	onEdit,
 }: {
 	workspace: WorkspaceItem;
-	onDeleted: () => void;
 	onEdit: (workspace: WorkspaceItem) => void;
 }) {
 	const [deleteOpen, setDeleteOpen] = useState(false);
@@ -543,7 +544,6 @@ function WorkspaceCard({
 				onSuccess: () => {
 					toast.success("Workspace deleted successfully");
 					setDeleteOpen(false);
-					onDeleted();
 				},
 				onError: (error) => {
 					toast.error(

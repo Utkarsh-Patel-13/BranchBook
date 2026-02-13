@@ -104,7 +104,6 @@ export const listDeletedWorkspaces = async (
 	type OrderByOption =
 		| { name: typeof sortDirection }
 		| { createdAt: typeof sortDirection }
-		| { updatedAt: typeof sortDirection }
 		| { deletedAt: typeof sortDirection };
 	let orderBy: OrderByOption;
 	if (sortBy === "name") {
@@ -112,7 +111,7 @@ export const listDeletedWorkspaces = async (
 	} else if (sortBy === "createdAt") {
 		orderBy = { createdAt: sortDirection };
 	} else {
-		orderBy = { updatedAt: sortDirection };
+		orderBy = { deletedAt: sortDirection };
 	}
 
 	const now = Date.now();
@@ -137,10 +136,18 @@ export const listDeletedWorkspaces = async (
 		},
 	});
 
-	return workspaces.map((w) => ({
-		...toWorkspaceListItem(w),
-		deletedAt: w.deletedAt as Date,
-	}));
+	return workspaces.map((w) => {
+		if (w.deletedAt == null) {
+			throw new Error(
+				"Invariant failed: deleted workspace is missing deletedAt."
+			);
+		}
+
+		return {
+			...toWorkspaceListItem(w),
+			deletedAt: w.deletedAt,
+		};
+	});
 };
 
 export const getWorkspaceById = async (
@@ -179,11 +186,9 @@ export const updateWorkspace = async (
 		return null;
 	}
 
-	const updateResult = await prisma.workspace.updateMany({
+	const workspace = await prisma.workspace.update({
 		where: {
 			id: input.workspaceId,
-			ownerId,
-			deletedAt: null,
 		},
 		data: {
 			name: input.name ?? existing.name,
@@ -193,19 +198,6 @@ export const updateWorkspace = async (
 					: existing.description,
 		},
 	});
-
-	if (updateResult.count !== 1) {
-		return null;
-	}
-
-	const workspace = {
-		...existing,
-		name: input.name ?? existing.name,
-		description:
-			input.description !== undefined
-				? input.description
-				: existing.description,
-	};
 
 	if (logger) {
 		const { logWorkspaceUpdated } = await import("./workspace.logging");
@@ -237,16 +229,16 @@ export const deleteWorkspace = async (
 	const deletedAt = new Date();
 
 	// Soft delete workspace and all its nodes in a transaction
-	await prisma.$transaction([
-		prisma.workspace.update({
+	const workspace = await prisma.$transaction(async (tx) => {
+		const updatedWorkspace = await tx.workspace.update({
 			where: {
 				id: input.workspaceId,
 			},
 			data: {
 				deletedAt,
 			},
-		}),
-		prisma.node.updateMany({
+		});
+		await tx.node.updateMany({
 			where: {
 				workspaceId: input.workspaceId,
 				deletedAt: null,
@@ -254,18 +246,9 @@ export const deleteWorkspace = async (
 			data: {
 				deletedAt,
 			},
-		}),
-	]);
-
-	const workspace = await prisma.workspace.findUnique({
-		where: {
-			id: input.workspaceId,
-		},
+		});
+		return updatedWorkspace;
 	});
-
-	if (!workspace) {
-		return null;
-	}
 
 	if (logger) {
 		const { logWorkspaceDeleted } = await import("./workspace.logging");
@@ -302,16 +285,16 @@ export const restoreWorkspace = async (
 	}
 
 	// Restore workspace and all its nodes in a transaction
-	await prisma.$transaction([
-		prisma.workspace.update({
+	const workspace = await prisma.$transaction(async (tx) => {
+		const updatedWorkspace = await tx.workspace.update({
 			where: {
 				id: input.workspaceId,
 			},
 			data: {
 				deletedAt: null,
 			},
-		}),
-		prisma.node.updateMany({
+		});
+		await tx.node.updateMany({
 			where: {
 				workspaceId: input.workspaceId,
 				deletedAt: existing.deletedAt,
@@ -319,18 +302,9 @@ export const restoreWorkspace = async (
 			data: {
 				deletedAt: null,
 			},
-		}),
-	]);
-
-	const workspace = await prisma.workspace.findUnique({
-		where: {
-			id: input.workspaceId,
-		},
+		});
+		return updatedWorkspace;
 	});
-
-	if (!workspace) {
-		return null;
-	}
 
 	if (logger) {
 		const { logWorkspaceRestored } = await import("./workspace.logging");
