@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@tanstack/react-router";
+import { BookOpenIcon } from "lucide-react";
 import {
 	NavigationMenu,
 	NavigationMenuContent,
@@ -39,9 +40,7 @@ export default function Header() {
 			className="flex items-center gap-1.5 transition-opacity hover:opacity-80"
 			to="/"
 		>
-			<span className="material-symbols-outlined text-primary text-xl">
-				auto_stories
-			</span>
+			<BookOpenIcon className="size-5 text-primary" />
 			<span className="font-semibold text-base tracking-tight">Nexus</span>
 		</Link>
 	);

@@ -326,7 +326,7 @@ function DeletedWorkspaceCard({
 					</Button>
 				</CardAction>
 			</CardHeader>
-			<CardContent className="line-clamp-2 min-h-0 flex-1">
+			<CardContent className="line-clamp-2 min-h-0 flex-1 text-muted-foreground">
 				{workspace.description ?? "No description."}
 			</CardContent>
 			<CardFooter className="flex-col items-start gap-1 text-muted-foreground text-xs">

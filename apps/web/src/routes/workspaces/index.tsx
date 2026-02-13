@@ -613,7 +613,7 @@ function WorkspaceCard({
 				params={{ workspaceId: workspace.id }}
 				to="/workspaces/$workspaceId"
 			>
-				<CardContent className="line-clamp-2 min-h-0 flex-1">
+				<CardContent className="line-clamp-2 min-h-0 flex-1 text-muted-foreground">
 					{workspace.description ?? "No description."}
 				</CardContent>
 			</Link>
