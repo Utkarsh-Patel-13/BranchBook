@@ -79,12 +79,12 @@ const pickSummary = (
  * Assemble the inherited context payload for a child node being branched.
  *
  * @param parentNodeId - The node being branched from (direct parent of child)
- * @param branchPointMessageId - The message the branch was created from
+ * @param branchPointMessageId - The message the branch was created from, or null to branch from parent (use latest message)
  * @returns The formatted context string to store on the child node
  */
 export const assembleContextPayload = async (
 	parentNodeId: string,
-	branchPointMessageId: string
+	branchPointMessageId: string | null
 ): Promise<string> => {
 	// Walk from root down to the parent node
 	const ancestry = await walkAncestry(parentNodeId);
@@ -110,17 +110,23 @@ export const assembleContextPayload = async (
 		}
 	}
 
-	// Fetch last N raw messages from the parent node up to and including the branch point
-	const branchPointMessage = await prisma.message.findUnique({
-		where: { id: branchPointMessageId },
-		select: { createdAt: true },
-	});
+	// Resolve branch point: explicit message id or latest message in parent (branch from parent)
+	const effectiveBranchPoint = branchPointMessageId
+		? await prisma.message.findUnique({
+				where: { id: branchPointMessageId },
+				select: { createdAt: true },
+			})
+		: await prisma.message.findFirst({
+				where: { nodeId: parentNodeId },
+				orderBy: { createdAt: "desc" },
+				select: { createdAt: true },
+			});
 
-	if (branchPointMessage) {
+	if (effectiveBranchPoint) {
 		const rawMessages = await prisma.message.findMany({
 			where: {
 				nodeId: parentNodeId,
-				createdAt: { lte: branchPointMessage.createdAt },
+				createdAt: { lte: effectiveBranchPoint.createdAt },
 			},
 			orderBy: { createdAt: "desc" },
 			take: RAW_MESSAGE_COUNT,
