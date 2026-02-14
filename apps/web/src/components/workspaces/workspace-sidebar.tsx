@@ -98,7 +98,7 @@ function NodeRow({
 				<Button
 					aria-label={open ? "Collapse" : "Expand"}
 					className={cn(
-						"shrink-0 transition-colors",
+						"shrink-0 cursor-pointer transition-colors",
 						!isSelected && "hover:bg-sidebar-accent/50"
 					)}
 					onClick={() => setOpen((prev) => !prev)}
@@ -122,7 +122,7 @@ function NodeRow({
 			)}
 			<Button
 				className={cn(
-					"min-w-0 flex-1 justify-start rounded-none border-0 px-1 text-left transition-colors",
+					"min-w-0 flex-1 cursor-pointer justify-start rounded-none border-0 px-1 text-left transition-colors",
 					!isSelected && "hover:bg-sidebar-accent/50"
 				)}
 				onClick={() => onSelectNode(node.id)}
@@ -138,7 +138,7 @@ function NodeRow({
 							render={
 								<Button
 									aria-label="Node options"
-									className="size-6 rounded p-0"
+									className="size-6 cursor-pointer rounded"
 									onClick={(e) => e.stopPropagation()}
 									size="icon"
 									variant="ghost"
@@ -150,21 +150,21 @@ function NodeRow({
 						<DropdownMenuContent align="start" side="right">
 							<DropdownMenuItem
 								onClick={() => {
-									setEditNode({ nodeId: node.id, title: node.title });
-									setAddChildOpen(true);
-								}}
-							>
-								<Pencil className="size-4" />
-								Edit
-							</DropdownMenuItem>
-							<DropdownMenuItem
-								onClick={() => {
 									setEditNode(null);
 									setAddChildOpen(true);
 								}}
 							>
 								<PlusIcon className="size-4" />
 								Add child
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={() => {
+									setEditNode({ nodeId: node.id, title: node.title });
+									setAddChildOpen(true);
+								}}
+							>
+								<Pencil className="size-4" />
+								Edit
 							</DropdownMenuItem>
 							<DropdownMenuItem
 								onClick={() => setDeleteOpen(true)}
