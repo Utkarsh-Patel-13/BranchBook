@@ -37,6 +37,7 @@ import {
 import UserMenu from "@/components/user-menu";
 import { useNodeTree } from "@/hooks/use-nodes";
 import { cn } from "@/lib/utils";
+import { Separator } from "../ui/separator";
 
 function filterTree(nodes: NodeTree[], query: string): NodeTree[] {
 	const q = query.trim().toLowerCase();
@@ -331,15 +332,20 @@ export function WorkspaceSidebar({
 								</div>
 							)}
 							{!isLoading && filteredNodes.length > 0 && (
-								<div className="min-w-0 flex-1 space-y-0.5">
-									{filteredNodes.map((node) => (
-										<NodeRow
-											key={node.id}
-											node={node}
-											onSelectNode={onSelectNode}
-											selectedNodeId={selectedNodeId}
-											workspaceId={workspaceId}
-										/>
+								<div className="min-w-0 flex-1 space-y-4">
+									{filteredNodes.map((node, index) => (
+										<>
+											<NodeRow
+												key={node.id}
+												node={node}
+												onSelectNode={onSelectNode}
+												selectedNodeId={selectedNodeId}
+												workspaceId={workspaceId}
+											/>
+											{index < filteredNodes.length - 1 && (
+												<Separator className="my-2" />
+											)}
+										</>
 									))}
 								</div>
 							)}
