@@ -5,7 +5,7 @@ import { WorkspaceSplitLayout } from "@/components/workspaces/workspace-split-la
 import { useNodeTree } from "@/hooks/use-nodes";
 import { authClient } from "@/lib/auth-client";
 
-export const Route = createFileRoute("/workspaces/$workspaceId")({
+export const Route = createFileRoute("/workspaces/$workspaceId/")({
 	component: WorkspaceSplitViewRouteComponent,
 	beforeLoad: async ({ location }) => {
 		const session = await authClient.getSession();
@@ -41,5 +41,14 @@ function WorkspaceSplitViewRouteComponent() {
 		return <WorkspaceEmptyView workspaceId={workspaceId} />;
 	}
 
-	return <WorkspaceSplitLayout workspaceId={workspaceId} />;
+	console.log({ tree, workspaceId });
+
+	// Show workspace with no node selected - user must select from sidebar
+	return (
+		<WorkspaceSplitLayout
+			currentNodeId={null}
+			rootId={workspaceId}
+			tree={tree}
+		/>
+	);
 }

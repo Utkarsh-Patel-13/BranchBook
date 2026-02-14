@@ -366,7 +366,6 @@ function WorkspacesListRouteComponent() {
 							</SelectContent>
 						</Select>
 					</div>
-					<div className="hidden h-4 w-px bg-border sm:block" />
 				</div>
 			</div>
 

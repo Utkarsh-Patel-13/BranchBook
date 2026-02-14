@@ -1,5 +1,7 @@
 import type { NodeTree } from "@nexus/types";
+import { Link } from "@tanstack/react-router";
 import {
+	BookOpenIcon,
 	ChevronRightIcon,
 	FileTextIcon,
 	FolderIcon,
@@ -8,6 +10,7 @@ import {
 	Trash2Icon,
 } from "lucide-react";
 import { useState } from "react";
+import { ModeToggle } from "@/components/mode-toggle";
 import { CreateNodeDialog } from "@/components/nodes/create-node-dialog";
 import { DeleteNodeDialog } from "@/components/nodes/delete-node-dialog";
 import { Button } from "@/components/ui/button";
@@ -25,10 +28,12 @@ import {
 import {
 	Sidebar,
 	SidebarContent,
+	SidebarFooter,
 	SidebarGroup,
 	SidebarGroupAction,
 	SidebarGroupContent,
 	SidebarGroupLabel,
+	SidebarHeader,
 	SidebarMenu,
 	SidebarMenuAction,
 	SidebarMenuButton,
@@ -36,6 +41,7 @@ import {
 	SidebarMenuSub,
 	SidebarRail,
 } from "@/components/ui/sidebar";
+import UserMenu from "@/components/user-menu";
 import { useNodeTree } from "@/hooks/use-nodes";
 import { cn } from "@/lib/utils";
 
@@ -44,6 +50,7 @@ interface NodeRowProps {
 	workspaceId: string;
 	selectedNodeId: string | null;
 	onSelectNode: (nodeId: string) => void;
+	tree: NodeTree[];
 }
 
 function NodeRow({
@@ -51,6 +58,7 @@ function NodeRow({
 	workspaceId,
 	selectedNodeId,
 	onSelectNode,
+	tree,
 }: NodeRowProps) {
 	const [addChildOpen, setAddChildOpen] = useState(false);
 	const [deleteOpen, setDeleteOpen] = useState(false);
@@ -110,16 +118,19 @@ function NodeRow({
 	return (
 		<SidebarMenuItem>
 			<Collapsible className="group/collapsible [&[data-state=open]>button>svg:first-child]:rotate-90">
-				<SidebarMenuButton
-					className={cn("gap-1.5", isSelected && "font-medium")}
-					isActive={isSelected}
-					onClick={() => onSelectNode(node.id)}
-					render={<CollapsibleTrigger />}
-				>
-					<ChevronRightIcon className="transition-transform" />
-					<FolderIcon />
-					{node.title}
-				</SidebarMenuButton>
+				<div className="flex w-full items-center">
+					<CollapsibleTrigger className="flex size-4 items-center justify-center">
+						<ChevronRightIcon className="size-4 transition-transform" />
+					</CollapsibleTrigger>
+					<SidebarMenuButton
+						className={cn("flex-1 gap-1.5", isSelected && "font-medium")}
+						isActive={isSelected}
+						onClick={() => onSelectNode(node.id)}
+					>
+						<FolderIcon />
+						{node.title}
+					</SidebarMenuButton>
+				</div>
 
 				<DropdownMenu>
 					<SidebarMenuAction render={<DropdownMenuTrigger />} showOnHover>
@@ -148,6 +159,7 @@ function NodeRow({
 								node={child}
 								onSelectNode={onSelectNode}
 								selectedNodeId={selectedNodeId}
+								tree={tree}
 								workspaceId={workspaceId}
 							/>
 						))}
@@ -177,12 +189,14 @@ interface WorkspaceSidebarProps {
 	workspaceId: string;
 	selectedNodeId: string | null;
 	onSelectNode: (nodeId: string) => void;
+	workspaceName?: string;
 }
 
 export function WorkspaceSidebar({
 	workspaceId,
 	selectedNodeId,
 	onSelectNode,
+	workspaceName,
 	...props
 }: WorkspaceSidebarProps & React.ComponentProps<typeof Sidebar>) {
 	const { data: tree, isLoading } = useNodeTree(workspaceId);
@@ -193,6 +207,28 @@ export function WorkspaceSidebar({
 	return (
 		<>
 			<Sidebar {...props}>
+				<SidebarHeader>
+					<Link
+						className="flex items-center gap-2 px-2 py-2 transition-opacity hover:opacity-80"
+						to="/"
+					>
+						<BookOpenIcon className="size-5 text-primary" />
+						<span className="font-semibold text-base tracking-tight">
+							Nexus
+						</span>
+					</Link>
+					<div className="flex items-center gap-2 border-t px-2 py-2">
+						<div className="flex flex-1 flex-col gap-0.5">
+							<span className="font-semibold text-sm">
+								{workspaceName || "Workspace"}
+							</span>
+							<span className="text-muted-foreground text-xs">
+								{nodes.length} {nodes.length === 1 ? "node" : "nodes"}
+							</span>
+						</div>
+					</div>
+				</SidebarHeader>
+
 				<SidebarContent>
 					<SidebarGroup>
 						<SidebarGroupLabel>Nodes</SidebarGroupLabel>
@@ -233,6 +269,7 @@ export function WorkspaceSidebar({
 											node={node}
 											onSelectNode={onSelectNode}
 											selectedNodeId={selectedNodeId}
+											tree={nodes}
 											workspaceId={workspaceId}
 										/>
 									))}
@@ -241,6 +278,18 @@ export function WorkspaceSidebar({
 						</SidebarGroupContent>
 					</SidebarGroup>
 				</SidebarContent>
+
+				<SidebarFooter>
+					<SidebarMenu>
+						<SidebarMenuItem>
+							<div className="flex items-center justify-between gap-2 px-2 py-2">
+								<UserMenu />
+								<ModeToggle />
+							</div>
+						</SidebarMenuItem>
+					</SidebarMenu>
+				</SidebarFooter>
+
 				<SidebarRail />
 			</Sidebar>
 

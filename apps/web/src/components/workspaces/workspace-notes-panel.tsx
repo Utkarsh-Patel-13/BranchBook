@@ -27,14 +27,14 @@ import {
 	EyeIcon,
 	NotebookIcon,
 	PencilIcon,
-	PlusIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FloatingTextFormatPlugin } from "@/components/notes/note-floating-toolbar";
 import { NoteToolbar } from "@/components/notes/note-toolbar";
+import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useNote, useUpsertNote } from "@/hooks/use-note";
-import { Label } from "../ui/label";
+import { useWorkspaceLayoutStore } from "@/stores/workspace-layout-store";
 
 const URL_MATCHER =
 	/((https?:\/\/(www\.)?)|(www\.))[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)/;
@@ -189,15 +189,15 @@ interface NotesPanelHeaderProps {
 	isEditing: boolean;
 	isSaving: boolean;
 	justSaved: boolean;
-	onToggleMode: () => void;
 }
 
 function NotesPanelHeader({
 	isEditing,
 	isSaving,
 	justSaved,
-	onToggleMode,
 }: NotesPanelHeaderProps) {
+	const { editMode, setEditMode } = useWorkspaceLayoutStore();
+
 	return (
 		<div className="flex shrink-0 items-center justify-between border-b px-4 py-2">
 			<div className="flex items-center gap-2">
@@ -210,7 +210,7 @@ function NotesPanelHeader({
 					className={
 						isEditing
 							? "font-medium text-primary text-sm"
-							: "font-medium text-muted-foreground text-sm"
+							: "font-medium text-primary text-sm"
 					}
 				>
 					{isEditing ? "Editing" : "View"}
@@ -219,21 +219,23 @@ function NotesPanelHeader({
 					<span className="text-muted-foreground text-sm">· Saving…</span>
 				)}
 				{!isSaving && justSaved && (
-					<span className="text-emerald-600 text-sm dark:text-emerald-400">
-						· Saved ✓
+					<span className="text-emerald-600 text-xs dark:text-emerald-400">
+						Saved
 					</span>
 				)}
 			</div>
-			<div className="flex items-center gap-4">
-				<Label htmlFor="edit-mode">View</Label>
+			<div className="flex items-center gap-2">
+				<Label className="text-xs" htmlFor="edit-mode-toggle">
+					View
+				</Label>
 				<Switch
-					aria-label={isEditing ? "Switch to view mode" : "Switch to edit mode"}
-					checked={isEditing}
-					id="edit-mode"
-					onCheckedChange={() => onToggleMode()}
-					size="default"
+					checked={editMode}
+					id="edit-mode-toggle"
+					onCheckedChange={setEditMode}
 				/>
-				<Label htmlFor="edit-mode">Edit</Label>
+				<Label className="text-xs" htmlFor="edit-mode-toggle">
+					Edit
+				</Label>
 			</div>
 		</div>
 	);
@@ -241,10 +243,10 @@ function NotesPanelHeader({
 
 interface NotesPanelContentProps {
 	nodeId: string;
+	editMode: boolean;
 }
 
-function NotesPanelContent({ nodeId }: NotesPanelContentProps) {
-	const [isEditing, setIsEditing] = useState(false);
+function NotesPanelContent({ nodeId, editMode }: NotesPanelContentProps) {
 	const { data: note, isLoading, isError, refetch } = useNote(nodeId);
 	const { mutate: upsert, isPending: isSaving } = useUpsertNote(nodeId);
 	const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -259,11 +261,6 @@ function NotesPanelContent({ nodeId }: NotesPanelContentProps) {
 		}
 		wasSavingRef.current = isSaving;
 	}, [isSaving]);
-
-	// biome-ignore lint/correctness/useExhaustiveDependencies: nodeId is a prop; we intentionally reset when it changes
-	useEffect(() => {
-		setIsEditing(false);
-	}, [nodeId]);
 
 	useEffect(() => {
 		return () => {
@@ -281,7 +278,7 @@ function NotesPanelContent({ nodeId }: NotesPanelContentProps) {
 
 	const handleChange = useCallback(
 		(editorState: EditorState) => {
-			if (!isEditing) {
+			if (!editMode) {
 				return;
 			}
 			if (saveTimerRef.current !== null) {
@@ -292,10 +289,8 @@ function NotesPanelContent({ nodeId }: NotesPanelContentProps) {
 				upsert({ nodeId, content });
 			}, DEBOUNCE_MS);
 		},
-		[isEditing, nodeId, upsert]
+		[editMode, nodeId, upsert]
 	);
-
-	const toggleMode = useCallback(() => setIsEditing((prev) => !prev), []);
 
 	if (isLoading) {
 		return <NotesLoadingState />;
@@ -320,28 +315,25 @@ function NotesPanelContent({ nodeId }: NotesPanelContentProps) {
 			key={nodeId}
 		>
 			<div className="flex h-full flex-col overflow-hidden">
-				{note || isEditing ? (
-					<NotesPanelHeader
-						isEditing={isEditing}
-						isSaving={isSaving}
-						justSaved={justSaved}
-						onToggleMode={toggleMode}
-					/>
-				) : null}
+				<NotesPanelHeader
+					isEditing={editMode}
+					isSaving={isSaving}
+					justSaved={justSaved}
+				/>
 
-				{isEditing && <NoteToolbar />}
+				{editMode && <NoteToolbar />}
 
-				{note || isEditing ? (
+				{note || editMode ? (
 					<div className="relative min-h-0 flex-1 overflow-y-auto px-4 py-3">
 						<RichTextPlugin
 							contentEditable={
 								<ContentEditable
-									className={`prose prose-sm dark:prose-invert min-h-full max-w-none outline-none ${isEditing ? "cursor-text" : "cursor-default select-text"}`}
+									className={`prose prose-sm dark:prose-invert min-h-full max-w-none outline-none ${editMode ? "cursor-text" : "cursor-default select-text"}`}
 								/>
 							}
 							ErrorBoundary={LexicalErrorBoundary}
 							placeholder={
-								isEditing ? (
+								editMode ? (
 									<div className="pointer-events-none absolute top-3 left-4 text-muted-foreground text-sm">
 										Start writing… (supports Markdown shortcuts)
 									</div>
@@ -357,21 +349,13 @@ function NotesPanelContent({ nodeId }: NotesPanelContentProps) {
 						<div className="space-y-1">
 							<h3 className="font-medium text-sm">No note yet</h3>
 							<p className="text-muted-foreground text-xs">
-								Add a note to capture context for this node.
+								Toggle edit mode in the header to start writing.
 							</p>
 						</div>
-						<button
-							className="mt-1 flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 font-medium text-primary-foreground text-xs transition-colors hover:bg-primary/90"
-							onClick={() => setIsEditing(true)}
-							type="button"
-						>
-							<PlusIcon className="size-3" />
-							Add note
-						</button>
 					</div>
 				)}
 
-				{isEditing && (
+				{editMode && (
 					<div className="flex shrink-0 items-center justify-end border-t px-4 py-1">
 						<span className="text-muted-foreground text-xs tabular-nums">
 							{wordCount.words} {wordCount.words === 1 ? "word" : "words"} ·{" "}
@@ -381,7 +365,7 @@ function NotesPanelContent({ nodeId }: NotesPanelContentProps) {
 				)}
 			</div>
 
-			<EditabilityPlugin isEditing={isEditing} />
+			<EditabilityPlugin isEditing={editMode} />
 			<HistoryPlugin />
 			<ListPlugin />
 			<CheckListPlugin />
@@ -392,22 +376,24 @@ function NotesPanelContent({ nodeId }: NotesPanelContentProps) {
 			<TabIndentationPlugin />
 			<MarkdownShortcutPlugin transformers={TRANSFORMERS} />
 			<OnChangePlugin ignoreSelectionChange onChange={handleChange} />
-			{isEditing && <FloatingTextFormatPlugin />}
-			{isEditing && <WordCountPlugin onCount={handleCount} />}
+			{editMode && <FloatingTextFormatPlugin />}
+			{editMode && <WordCountPlugin onCount={handleCount} />}
 		</LexicalComposer>
 	);
 }
 
 interface WorkspaceNotesPanelProps {
 	selectedNodeId: string | null;
+	editMode: boolean;
 }
 
 export function WorkspaceNotesPanel({
 	selectedNodeId,
+	editMode,
 }: WorkspaceNotesPanelProps) {
 	if (selectedNodeId === null) {
 		return <NoNodeSelected />;
 	}
 
-	return <NotesPanelContent nodeId={selectedNodeId} />;
+	return <NotesPanelContent editMode={editMode} nodeId={selectedNodeId} />;
 }

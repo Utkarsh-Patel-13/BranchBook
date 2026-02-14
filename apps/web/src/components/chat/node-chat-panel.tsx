@@ -11,7 +11,6 @@ import {
 	GitBranchIcon,
 	GlobeIcon,
 	LightbulbIcon,
-	MessageSquareIcon,
 	Volume2Icon,
 	VolumeXIcon,
 } from "lucide-react";
@@ -49,13 +48,8 @@ import {
 	SourcesTrigger,
 } from "@/components/ai-elements/sources";
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
-import { ContextPanel } from "@/components/context/ContextPanel";
 import { useListMessages } from "@/hooks/use-messages";
-import {
-	useBranchFromMessage,
-	useContextForPanel,
-	useNodeById,
-} from "@/hooks/use-nodes";
+import { useBranchFromMessage, useNodeById } from "@/hooks/use-nodes";
 import { cn } from "@/lib/utils";
 import { useWorkspaceLayoutStore } from "@/stores/workspace-layout-store";
 import { trpc } from "@/utils/trpc";
@@ -458,19 +452,9 @@ interface NodeChatPanelProps {
 export function NodeChatPanel({ nodeId }: NodeChatPanelProps) {
 	const { data: node } = useNodeById(nodeId);
 	const { data: dbMessages, isLoading } = useListMessages(nodeId);
-	const { data: contextData } = useContextForPanel(nodeId);
 
 	return (
 		<div className="flex h-full flex-col overflow-hidden">
-			<div className="flex shrink-0 items-center gap-2 border-b px-4 py-2">
-				<MessageSquareIcon className="size-3.5 shrink-0 text-muted-foreground" />
-				<h3 className="truncate font-medium text-sm">
-					{node?.title ?? "Chat"}
-				</h3>
-			</div>
-
-			{contextData && <ContextPanel data={contextData} />}
-
 			{isLoading || !dbMessages || !node ? (
 				<div className="flex flex-1 flex-col gap-6 p-4">
 					<div className="ml-auto flex max-w-[60%] flex-col gap-2">

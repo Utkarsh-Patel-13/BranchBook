@@ -4,12 +4,16 @@ interface WorkspaceLayout {
 	selectedNodeId: string | null;
 	sidebarOpen: boolean;
 	panelSizes: number[];
+	notesVisible: boolean;
+	editMode: boolean;
 }
 
 const DEFAULT_LAYOUT: WorkspaceLayout = {
 	selectedNodeId: null,
 	sidebarOpen: true,
 	panelSizes: [50, 50],
+	notesVisible: true,
+	editMode: false,
 };
 
 function storageKey(workspaceId: string): string {
@@ -38,7 +42,12 @@ function parseLayout(raw: unknown): WorkspaceLayout {
 			? (obj.panelSizes as number[])
 			: [50, 50];
 
-	return { selectedNodeId, sidebarOpen, panelSizes };
+	const notesVisible =
+		typeof obj.notesVisible === "boolean" ? obj.notesVisible : true;
+
+	const editMode = typeof obj.editMode === "boolean" ? obj.editMode : false;
+
+	return { selectedNodeId, sidebarOpen, panelSizes, notesVisible, editMode };
 }
 
 export function getLayout(workspaceId: string): WorkspaceLayout {
