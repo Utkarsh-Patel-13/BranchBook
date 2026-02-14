@@ -104,6 +104,11 @@ export const branchFromMessageSchema = z.object({
 		.optional(),
 });
 
+export const getBranchesForNodeOutputSchema = z.record(
+	z.string().cuid(),
+	z.array(z.object({ id: z.string().cuid(), title: z.string() }))
+);
+
 export const getContextForPanelInputSchema = z.object({
 	nodeId: z.string().cuid(),
 });
@@ -134,6 +139,9 @@ export type GetNodeByIdInput = z.infer<typeof getNodeByIdInputSchema>;
 export type GetTreeInput = z.infer<typeof getTreeInputSchema>;
 export type NodeOutput = z.infer<typeof nodeOutputSchema>;
 export type BranchFromMessageInput = z.infer<typeof branchFromMessageSchema>;
+export type GetBranchesForNodeOutput = z.infer<
+	typeof getBranchesForNodeOutputSchema
+>;
 export type GetContextForPanelInput = z.infer<
 	typeof getContextForPanelInputSchema
 >;

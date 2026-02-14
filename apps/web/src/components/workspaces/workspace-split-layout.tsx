@@ -94,7 +94,7 @@ export function WorkspaceSplitLayout({
 								}`}
 							>
 								{currentNodeId ? (
-									<NodeChatPanel nodeId={currentNodeId} />
+									<NodeChatPanel nodeId={currentNodeId} tree={tree} />
 								) : (
 									<ChatEmptyState />
 								)}
@@ -113,7 +113,7 @@ export function WorkspaceSplitLayout({
 							<div className="flex w-full flex-col overflow-hidden lg:hidden">
 								{mobileView === "chat" &&
 									(currentNodeId ? (
-										<NodeChatPanel nodeId={currentNodeId} />
+										<NodeChatPanel nodeId={currentNodeId} tree={tree} />
 									) : (
 										<ChatEmptyState />
 									))}

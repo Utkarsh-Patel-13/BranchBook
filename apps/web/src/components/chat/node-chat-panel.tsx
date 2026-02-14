@@ -1,11 +1,13 @@
 import { useChat } from "@ai-sdk/react";
 import { env } from "@nexus/env/web";
-import type { MessageType } from "@nexus/types";
+import type { MessageType, NodeTree } from "@nexus/types";
 import { useMutation } from "@tanstack/react-query";
+import { useRouter } from "@tanstack/react-router";
 import type { UIMessage } from "ai";
 import { DefaultChatTransport, isReasoningUIPart, isTextUIPart } from "ai";
 import {
 	CheckIcon,
+	ChevronDownIcon,
 	CopyIcon,
 	FileTextIcon,
 	GitBranchIcon,
@@ -14,6 +16,7 @@ import {
 	Volume2Icon,
 	VolumeXIcon,
 } from "lucide-react";
+import { parse } from "marked";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	Conversation,
@@ -47,6 +50,14 @@ import {
 	SourcesContent,
 	SourcesTrigger,
 } from "@/components/ai-elements/sources";
+import { CreateNodeDialog } from "@/components/nodes/create-node-dialog";
+import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
 	Select,
 	SelectContent,
@@ -55,8 +66,9 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { useListMessages } from "@/hooks/use-messages";
-import { useBranchFromMessage, useNodeById } from "@/hooks/use-nodes";
+import { useBranchesForNode, useNodeById } from "@/hooks/use-nodes";
 import { cn } from "@/lib/utils";
+import { buildNodePath } from "@/lib/workspace-navigation";
 import { useWorkspaceLayoutStore } from "@/stores/workspace-layout-store";
 import { trpc } from "@/utils/trpc";
 
@@ -115,16 +127,29 @@ interface ChatContentProps {
 	nodeId: string;
 	dbMessages: MessageType[];
 	workspaceId: string;
+	tree: NodeTree[];
 }
 
 interface CopyActionProps {
 	content: string;
 }
 
+async function copyToClipboard(content: string) {
+	const htmlBody = (await parse(content, { gfm: true })) as string;
+	const htmlDocument = `<meta charset='utf-8'><html><head></head><body>${htmlBody}</body></html>`;
+
+	await navigator.clipboard.write([
+		new ClipboardItem({
+			"text/plain": new Blob([content], { type: "text/plain" }),
+			"text/html": new Blob([htmlDocument], { type: "text/html" }),
+		}),
+	]);
+}
+
 const CopyAction = memo(({ content }: CopyActionProps) => {
 	const [copied, setCopied] = useState(false);
 	const handleClick = useCallback(() => {
-		navigator.clipboard.writeText(content);
+		copyToClipboard(content);
 		setCopied(true);
 		setTimeout(() => setCopied(false), 2000);
 	}, [content]);
@@ -174,34 +199,97 @@ interface BranchActionProps {
 
 const BranchAction = memo(
 	({ messageId, nodeId, workspaceId }: BranchActionProps) => {
+		const [branchDialogOpen, setBranchDialogOpen] = useState(false);
 		const setSelectedNodeId = useWorkspaceLayoutStore(
 			(s) => s.setSelectedNodeId
 		);
-		const { mutate, isPending } = useBranchFromMessage(workspaceId);
 
-		const handleClick = useCallback(() => {
-			mutate(
-				{ nodeId, messageId },
-				{ onSuccess: (childNode) => setSelectedNodeId(childNode.id) }
-			);
-		}, [mutate, nodeId, messageId, setSelectedNodeId]);
+		const handleBranchCreated = useCallback(
+			(node: { id: string }) => {
+				setSelectedNodeId(node.id);
+			},
+			[setSelectedNodeId]
+		);
 
 		return (
-			<MessageAction
-				className="flex w-full flex-row items-center gap-1 p-2"
-				disabled={isPending}
-				label="Branch from here"
-				onClick={handleClick}
-				tooltip="Branch from here"
-			>
-				<GitBranchIcon className="size-3.5" />
-				<span className="text-xs">Branch</span>
-			</MessageAction>
+			<>
+				<MessageAction
+					className="flex w-full flex-row items-center gap-1 p-2"
+					label="Branch from here"
+					onClick={() => setBranchDialogOpen(true)}
+					tooltip="Branch from here"
+				>
+					<GitBranchIcon className="size-3.5" />
+					<span className="text-xs">Branch</span>
+				</MessageAction>
+				<CreateNodeDialog
+					branch={{ messageId, nodeId }}
+					onBranchCreated={handleBranchCreated}
+					onOpenChange={setBranchDialogOpen}
+					open={branchDialogOpen}
+					workspaceId={workspaceId}
+				/>
+			</>
 		);
 	}
 );
 
 BranchAction.displayName = "BranchAction";
+
+interface BranchesDropdownProps {
+	branches: { id: string; title: string }[];
+	workspaceId: string;
+	tree: NodeTree[];
+}
+
+const BranchesDropdown = memo(
+	({ branches, workspaceId, tree }: BranchesDropdownProps) => {
+		const router = useRouter();
+
+		if (branches.length === 0) {
+			return null;
+		}
+
+		const handleSelectBranch = (branchId: string) => {
+			const path = buildNodePath(tree, branchId);
+			if (path) {
+				router.navigate({
+					to: `/workspaces/${workspaceId}/${path.join("/")}` as never,
+				});
+			}
+		};
+
+		return (
+			<DropdownMenu>
+				<DropdownMenuTrigger
+					render={
+						<Button
+							aria-label={`${branches.length} branch${branches.length === 1 ? "" : "es"} from this message`}
+							className="flex flex-row items-center gap-1 p-2"
+							size="icon-sm"
+							title={`${branches.length} branch${branches.length === 1 ? "" : "es"} from this message`}
+							variant="ghost"
+						>
+							<ChevronDownIcon className="size-3.5" />
+						</Button>
+					}
+				/>
+				<DropdownMenuContent align="end">
+					<DropdownMenuItem disabled>Branches</DropdownMenuItem>
+					{branches.map((branch) => (
+						<DropdownMenuItem
+							key={branch.id}
+							onClick={() => handleSelectBranch(branch.id)}
+						>
+							{branch.title}
+						</DropdownMenuItem>
+					))}
+				</DropdownMenuContent>
+			</DropdownMenu>
+		);
+	}
+);
+BranchesDropdown.displayName = "BranchesDropdown";
 
 function SpeakButton({ content }: { content: string }) {
 	const [speaking, setSpeaking] = useState(false);
@@ -250,12 +338,15 @@ function ChatMessage({
 	isLastStreaming,
 	nodeId,
 	workspaceId,
+	branches = [],
+	tree = [],
 }: {
 	msg: UIMessage;
 	isLastStreaming: boolean;
 	nodeId: string;
 	workspaceId: string;
-	// isDbMessage: boolean;
+	branches?: { id: string; title: string }[];
+	tree?: NodeTree[];
 }) {
 	const textPart = msg.parts.find(isTextUIPart);
 	const content = textPart?.text ?? "";
@@ -315,12 +406,18 @@ function ChatMessage({
 				{msg.role === "assistant" && (
 					<div className="flex flex-row items-center gap-1">
 						<ConvertToNoteAction />
-
 						<BranchAction
 							messageId={msg.id}
 							nodeId={nodeId}
 							workspaceId={workspaceId}
 						/>
+						{branches.length > 0 && (
+							<BranchesDropdown
+								branches={branches}
+								tree={tree}
+								workspaceId={workspaceId}
+							/>
+						)}
 					</div>
 				)}
 			</MessageActions>
@@ -328,11 +425,13 @@ function ChatMessage({
 	);
 }
 
-function ChatContent({ nodeId, dbMessages, workspaceId }: ChatContentProps) {
-	// const dbMessageIds = useMemo(
-	// 	() => new Set(dbMessages.map((m) => m.id)),
-	// 	[dbMessages]
-	// );
+function ChatContent({
+	nodeId,
+	dbMessages,
+	workspaceId,
+	tree,
+}: ChatContentProps) {
+	const { data: branchesByMessageId = {} } = useBranchesForNode(nodeId);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional snapshot — useChat initialises state once at mount
 	const initialMessages = useMemo<UIMessage[]>(
@@ -449,11 +548,12 @@ function ChatContent({ nodeId, dbMessages, workspaceId }: ChatContentProps) {
 						<>
 							{messages.map((msg, i) => (
 								<ChatMessage
-									// isDbMessage={dbMessageIds.has(msg.id)}
+									branches={branchesByMessageId[msg.id] ?? []}
 									isLastStreaming={isStreaming && i === messages.length - 1}
 									key={msg.id}
 									msg={msg}
 									nodeId={nodeId}
+									tree={tree}
 									workspaceId={workspaceId}
 								/>
 							))}
@@ -559,9 +659,10 @@ function ChatContent({ nodeId, dbMessages, workspaceId }: ChatContentProps) {
 
 interface NodeChatPanelProps {
 	nodeId: string;
+	tree: NodeTree[];
 }
 
-export function NodeChatPanel({ nodeId }: NodeChatPanelProps) {
+export function NodeChatPanel({ nodeId, tree }: NodeChatPanelProps) {
 	const { data: node } = useNodeById(nodeId);
 	const { data: dbMessages, isLoading } = useListMessages(nodeId);
 
@@ -590,6 +691,7 @@ export function NodeChatPanel({ nodeId }: NodeChatPanelProps) {
 					dbMessages={dbMessages}
 					key={nodeId}
 					nodeId={nodeId}
+					tree={tree}
 					workspaceId={node.workspaceId}
 				/>
 			)}

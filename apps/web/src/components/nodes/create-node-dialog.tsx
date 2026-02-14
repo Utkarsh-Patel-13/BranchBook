@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { useCreateNode, useUpdateNode } from "../../hooks/use-nodes";
+import {
+	useBranchFromMessage,
+	useCreateNode,
+	useUpdateNode,
+} from "../../hooks/use-nodes";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -24,7 +28,14 @@ function validateTitle(value: string): string | null {
 	return null;
 }
 
-function getDialogTitle(isEdit: boolean, isRoot: boolean): string {
+function getDialogTitle(
+	isEdit: boolean,
+	isRoot: boolean,
+	isBranch: boolean
+): string {
+	if (isBranch) {
+		return "Create Branch";
+	}
 	if (isEdit) {
 		return "Edit Node";
 	}
@@ -34,7 +45,14 @@ function getDialogTitle(isEdit: boolean, isRoot: boolean): string {
 	return "Add Child Node";
 }
 
-function getDialogDescription(isEdit: boolean, isRoot: boolean): string {
+function getDialogDescription(
+	isEdit: boolean,
+	isRoot: boolean,
+	isBranch: boolean
+): string {
+	if (isBranch) {
+		return "Give a title to the new branch.";
+	}
 	if (isEdit) {
 		return "Update the node title.";
 	}
@@ -46,9 +64,14 @@ function getDialogDescription(isEdit: boolean, isRoot: boolean): string {
 
 function getSubmitLabel(
 	isEdit: boolean,
+	isBranch: boolean,
 	createPending: boolean,
-	updatePending: boolean
+	updatePending: boolean,
+	branchPending: boolean
 ): string {
+	if (isBranch) {
+		return branchPending ? "Creating..." : "Create branch";
+	}
 	if (isEdit) {
 		return updatePending ? "Saving..." : "Save";
 	}
@@ -63,6 +86,10 @@ interface CreateNodeDialogProps {
 	isRoot?: boolean;
 	/** When set, dialog is in edit mode with pre-filled title */
 	edit?: { nodeId: string; title: string };
+	/** When set, dialog creates a branch from message; title is required */
+	branch?: { nodeId: string; messageId: string };
+	/** Called when branch is created (with new node id) */
+	onBranchCreated?: (node: { id: string }) => void;
 }
 
 export function CreateNodeDialog({
@@ -72,13 +99,17 @@ export function CreateNodeDialog({
 	parentId = null,
 	isRoot = true,
 	edit,
+	branch,
+	onBranchCreated,
 }: CreateNodeDialogProps) {
 	const [title, setTitle] = useState("");
 	const [titleError, setTitleError] = useState<string | null>(null);
 	const createNode = useCreateNode(workspaceId);
 	const updateNode = useUpdateNode(workspaceId);
+	const branchFromMessage = useBranchFromMessage(workspaceId);
 
 	const isEdit = Boolean(edit);
+	const isBranch = Boolean(branch);
 
 	useEffect(() => {
 		if (open) {
@@ -95,7 +126,15 @@ export function CreateNodeDialog({
 		}
 
 		try {
-			if (isEdit && edit) {
+			if (isBranch && branch) {
+				const childNode = await branchFromMessage.mutateAsync({
+					nodeId: branch.nodeId,
+					messageId: branch.messageId,
+					title: title.trim(),
+				});
+				onBranchCreated?.(childNode);
+				toast.success("Branch created successfully");
+			} else if (isEdit && edit) {
 				await updateNode.mutateAsync({
 					nodeId: edit.nodeId,
 					title: title.trim(),
@@ -131,9 +170,11 @@ export function CreateNodeDialog({
 		<AlertDialog onOpenChange={onOpenChange} open={open}>
 			<AlertDialogContent>
 				<AlertDialogHeader>
-					<AlertDialogTitle>{getDialogTitle(isEdit, isRoot)}</AlertDialogTitle>
+					<AlertDialogTitle>
+						{getDialogTitle(isEdit, isRoot, isBranch)}
+					</AlertDialogTitle>
 					<AlertDialogDescription>
-						{getDialogDescription(isEdit, isRoot)}
+						{getDialogDescription(isEdit, isRoot, isBranch)}
 					</AlertDialogDescription>
 				</AlertDialogHeader>
 
@@ -164,10 +205,20 @@ export function CreateNodeDialog({
 				<AlertDialogFooter>
 					<AlertDialogCancel onClick={handleCancel}>Cancel</AlertDialogCancel>
 					<AlertDialogAction
-						disabled={createNode.isPending || updateNode.isPending}
+						disabled={
+							createNode.isPending ||
+							updateNode.isPending ||
+							branchFromMessage.isPending
+						}
 						onClick={handleSubmit}
 					>
-						{getSubmitLabel(isEdit, createNode.isPending, updateNode.isPending)}
+						{getSubmitLabel(
+							isEdit,
+							isBranch,
+							createNode.isPending,
+							updateNode.isPending,
+							branchFromMessage.isPending
+						)}
 					</AlertDialogAction>
 				</AlertDialogFooter>
 			</AlertDialogContent>

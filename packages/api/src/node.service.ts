@@ -422,6 +422,52 @@ export const createBranchFromMessage = async (
 	return toNode(childNode);
 };
 
+export const getBranchesForNode = async (
+	userId: string,
+	input: GetNodeByIdInput
+): Promise<Record<string, { id: string; title: string }[]>> => {
+	const node = await prisma.node.findUnique({
+		where: { id: input.nodeId },
+		include: { workspace: { select: { ownerId: true } } },
+	});
+
+	if (!node || node.deletedAt) {
+		throw new TRPCError({
+			code: "NOT_FOUND",
+			message: "Node not found",
+		});
+	}
+
+	if (node.workspace.ownerId !== userId) {
+		throw new TRPCError({
+			code: "FORBIDDEN",
+			message: "Access denied",
+		});
+	}
+
+	const children = await prisma.node.findMany({
+		where: {
+			parentId: input.nodeId,
+			deletedAt: null,
+			branchPointMessageId: { not: null },
+		},
+		select: { id: true, title: true, branchPointMessageId: true },
+	});
+
+	const byMessage: Record<string, { id: string; title: string }[]> = {};
+	for (const child of children) {
+		const mid = child.branchPointMessageId;
+		if (!mid) {
+			continue;
+		}
+		if (!byMessage[mid]) {
+			byMessage[mid] = [];
+		}
+		byMessage[mid].push({ id: child.id, title: child.title });
+	}
+	return byMessage;
+};
+
 export const getNodeTree = async (
 	userId: string,
 	input: GetTreeInput
