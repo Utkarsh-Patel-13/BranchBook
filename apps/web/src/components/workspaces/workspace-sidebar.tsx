@@ -5,6 +5,7 @@ import {
 	ChevronRightIcon,
 	MinusIcon,
 	MoreHorizontalIcon,
+	Pencil,
 	PlusIcon,
 	SearchIcon,
 	Trash2Icon,
@@ -74,6 +75,10 @@ function NodeRow({
 }: NodeRowProps) {
 	const [addChildOpen, setAddChildOpen] = useState(false);
 	const [deleteOpen, setDeleteOpen] = useState(false);
+	const [editNode, setEditNode] = useState<{
+		nodeId: string;
+		title: string;
+	} | null>(null);
 	const [open, setOpen] = useState(true);
 
 	const hasChildren = node.children.length > 0;
@@ -128,19 +133,6 @@ function NodeRow({
 					{node.title}
 				</span>
 				<div className="row-actions flex shrink-0 items-center gap-0.5 transition-opacity">
-					<Button
-						aria-label="Add child node"
-						className="size-6 rounded p-0"
-						onClick={(e) => {
-							e.preventDefault();
-							e.stopPropagation();
-							setAddChildOpen(true);
-						}}
-						size="icon"
-						variant="ghost"
-					>
-						<PlusIcon className="size-3.5" />
-					</Button>
 					<DropdownMenu>
 						<DropdownMenuTrigger
 							render={
@@ -156,7 +148,21 @@ function NodeRow({
 							}
 						/>
 						<DropdownMenuContent align="start" side="right">
-							<DropdownMenuItem onClick={() => setAddChildOpen(true)}>
+							<DropdownMenuItem
+								onClick={() => {
+									setEditNode({ nodeId: node.id, title: node.title });
+									setAddChildOpen(true);
+								}}
+							>
+								<Pencil className="size-4" />
+								Edit
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={() => {
+									setEditNode(null);
+									setAddChildOpen(true);
+								}}
+							>
 								<PlusIcon className="size-4" />
 								Add child
 							</DropdownMenuItem>
@@ -172,8 +178,14 @@ function NodeRow({
 				</div>
 			</Button>
 			<CreateNodeDialog
+				edit={editNode ?? undefined}
 				isRoot={false}
-				onOpenChange={setAddChildOpen}
+				onOpenChange={(open) => {
+					setAddChildOpen(open);
+					if (!open) {
+						setEditNode(null);
+					}
+				}}
 				open={addChildOpen}
 				parentId={node.id}
 				workspaceId={workspaceId}

@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { useCreateNode } from "../../hooks/use-nodes";
+import { useCreateNode, useUpdateNode } from "../../hooks/use-nodes";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -24,12 +24,45 @@ function validateTitle(value: string): string | null {
 	return null;
 }
 
+function getDialogTitle(isEdit: boolean, isRoot: boolean): string {
+	if (isEdit) {
+		return "Edit Node";
+	}
+	if (isRoot) {
+		return "Create Root Node";
+	}
+	return "Add Child Node";
+}
+
+function getDialogDescription(isEdit: boolean, isRoot: boolean): string {
+	if (isEdit) {
+		return "Update the node title.";
+	}
+	if (isRoot) {
+		return "Create a new root node in your workspace.";
+	}
+	return "Add a child node to the selected parent.";
+}
+
+function getSubmitLabel(
+	isEdit: boolean,
+	createPending: boolean,
+	updatePending: boolean
+): string {
+	if (isEdit) {
+		return updatePending ? "Saving..." : "Save";
+	}
+	return createPending ? "Creating..." : "Create";
+}
+
 interface CreateNodeDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	workspaceId: string;
 	parentId?: string | null;
 	isRoot?: boolean;
+	/** When set, dialog is in edit mode with pre-filled title */
+	edit?: { nodeId: string; title: string };
 }
 
 export function CreateNodeDialog({
@@ -38,10 +71,21 @@ export function CreateNodeDialog({
 	workspaceId,
 	parentId = null,
 	isRoot = true,
+	edit,
 }: CreateNodeDialogProps) {
 	const [title, setTitle] = useState("");
 	const [titleError, setTitleError] = useState<string | null>(null);
 	const createNode = useCreateNode(workspaceId);
+	const updateNode = useUpdateNode(workspaceId);
+
+	const isEdit = Boolean(edit);
+
+	useEffect(() => {
+		if (open) {
+			setTitle(edit?.title ?? "");
+			setTitleError(null);
+		}
+	}, [open, edit?.title]);
 
 	const handleSubmit = async () => {
 		const error = validateTitle(title);
@@ -51,22 +95,29 @@ export function CreateNodeDialog({
 		}
 
 		try {
-			await createNode.mutateAsync({
-				workspaceId,
-				title: title.trim(),
-				parentId,
-			});
-
-			toast.success(
-				isRoot
-					? "Root node created successfully"
-					: "Child node created successfully"
-			);
+			if (isEdit && edit) {
+				await updateNode.mutateAsync({
+					nodeId: edit.nodeId,
+					title: title.trim(),
+				});
+				toast.success("Node updated successfully");
+			} else {
+				await createNode.mutateAsync({
+					workspaceId,
+					title: title.trim(),
+					parentId,
+				});
+				toast.success(
+					isRoot
+						? "Root node created successfully"
+						: "Child node created successfully"
+				);
+			}
 			setTitle("");
 			setTitleError(null);
 			onOpenChange(false);
 		} catch (err) {
-			toast.error(err instanceof Error ? err.message : "Failed to create node");
+			toast.error(err instanceof Error ? err.message : "Failed to save node");
 		}
 	};
 
@@ -80,13 +131,9 @@ export function CreateNodeDialog({
 		<AlertDialog onOpenChange={onOpenChange} open={open}>
 			<AlertDialogContent>
 				<AlertDialogHeader>
-					<AlertDialogTitle>
-						{isRoot ? "Create Root Node" : "Add Child Node"}
-					</AlertDialogTitle>
+					<AlertDialogTitle>{getDialogTitle(isEdit, isRoot)}</AlertDialogTitle>
 					<AlertDialogDescription>
-						{isRoot
-							? "Create a new root node in your workspace."
-							: "Add a child node to the selected parent."}
+						{getDialogDescription(isEdit, isRoot)}
 					</AlertDialogDescription>
 				</AlertDialogHeader>
 
@@ -117,10 +164,10 @@ export function CreateNodeDialog({
 				<AlertDialogFooter>
 					<AlertDialogCancel onClick={handleCancel}>Cancel</AlertDialogCancel>
 					<AlertDialogAction
-						disabled={createNode.isPending}
+						disabled={createNode.isPending || updateNode.isPending}
 						onClick={handleSubmit}
 					>
-						{createNode.isPending ? "Creating..." : "Create"}
+						{getSubmitLabel(isEdit, createNode.isPending, updateNode.isPending)}
 					</AlertDialogAction>
 				</AlertDialogFooter>
 			</AlertDialogContent>
