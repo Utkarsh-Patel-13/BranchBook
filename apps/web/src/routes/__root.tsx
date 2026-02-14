@@ -5,6 +5,7 @@ import {
 	createRootRouteWithContext,
 	HeadContent,
 	Outlet,
+	useRouterState,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import Header from "@/components/header";
@@ -41,6 +42,15 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 });
 
 function RootComponent() {
+	const routerState = useRouterState();
+	const pathname = routerState.location.pathname;
+
+	// Hide header for workspace detail routes
+	const isWorkspaceDetailRoute =
+		pathname.startsWith("/workspaces/") &&
+		pathname !== "/workspaces" &&
+		pathname !== "/workspaces/trash";
+
 	return (
 		<>
 			<HeadContent />
@@ -50,8 +60,12 @@ function RootComponent() {
 				disableTransitionOnChange
 				storageKey="vite-ui-theme"
 			>
-				<div className="grid h-svh grid-rows-[auto_1fr]">
-					<Header />
+				<div
+					className={
+						isWorkspaceDetailRoute ? "h-svh" : "grid h-svh grid-rows-[auto_1fr]"
+					}
+				>
+					{!isWorkspaceDetailRoute && <Header />}
 					<Outlet />
 				</div>
 				<Toaster richColors />

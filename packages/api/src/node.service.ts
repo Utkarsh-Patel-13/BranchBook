@@ -108,7 +108,9 @@ export const createNode = async (
 		});
 	}
 
-	// If parentId provided, validate it exists in the same workspace
+	let inheritedContext: string | null = null;
+	let branchPointMessageId: string | null = null;
+
 	if (input.parentId) {
 		const parent = await prisma.node.findFirst({
 			where: {
@@ -124,6 +126,15 @@ export const createNode = async (
 				message: "Parent node not found in this workspace",
 			});
 		}
+
+		// Branch from parent: same context logic as branch-from-message, with branch point = parent (latest message)
+		inheritedContext = await assembleContextPayload(input.parentId, null);
+		const latestMessage = await prisma.message.findFirst({
+			where: { nodeId: input.parentId },
+			orderBy: { createdAt: "desc" },
+			select: { id: true },
+		});
+		branchPointMessageId = latestMessage?.id ?? null;
 	}
 
 	const node = await prisma.node.create({
@@ -131,6 +142,8 @@ export const createNode = async (
 			workspaceId: input.workspaceId,
 			parentId: input.parentId ?? null,
 			title: input.title,
+			...(inheritedContext !== null && { inheritedContext }),
+			...(branchPointMessageId !== null && { branchPointMessageId }),
 		},
 	});
 

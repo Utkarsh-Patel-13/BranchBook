@@ -94,6 +94,62 @@ export const listWorkspaces = async (
 	return workspaces.map(toWorkspaceListItem);
 };
 
+export const listDeletedWorkspaces = async (
+	ownerId: string,
+	input: WorkspaceListInput
+): Promise<(WorkspaceListItem & { deletedAt: Date })[]> => {
+	const sortBy = input.sortBy ?? "lastUpdated";
+	const sortDirection = input.sortDirection ?? "desc";
+
+	type OrderByOption =
+		| { name: typeof sortDirection }
+		| { createdAt: typeof sortDirection }
+		| { deletedAt: typeof sortDirection };
+	let orderBy: OrderByOption;
+	if (sortBy === "name") {
+		orderBy = { name: sortDirection };
+	} else if (sortBy === "createdAt") {
+		orderBy = { createdAt: sortDirection };
+	} else {
+		orderBy = { deletedAt: sortDirection };
+	}
+
+	const now = Date.now();
+	const cutoffDate = new Date(now - RECOVERY_WINDOW_MS);
+
+	const workspaces = await prisma.workspace.findMany({
+		where: {
+			ownerId,
+			deletedAt: {
+				not: null,
+				gte: cutoffDate,
+			},
+		},
+		orderBy,
+		select: {
+			id: true,
+			name: true,
+			description: true,
+			createdAt: true,
+			updatedAt: true,
+			deletedAt: true,
+		},
+	});
+
+	return workspaces.map((w) => {
+		if (w.deletedAt == null) {
+			throw new Error(
+				"Invariant failed: deleted workspace is missing deletedAt."
+			);
+		}
+
+		return {
+			...toWorkspaceListItem(w),
+			deletedAt: w.deletedAt,
+		};
+	});
+};
+
 export const getWorkspaceById = async (
 	ownerId: string,
 	input: WorkspaceGetByIdInput
@@ -130,11 +186,9 @@ export const updateWorkspace = async (
 		return null;
 	}
 
-	const updateResult = await prisma.workspace.updateMany({
+	const workspace = await prisma.workspace.update({
 		where: {
 			id: input.workspaceId,
-			ownerId,
-			deletedAt: null,
 		},
 		data: {
 			name: input.name ?? existing.name,
@@ -144,19 +198,6 @@ export const updateWorkspace = async (
 					: existing.description,
 		},
 	});
-
-	if (updateResult.count !== 1) {
-		return null;
-	}
-
-	const workspace = {
-		...existing,
-		name: input.name ?? existing.name,
-		description:
-			input.description !== undefined
-				? input.description
-				: existing.description,
-	};
 
 	if (logger) {
 		const { logWorkspaceUpdated } = await import("./workspace.logging");
@@ -185,13 +226,28 @@ export const deleteWorkspace = async (
 		return null;
 	}
 
-	const workspace = await prisma.workspace.update({
-		where: {
-			id: input.workspaceId,
-		},
-		data: {
-			deletedAt: new Date(),
-		},
+	const deletedAt = new Date();
+
+	// Soft delete workspace and all its nodes in a transaction
+	const workspace = await prisma.$transaction(async (tx) => {
+		const updatedWorkspace = await tx.workspace.update({
+			where: {
+				id: input.workspaceId,
+			},
+			data: {
+				deletedAt,
+			},
+		});
+		await tx.node.updateMany({
+			where: {
+				workspaceId: input.workspaceId,
+				deletedAt: null,
+			},
+			data: {
+				deletedAt,
+			},
+		});
+		return updatedWorkspace;
 	});
 
 	if (logger) {
@@ -228,13 +284,26 @@ export const restoreWorkspace = async (
 		return null;
 	}
 
-	const workspace = await prisma.workspace.update({
-		where: {
-			id: input.workspaceId,
-		},
-		data: {
-			deletedAt: null,
-		},
+	// Restore workspace and all its nodes in a transaction
+	const workspace = await prisma.$transaction(async (tx) => {
+		const updatedWorkspace = await tx.workspace.update({
+			where: {
+				id: input.workspaceId,
+			},
+			data: {
+				deletedAt: null,
+			},
+		});
+		await tx.node.updateMany({
+			where: {
+				workspaceId: input.workspaceId,
+				deletedAt: existing.deletedAt,
+			},
+			data: {
+				deletedAt: null,
+			},
+		});
+		return updatedWorkspace;
 	});
 
 	if (logger) {

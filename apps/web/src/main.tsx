@@ -1,6 +1,10 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import ReactDOM from "react-dom/client";
+import "@fontsource-variable/inter";
+import "@fontsource/lora/latin-400.css";
+import "@fontsource/lora/latin-600.css";
+import "@fontsource/lora/latin-700.css";
 
 import Loader from "./components/loader";
 import { routeTree } from "./routeTree.gen";

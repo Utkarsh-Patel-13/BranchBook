@@ -2,7 +2,7 @@ import type { WorkspaceId, WorkspaceListInput } from "@nexus/types";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { create } from "zustand";
 
-import { trpc } from "@/utils/trpc";
+import { queryClient, trpc } from "@/utils/trpc";
 
 interface WorkspaceStoreState {
 	selectedWorkspaceId: WorkspaceId | null;
@@ -34,6 +34,9 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set) => ({
 export const useWorkspaceListQuery = (input?: WorkspaceListInput) =>
 	useQuery(trpc.workspace.list.queryOptions(input ?? {}));
 
+export const useDeletedWorkspaceListQuery = (input?: WorkspaceListInput) =>
+	useQuery(trpc.workspace.listDeleted.queryOptions(input ?? {}));
+
 export const useWorkspaceByIdQuery = (workspaceId: WorkspaceId | null) =>
 	useQuery({
 		...trpc.workspace.getById.queryOptions({
@@ -42,14 +45,42 @@ export const useWorkspaceByIdQuery = (workspaceId: WorkspaceId | null) =>
 		enabled: workspaceId !== null,
 	});
 
+const invalidateWorkspaceList = () =>
+	queryClient.invalidateQueries(trpc.workspace.list.queryOptions({}));
+
+const invalidateDeletedWorkspaceList = () =>
+	queryClient.invalidateQueries(trpc.workspace.listDeleted.queryOptions({}));
+
 export const useCreateWorkspaceMutation = () =>
-	useMutation(trpc.workspace.create.mutationOptions());
+	useMutation({
+		...trpc.workspace.create.mutationOptions(),
+		onSuccess: () => invalidateWorkspaceList(),
+	});
 
 export const useUpdateWorkspaceMutation = () =>
-	useMutation(trpc.workspace.update.mutationOptions());
+	useMutation({
+		...trpc.workspace.update.mutationOptions(),
+		onSuccess: () => invalidateWorkspaceList(),
+	});
 
 export const useDeleteWorkspaceMutation = () =>
-	useMutation(trpc.workspace.delete.mutationOptions());
+	useMutation({
+		...trpc.workspace.delete.mutationOptions(),
+		onSuccess: async () => {
+			await Promise.all([
+				invalidateWorkspaceList(),
+				invalidateDeletedWorkspaceList(),
+			]);
+		},
+	});
 
 export const useRestoreWorkspaceMutation = () =>
-	useMutation(trpc.workspace.restore.mutationOptions());
+	useMutation({
+		...trpc.workspace.restore.mutationOptions(),
+		onSuccess: async () => {
+			await Promise.all([
+				invalidateWorkspaceList(),
+				invalidateDeletedWorkspaceList(),
+			]);
+		},
+	});

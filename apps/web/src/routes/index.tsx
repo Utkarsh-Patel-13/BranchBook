@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { AtSignIcon, BookOpenIcon, Share2Icon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
@@ -124,9 +125,7 @@ function HomeComponent() {
 				<div className="mx-auto max-w-7xl px-6">
 					<div className="flex items-center justify-between gap-4">
 						<div className="flex items-center gap-1.5">
-							<span className="material-symbols-outlined text-base text-primary">
-								auto_stories
-							</span>
+							<BookOpenIcon className="size-4 text-primary" />
 							<span className="font-semibold text-sm tracking-tight">
 								Nexus
 							</span>
@@ -152,17 +151,13 @@ function HomeComponent() {
 								className="text-muted-foreground transition-colors hover:text-primary"
 								href="/"
 							>
-								<span className="material-symbols-outlined text-base">
-									alternate_email
-								</span>
+								<AtSignIcon className="size-4" />
 							</a>
 							<a
 								className="text-muted-foreground transition-colors hover:text-primary"
 								href="/"
 							>
-								<span className="material-symbols-outlined text-base">
-									share
-								</span>
+								<Share2Icon className="size-4" />
 							</a>
 						</div>
 					</div>

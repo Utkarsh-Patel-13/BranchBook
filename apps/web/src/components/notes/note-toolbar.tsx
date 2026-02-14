@@ -59,7 +59,7 @@ type BlockType =
 
 const FONT_FAMILIES = [
 	{ label: "Default", value: "" },
-	{ label: "Sans", value: "'Geist Variable', sans-serif" },
+	{ label: "Sans", value: "'Inter Variable', sans-serif" },
 	{ label: "Serif", value: "Lora, serif" },
 	{ label: "Mono", value: "ui-monospace, monospace" },
 ] as const;
