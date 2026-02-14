@@ -11,7 +11,7 @@ import {
 	Trash2Icon,
 } from "lucide-react";
 import type * as React from "react";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { ModeToggle } from "@/components/mode-toggle";
 import { CreateNodeDialog } from "@/components/nodes/create-node-dialog";
 import { DeleteNodeDialog } from "@/components/nodes/delete-node-dialog";
@@ -126,58 +126,61 @@ function NodeRow({
 					"min-w-0 flex-1 cursor-pointer justify-start rounded-none border-0 px-1 text-left transition-colors",
 					!isSelected && "hover:bg-sidebar-accent/50"
 				)}
-				onClick={() => onSelectNode(node.id)}
+				onClick={() => {
+					if (selectedNodeId !== node.id) {
+						onSelectNode(node.id);
+					}
+				}}
 				size="sm"
 				variant="ghost"
 			>
 				<span className={cn("flex-1 truncate", isSelected && "font-semibold")}>
 					{node.title}
 				</span>
-				<div className="row-actions flex shrink-0 items-center gap-0.5 transition-opacity">
-					<DropdownMenu>
-						<DropdownMenuTrigger
-							render={
-								<Button
-									aria-label="Node options"
-									className="size-6 cursor-pointer rounded"
-									onClick={(e) => e.stopPropagation()}
-									size="icon"
-									variant="ghost"
-								>
-									<MoreHorizontalIcon className="size-4" />
-								</Button>
-							}
-						/>
-						<DropdownMenuContent align="start" side="right">
-							<DropdownMenuItem
-								onClick={() => {
-									setEditNode(null);
-									setAddChildOpen(true);
-								}}
-							>
-								<PlusIcon className="size-4" />
-								Add child
-							</DropdownMenuItem>
-							<DropdownMenuItem
-								onClick={() => {
-									setEditNode({ nodeId: node.id, title: node.title });
-									setAddChildOpen(true);
-								}}
-							>
-								<Pencil className="size-4" />
-								Edit
-							</DropdownMenuItem>
-							<DropdownMenuItem
-								onClick={() => setDeleteOpen(true)}
-								variant="destructive"
-							>
-								<Trash2Icon className="size-4" />
-								Delete
-							</DropdownMenuItem>
-						</DropdownMenuContent>
-					</DropdownMenu>
-				</div>
 			</Button>
+
+			<DropdownMenu>
+				<DropdownMenuTrigger
+					render={
+						<Button
+							aria-label="Node options"
+							className="size-6 cursor-pointer rounded"
+							onClick={(e) => e.stopPropagation()}
+							size="icon"
+							variant="ghost"
+						>
+							<MoreHorizontalIcon className="size-4" />
+						</Button>
+					}
+				/>
+				<DropdownMenuContent align="start" side="right">
+					<DropdownMenuItem
+						onClick={() => {
+							setEditNode(null);
+							setAddChildOpen(true);
+						}}
+					>
+						<PlusIcon className="size-4" />
+						Add child
+					</DropdownMenuItem>
+					<DropdownMenuItem
+						onClick={() => {
+							setEditNode({ nodeId: node.id, title: node.title });
+							setAddChildOpen(true);
+						}}
+					>
+						<Pencil className="size-4" />
+						Edit
+					</DropdownMenuItem>
+					<DropdownMenuItem
+						onClick={() => setDeleteOpen(true)}
+						variant="destructive"
+					>
+						<Trash2Icon className="size-4" />
+						Delete
+					</DropdownMenuItem>
+				</DropdownMenuContent>
+			</DropdownMenu>
 			<CreateNodeDialog
 				edit={editNode ?? undefined}
 				isRoot={false}
@@ -334,9 +337,8 @@ export function WorkspaceSidebar({
 							{!isLoading && filteredNodes.length > 0 && (
 								<div className="min-w-0 flex-1 space-y-4">
 									{filteredNodes.map((node, index) => (
-										<>
+										<Fragment key={node.id}>
 											<NodeRow
-												key={node.id}
 												node={node}
 												onSelectNode={onSelectNode}
 												selectedNodeId={selectedNodeId}
@@ -345,7 +347,7 @@ export function WorkspaceSidebar({
 											{index < filteredNodes.length - 1 && (
 												<Separator className="my-2" />
 											)}
-										</>
+										</Fragment>
 									))}
 								</div>
 							)}

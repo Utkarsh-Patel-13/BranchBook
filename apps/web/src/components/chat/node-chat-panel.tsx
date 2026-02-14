@@ -47,19 +47,69 @@ import {
 	SourcesContent,
 	SourcesTrigger,
 } from "@/components/ai-elements/sources";
-import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { useListMessages } from "@/hooks/use-messages";
 import { useBranchFromMessage, useNodeById } from "@/hooks/use-nodes";
 import { cn } from "@/lib/utils";
 import { useWorkspaceLayoutStore } from "@/stores/workspace-layout-store";
 import { trpc } from "@/utils/trpc";
 
-const CHAT_SUGGESTIONS = [
-	"Summarize this topic",
-	"What are the key concepts?",
-	"Give me related questions to explore",
-	"Create a study outline",
+interface ChatModelItem {
+	label: string;
+	value: string;
+	supportsWeb: boolean;
+	supportsThinking: boolean;
+}
+
+const CHAT_MODELS: ChatModelItem[] = [
+	{
+		label: "Gemini 2.0 Flash",
+		value: "gemini-2.0-flash",
+		supportsWeb: true,
+		supportsThinking: true,
+	},
+	{
+		label: "Gemini 2.5 Pro",
+		value: "gemini-2.5-pro",
+		supportsWeb: true,
+		supportsThinking: true,
+	},
+	{
+		label: "Gemini 2.5 Flash Lite",
+		value: "gemini-2.5-flash-lite-preview-09-2025",
+		supportsWeb: true,
+		supportsThinking: true,
+	},
+	{
+		label: "Gemini 2.5 Flash",
+		value: "gemini-2.5-flash-preview-09-2025",
+		supportsWeb: true,
+		supportsThinking: true,
+	},
+	{
+		label: "Gemini 3 Flash",
+		value: "gemini-3-flash-preview",
+		supportsWeb: true,
+		supportsThinking: true,
+	},
+	{
+		label: "Gemini 3 Preview",
+		value: "gemini-3-pro-preview",
+		supportsWeb: true,
+		supportsThinking: true,
+	},
 ];
+
+const DEFAULT_CHAT_MODEL =
+	CHAT_MODELS.find(
+		(m) => m.value === "gemini-2.5-flash-lite-preview-09-2025"
+	) ?? CHAT_MODELS[0];
 
 interface ChatContentProps {
 	nodeId: string;
@@ -322,10 +372,39 @@ function ChatContent({ nodeId, dbMessages, workspaceId }: ChatContentProps) {
 		trpc.message.create.mutationOptions()
 	);
 
+	const [selectedModel, setSelectedModel] =
+		useState<ChatModelItem>(DEFAULT_CHAT_MODEL);
 	const [thinking, setThinking] = useState(false);
 	const [webSearch, setWebSearch] = useState(false);
-	const chatOptionsRef = useRef({ thinking: false, webSearch: false });
-	chatOptionsRef.current = { thinking, webSearch };
+	const chatOptionsRef = useRef({
+		model: DEFAULT_CHAT_MODEL.value,
+		thinking: false,
+		webSearch: false,
+	});
+	chatOptionsRef.current = {
+		model: selectedModel.value,
+		thinking,
+		webSearch,
+	};
+
+	useEffect(() => {
+		if (!selectedModel.supportsThinking) {
+			setThinking(false);
+		}
+		if (!selectedModel.supportsWeb) {
+			setWebSearch(false);
+		}
+	}, [selectedModel]);
+
+	const handleModelChange = useCallback((value: string | null) => {
+		if (!value) {
+			return;
+		}
+		const model = CHAT_MODELS.find((m) => m.value === value);
+		if (model) {
+			setSelectedModel(model);
+		}
+	}, []);
 
 	const transport = useMemo(
 		() =>
@@ -360,19 +439,12 @@ function ChatContent({ nodeId, dbMessages, workspaceId }: ChatContentProps) {
 					)}
 				>
 					{messages.length === 0 && !isStreaming ? (
-						<>
-							<div className="space-y-1 text-center">
-								<h3 className="font-medium text-sm">Start a conversation</h3>
-								<p className="text-muted-foreground text-xs">
-									Ask anything about this topic
-								</p>
-							</div>
-							<Suggestions className="mt-2">
-								{CHAT_SUGGESTIONS.map((s) => (
-									<Suggestion key={s} onClick={handleSubmit} suggestion={s} />
-								))}
-							</Suggestions>
-						</>
+						<div className="space-y-1 text-center">
+							<h3 className="font-medium text-sm">Start a conversation</h3>
+							<p className="text-muted-foreground text-xs">
+								Ask anything about this topic
+							</p>
+						</div>
 					) : (
 						<>
 							{messages.map((msg, i) => (
@@ -418,32 +490,64 @@ function ChatContent({ nodeId, dbMessages, workspaceId }: ChatContentProps) {
 						className="max-h-32 min-h-10 text-sm"
 						disabled={isStreaming}
 						maxLength={4000}
-						placeholder="Ask a follow up…"
+						placeholder="Ask me anything ..."
 					/>
 					<PromptInputFooter className="px-2 pb-1.5">
 						<PromptInputTools>
-							<PromptInputButton
-								className={cn(thinking && "bg-background text-primary")}
-								onClick={() => setThinking((v) => !v)}
-								tooltip={{
-									content: thinking ? "Thinking on" : "Enable thinking",
-									side: "top",
-								}}
-								variant="default"
+							<Select
+								disabled={isStreaming}
+								onValueChange={handleModelChange}
+								value={selectedModel.value}
 							>
-								<LightbulbIcon className="size-3.5" />
-							</PromptInputButton>
-							<PromptInputButton
-								className={cn(webSearch && "bg-background text-primary")}
-								onClick={() => setWebSearch((v) => !v)}
-								tooltip={{
-									content: webSearch ? "Web search on" : "Enable web search",
-									side: "top",
-								}}
-								variant="default"
-							>
-								<GlobeIcon className="size-3.5" />
-							</PromptInputButton>
+								<SelectTrigger className="" size="sm">
+									<SelectValue placeholder="Model">
+										{selectedModel.label}
+									</SelectValue>
+								</SelectTrigger>
+								<SelectContent>
+									{CHAT_MODELS.map((model) => (
+										<SelectItem key={model.value} value={model.value}>
+											{model.label}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+							{selectedModel.supportsThinking && (
+								<PromptInputButton
+									aria-pressed={thinking}
+									className={cn(
+										"rounded-[4px] transition-colors",
+										thinking &&
+											"border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
+									)}
+									onClick={() => setThinking((v) => !v)}
+									tooltip={{
+										content: thinking ? "Thinking on" : "Enable thinking",
+										side: "top",
+									}}
+									variant="outline"
+								>
+									<LightbulbIcon className="size-3.5" />
+								</PromptInputButton>
+							)}
+							{selectedModel.supportsWeb && (
+								<PromptInputButton
+									aria-pressed={webSearch}
+									className={cn(
+										"rounded-[4px] transition-colors",
+										webSearch &&
+											"border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
+									)}
+									onClick={() => setWebSearch((v) => !v)}
+									tooltip={{
+										content: webSearch ? "Web search on" : "Enable web search",
+										side: "top",
+									}}
+									variant="outline"
+								>
+									<GlobeIcon className="size-3.5" />
+								</PromptInputButton>
+							)}
 						</PromptInputTools>
 						<PromptInputSubmit status={status} />
 					</PromptInputFooter>
