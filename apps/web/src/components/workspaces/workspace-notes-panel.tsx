@@ -1,5 +1,6 @@
 import { CodeHighlightNode, CodeNode } from "@lexical/code";
 import { HashtagNode } from "@lexical/hashtag";
+import { $generateHtmlFromNodes, $generateNodesFromDOM } from "@lexical/html";
 import { AutoLinkNode, LinkNode } from "@lexical/link";
 import { ListItemNode, ListNode } from "@lexical/list";
 import { TRANSFORMERS } from "@lexical/markdown";
@@ -20,8 +21,8 @@ import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { TabIndentationPlugin } from "@lexical/react/LexicalTabIndentationPlugin";
 import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import { TableCellNode, TableNode, TableRowNode } from "@lexical/table";
-import type { EditorState } from "lexical";
-import { $getRoot } from "lexical";
+import type { EditorState, LexicalEditor } from "lexical";
+import { $getRoot, TextNode } from "lexical";
 import {
 	AlertCircleIcon,
 	EyeIcon,
@@ -35,6 +36,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useNote, useUpsertNote } from "@/hooks/use-note";
 import { useWorkspaceLayoutStore } from "@/stores/workspace-layout-store";
+import { ExtendedTextNode } from "../nodes/styled-text-node";
 
 const URL_MATCHER =
 	/((https?:\/\/(www\.)?)|(www\.))[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)/;
@@ -70,6 +72,12 @@ const AUTOLINK_MATCHERS = [
 ];
 
 const NODES = [
+	ExtendedTextNode,
+	{
+		replace: TextNode,
+		with: (node: TextNode) => new ExtendedTextNode(node.__text),
+		withKlass: ExtendedTextNode,
+	},
 	HeadingNode,
 	QuoteNode,
 	ListNode,
@@ -277,7 +285,7 @@ function NotesPanelContent({ nodeId, editMode }: NotesPanelContentProps) {
 	);
 
 	const handleChange = useCallback(
-		(editorState: EditorState) => {
+		(_editorState: EditorState, editor: LexicalEditor) => {
 			if (!editMode) {
 				return;
 			}
@@ -285,8 +293,10 @@ function NotesPanelContent({ nodeId, editMode }: NotesPanelContentProps) {
 				clearTimeout(saveTimerRef.current);
 			}
 			saveTimerRef.current = setTimeout(() => {
-				const content = JSON.stringify(editorState.toJSON());
-				upsert({ nodeId, content });
+				editor.read(() => {
+					const html = $generateHtmlFromNodes(editor, null);
+					upsert({ nodeId, content: html });
+				});
 			}, DEBOUNCE_MS);
 		},
 		[editMode, nodeId, upsert]
@@ -300,6 +310,28 @@ function NotesPanelContent({ nodeId, editMode }: NotesPanelContentProps) {
 		return <NotesErrorState onRetry={() => refetch()} />;
 	}
 
+	const initialEditorState = (() => {
+		const raw = note?.content;
+		if (raw == null || raw === "") {
+			return undefined;
+		}
+		const trimmed = raw.trimStart();
+		if (trimmed.startsWith("{")) {
+			return raw;
+		}
+		return (editor: LexicalEditor) => {
+			const parser = new DOMParser();
+			console.log(raw);
+			const dom = parser.parseFromString(raw, "text/html");
+			console.log(dom);
+			const nodes = $generateNodesFromDOM(editor, dom);
+			console.log(nodes);
+			const root = $getRoot();
+			root.clear();
+			root.append(...nodes);
+		};
+	})();
+
 	return (
 		<LexicalComposer
 			initialConfig={{
@@ -307,7 +339,7 @@ function NotesPanelContent({ nodeId, editMode }: NotesPanelContentProps) {
 				theme: EDITOR_THEME,
 				editable: false,
 				nodes: NODES,
-				editorState: note?.content ?? undefined,
+				editorState: initialEditorState,
 				onError: (error) => {
 					throw error;
 				},
