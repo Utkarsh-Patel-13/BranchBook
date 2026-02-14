@@ -179,12 +179,12 @@ const ConvertToNoteAction = memo(() => {
 	return (
 		<MessageAction
 			className="flex w-full flex-row items-center gap-1 p-2"
-			label="Convert to Note"
+			label="Add to Note"
 			onClick={handleClick}
-			tooltip="Convert to Note"
+			tooltip="Add to Note"
 		>
 			<FileTextIcon className="size-3.5" />
-			<span className="text-xs">Convert to Note</span>
+			<span className="text-xs">Add to Note</span>
 		</MessageAction>
 	);
 });

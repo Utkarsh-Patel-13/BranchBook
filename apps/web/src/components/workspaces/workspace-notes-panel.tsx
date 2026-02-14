@@ -213,7 +213,7 @@ function NotesPanelHeader({
 							: "font-medium text-primary text-sm"
 					}
 				>
-					{isEditing ? "Editing" : "View"}
+					{isEditing ? "Editing" : "Read Only"}
 				</span>
 				{isSaving && (
 					<span className="text-muted-foreground text-sm">· Saving…</span>
