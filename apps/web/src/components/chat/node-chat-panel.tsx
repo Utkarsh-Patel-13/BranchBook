@@ -103,11 +103,13 @@ const ConvertToNoteAction = memo(() => {
 
 	return (
 		<MessageAction
+			className="flex w-full flex-row items-center gap-1 p-2"
 			label="Convert to Note"
 			onClick={handleClick}
 			tooltip="Convert to Note"
 		>
 			<FileTextIcon className="size-3.5" />
+			<span className="text-xs">Convert to Note</span>
 		</MessageAction>
 	);
 });
@@ -136,12 +138,14 @@ const BranchAction = memo(
 
 		return (
 			<MessageAction
+				className="flex w-full flex-row items-center gap-1 p-2"
 				disabled={isPending}
 				label="Branch from here"
 				onClick={handleClick}
 				tooltip="Branch from here"
 			>
 				<GitBranchIcon className="size-3.5" />
+				<span className="text-xs">Branch</span>
 			</MessageAction>
 		);
 	}
@@ -250,12 +254,16 @@ function ChatMessage({
 
 			<MessageActions
 				className={cn(
-					"flex flex-row items-center gap-1",
+					"flex flex-row items-center justify-between gap-1",
 					msg.role === "user" && "justify-end"
 				)}
 			>
+				<div>
+					<SpeakButton content={content} />
+					<CopyAction content={content} />
+				</div>
 				{msg.role === "assistant" && (
-					<>
+					<div className="flex flex-row items-center gap-1">
 						<ConvertToNoteAction />
 
 						<BranchAction
@@ -263,10 +271,8 @@ function ChatMessage({
 							nodeId={nodeId}
 							workspaceId={workspaceId}
 						/>
-					</>
+					</div>
 				)}
-				<SpeakButton content={content} />
-				<CopyAction content={content} />
 			</MessageActions>
 		</Message>
 	);
@@ -417,22 +423,24 @@ function ChatContent({ nodeId, dbMessages, workspaceId }: ChatContentProps) {
 					<PromptInputFooter className="px-2 pb-1.5">
 						<PromptInputTools>
 							<PromptInputButton
-								className={cn(thinking && "bg-primary/10 text-primary")}
+								className={cn(thinking && "bg-background text-primary")}
 								onClick={() => setThinking((v) => !v)}
 								tooltip={{
 									content: thinking ? "Thinking on" : "Enable thinking",
 									side: "top",
 								}}
+								variant="default"
 							>
 								<LightbulbIcon className="size-3.5" />
 							</PromptInputButton>
 							<PromptInputButton
-								className={cn(webSearch && "bg-primary/10 text-primary")}
+								className={cn(webSearch && "bg-background text-primary")}
 								onClick={() => setWebSearch((v) => !v)}
 								tooltip={{
 									content: webSearch ? "Web search on" : "Enable web search",
 									side: "top",
 								}}
+								variant="default"
 							>
 								<GlobeIcon className="size-3.5" />
 							</PromptInputButton>
