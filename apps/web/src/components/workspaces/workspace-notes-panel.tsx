@@ -109,7 +109,7 @@ const EDITOR_THEME = {
 		underlineStrikethrough: "underline line-through",
 		code: "rounded bg-muted px-1 py-0.5 font-mono text-sm",
 	},
-	link: "text-primary underline underline-offset-2 hover:opacity-75",
+	link: "notes-link",
 	list: {
 		listitemChecked: "notes-listitem-checked",
 		listitemUnchecked: "notes-listitem-unchecked",

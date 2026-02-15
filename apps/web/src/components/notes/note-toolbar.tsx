@@ -1,3 +1,4 @@
+import { $isLinkNode, TOGGLE_LINK_COMMAND } from "@lexical/link";
 import {
 	$isListNode,
 	INSERT_CHECK_LIST_COMMAND,
@@ -16,7 +17,8 @@ import {
 	$getSelectionStyleValueForProperty,
 	$patchStyleText,
 } from "@lexical/selection";
-import { mergeRegister } from "@lexical/utils";
+import { $findMatchingParent, mergeRegister } from "@lexical/utils";
+import type { ElementFormatType } from "lexical";
 import {
 	$createParagraphNode,
 	$getSelection,
@@ -24,6 +26,7 @@ import {
 	CAN_REDO_COMMAND,
 	CAN_UNDO_COMMAND,
 	COMMAND_PRIORITY_CRITICAL,
+	FORMAT_ELEMENT_COMMAND,
 	FORMAT_TEXT_COMMAND,
 	REDO_COMMAND,
 	UNDO_COMMAND,
@@ -34,6 +37,7 @@ import {
 	CodeIcon,
 	HighlighterIcon,
 	ItalicIcon,
+	LinkIcon,
 	ListIcon,
 	ListOrderedIcon,
 	MinusIcon,
@@ -46,6 +50,14 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuLabel,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 
 type BlockType =
 	| "paragraph"
@@ -56,6 +68,13 @@ type BlockType =
 	| "bullet"
 	| "number"
 	| "check";
+
+const ALIGNMENTS: { format: ElementFormatType; label: string }[] = [
+	{ format: "left", label: "Left" },
+	{ format: "center", label: "Center" },
+	{ format: "right", label: "Right" },
+	{ format: "justify", label: "Justify" },
+];
 
 const FONT_FAMILIES = [
 	{ label: "Default", value: "" },
@@ -161,6 +180,58 @@ function readBlockType(setBlockType: (v: BlockType) => void) {
 	} else {
 		setBlockType("paragraph");
 	}
+}
+
+const VALID_ELEMENT_FORMATS: ElementFormatType[] = [
+	"left",
+	"center",
+	"right",
+	"justify",
+];
+
+function syncFormatStateFromSelection(
+	setIsBold: (v: boolean) => void,
+	setIsItalic: (v: boolean) => void,
+	setIsUnderline: (v: boolean) => void,
+	setIsStrikethrough: (v: boolean) => void,
+	setIsCode: (v: boolean) => void,
+	setFontFamily: (v: string) => void,
+	setFontSize: (v: string) => void,
+	setHighlightColor: (v: string) => void,
+	setElementFormat: (v: ElementFormatType) => void,
+	setIsLink: (v: boolean) => void,
+	setLinkUrl: (v: string) => void
+) {
+	const sel = $getSelection();
+	if (!$isRangeSelection(sel)) {
+		return;
+	}
+	setIsBold(sel.hasFormat("bold"));
+	setIsItalic(sel.hasFormat("italic"));
+	setIsUnderline(sel.hasFormat("underline"));
+	setIsStrikethrough(sel.hasFormat("strikethrough"));
+	setIsCode(sel.hasFormat("code"));
+	setFontFamily($getSelectionStyleValueForProperty(sel, "font-family", ""));
+	setFontSize($getSelectionStyleValueForProperty(sel, "font-size", "16px"));
+	setHighlightColor(
+		$getSelectionStyleValueForProperty(sel, "background-color", "")
+	);
+	const anchorNode = sel.anchor.getNode();
+	const topElement = anchorNode.getTopLevelElement();
+	if (topElement && "getFormat" in topElement) {
+		const format = (topElement as { getFormat: () => unknown }).getFormat();
+		if (
+			typeof format === "string" &&
+			(VALID_ELEMENT_FORMATS as readonly string[]).includes(format)
+		) {
+			setElementFormat(format as ElementFormatType);
+		} else if (!format) {
+			setElementFormat("left");
+		}
+	}
+	const linkParent = $findMatchingParent(anchorNode, $isLinkNode);
+	setIsLink(linkParent !== null);
+	setLinkUrl(linkParent?.getURL() ?? "");
 }
 
 interface FontSizeControlProps {
@@ -298,6 +369,11 @@ export function NoteToolbar() {
 	const [fontFamily, setFontFamily] = useState("");
 	const [fontSize, setFontSize] = useState("16px");
 	const [highlightColor, setHighlightColor] = useState("");
+	const [elementFormat, setElementFormat] = useState<ElementFormatType>("left");
+	const [isLink, setIsLink] = useState(false);
+	const [linkUrl, setLinkUrl] = useState("");
+	const [linkMenuOpen, setLinkMenuOpen] = useState(false);
+	const linkInputRef = useRef<HTMLInputElement>(null);
 
 	useEffect(() => {
 		return mergeRegister(
@@ -320,23 +396,19 @@ export function NoteToolbar() {
 			editor.registerUpdateListener(({ editorState }) => {
 				editorState.read(() => {
 					readBlockType(setBlockType);
-					const sel = $getSelection();
-					if ($isRangeSelection(sel)) {
-						setIsBold(sel.hasFormat("bold"));
-						setIsItalic(sel.hasFormat("italic"));
-						setIsUnderline(sel.hasFormat("underline"));
-						setIsStrikethrough(sel.hasFormat("strikethrough"));
-						setIsCode(sel.hasFormat("code"));
-						setFontFamily(
-							$getSelectionStyleValueForProperty(sel, "font-family", "")
-						);
-						setFontSize(
-							$getSelectionStyleValueForProperty(sel, "font-size", "16px")
-						);
-						setHighlightColor(
-							$getSelectionStyleValueForProperty(sel, "background-color", "")
-						);
-					}
+					syncFormatStateFromSelection(
+						setIsBold,
+						setIsItalic,
+						setIsUnderline,
+						setIsStrikethrough,
+						setIsCode,
+						setFontFamily,
+						setFontSize,
+						setHighlightColor,
+						setElementFormat,
+						setIsLink,
+						setLinkUrl
+					);
 				});
 			})
 		);
@@ -420,6 +492,7 @@ export function NoteToolbar() {
 
 	return (
 		<div className="flex shrink-0 flex-wrap items-center gap-0.5 border-b bg-background px-2 py-1">
+			{/* Undo / Redo */}
 			<ToolbarButton
 				disabled={!canUndo}
 				label="Undo"
@@ -434,31 +507,9 @@ export function NoteToolbar() {
 			>
 				<Redo2Icon className="size-3.5" />
 			</ToolbarButton>
-
 			<Separator />
 
-			<select
-				aria-label="Font family"
-				className="h-7 cursor-pointer rounded bg-transparent px-1.5 text-muted-foreground text-xs outline-none hover:bg-muted hover:text-foreground focus:bg-muted"
-				onChange={(e) => applyStyle({ "font-family": e.target.value })}
-				value={fontFamily}
-			>
-				{FONT_FAMILIES.map((f) => (
-					<option key={f.value} value={f.value}>
-						{f.label}
-					</option>
-				))}
-			</select>
-
-			<FontSizeControl
-				onCommit={applyFontSize}
-				onDecrement={() => adjustFontSize(-1)}
-				onIncrement={() => adjustFontSize(1)}
-				value={fontSize}
-			/>
-
-			<Separator />
-
+			{/* Text format: bold, italic, underline, strikethrough, code */}
 			<ToolbarButton
 				active={isBold}
 				label="Bold"
@@ -496,16 +547,108 @@ export function NoteToolbar() {
 			>
 				<CodeIcon className="size-3.5" />
 			</ToolbarButton>
-
 			<Separator />
 
+			{/* Link */}
+			<DropdownMenu onOpenChange={setLinkMenuOpen} open={linkMenuOpen}>
+				<DropdownMenuTrigger
+					aria-label="Insert or edit link"
+					aria-pressed={isLink}
+					className={`flex h-7 min-w-7 items-center justify-center rounded px-1.5 text-xs transition-colors disabled:pointer-events-none disabled:opacity-40 ${
+						isLink
+							? "bg-accent text-accent-foreground"
+							: "text-muted-foreground hover:bg-muted hover:text-foreground"
+					}`}
+					onMouseDown={(e) => e.preventDefault()}
+				>
+					<LinkIcon className="size-3.5" />
+				</DropdownMenuTrigger>
+				<DropdownMenuContent className="min-w-64 p-2">
+					<DropdownMenuGroup>
+						<DropdownMenuLabel>Link URL</DropdownMenuLabel>
+						<div className="flex flex-col gap-2 px-1.5 py-1">
+							<Input
+								onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+									setLinkUrl(e.target.value)
+								}
+								onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+									if (e.key === "Enter") {
+										e.preventDefault();
+										if (linkUrl.trim()) {
+											editor.dispatchCommand(
+												TOGGLE_LINK_COMMAND,
+												linkUrl.trim()
+											);
+											setLinkMenuOpen(false);
+										}
+									}
+								}}
+								placeholder="https://..."
+								ref={linkInputRef}
+								value={linkUrl}
+							/>
+							<div className="flex gap-1">
+								<button
+									className="flex flex-1 items-center justify-center rounded-md border border-input bg-background px-2 py-1.5 font-medium text-xs transition-colors hover:bg-muted"
+									onClick={() => {
+										if (linkUrl.trim()) {
+											editor.dispatchCommand(
+												TOGGLE_LINK_COMMAND,
+												linkUrl.trim()
+											);
+											setLinkMenuOpen(false);
+										}
+									}}
+									type="button"
+								>
+									Apply
+								</button>
+								<button
+									className="flex flex-1 items-center justify-center rounded-md border border-input bg-background px-2 py-1.5 font-medium text-xs transition-colors hover:bg-muted data-[variant=destructive]:text-destructive"
+									onClick={() => {
+										editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
+										setLinkMenuOpen(false);
+									}}
+									type="button"
+								>
+									Remove link
+								</button>
+							</div>
+						</div>
+					</DropdownMenuGroup>
+				</DropdownMenuContent>
+			</DropdownMenu>
+			<Separator />
+
+			{/* Font family & size */}
+			<select
+				aria-label="Font family"
+				className="h-7 cursor-pointer rounded bg-transparent px-1.5 text-muted-foreground text-xs outline-none hover:bg-muted hover:text-foreground focus:bg-muted"
+				onChange={(e) => applyStyle({ "font-family": e.target.value })}
+				value={fontFamily}
+			>
+				{FONT_FAMILIES.map((f) => (
+					<option key={f.value} value={f.value}>
+						{f.label}
+					</option>
+				))}
+			</select>
+			<FontSizeControl
+				onCommit={applyFontSize}
+				onDecrement={() => adjustFontSize(-1)}
+				onIncrement={() => adjustFontSize(1)}
+				value={fontSize}
+			/>
+			<Separator />
+
+			{/* Highlight */}
 			<HighlightPicker
 				onChange={(color) => applyStyle({ "background-color": color })}
 				value={highlightColor}
 			/>
-
 			<Separator />
 
+			{/* Block types: headings, quote */}
 			<ToolbarButton
 				active={blockType === "h1"}
 				label="Heading 1"
@@ -534,9 +677,9 @@ export function NoteToolbar() {
 			>
 				<QuoteIcon className="size-3.5" />
 			</ToolbarButton>
-
 			<Separator />
 
+			{/* Lists */}
 			<ToolbarButton
 				active={blockType === "bullet"}
 				label="Bullet list"
@@ -558,6 +701,26 @@ export function NoteToolbar() {
 			>
 				<CheckSquareIcon className="size-3.5" />
 			</ToolbarButton>
+			<Separator />
+
+			{/* Alignment (dropdown, same pattern as font family) */}
+			<select
+				aria-label="Alignment"
+				className="h-7 cursor-pointer rounded bg-transparent px-1.5 text-muted-foreground text-xs outline-none hover:bg-muted hover:text-foreground focus:bg-muted"
+				onChange={(e) =>
+					editor.dispatchCommand(
+						FORMAT_ELEMENT_COMMAND,
+						e.target.value as ElementFormatType
+					)
+				}
+				value={elementFormat || "left"}
+			>
+				{ALIGNMENTS.map(({ format, label }) => (
+					<option key={format} value={format}>
+						{label}
+					</option>
+				))}
+			</select>
 		</div>
 	);
 }
