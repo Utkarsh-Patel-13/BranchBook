@@ -38,38 +38,6 @@
 }
 
 .dark {
-	/* Whitish – light, minimal tint */
-	--background: oklch(0.985 0.005 85);
-	--foreground: oklch(0.28 0.025 55);
-	--card: oklch(1 0.003 85);
-	--card-foreground: oklch(0.28 0.025 55);
-	--popover: oklch(1 0.003 85);
-	--popover-foreground: oklch(0.28 0.025 55);
-	/* Coral / terracotta – subtle */
-	--primary: oklch(0.55 0.1 35);
-	--primary-foreground: oklch(0.99 0 0);
-	--secondary: oklch(0.965 0.01 80);
-	--secondary-foreground: oklch(0.32 0.03 55);
-	--muted: oklch(0.955 0.012 80);
-	--muted-foreground: oklch(0.42 0.035 55);
-	--accent: oklch(0.96 0.02 50);
-	--accent-foreground: oklch(0.42 0.08 35);
-	--destructive: oklch(0.52 0.2 25);
-	--border: oklch(0.92 0.01 80);
-	--input: oklch(0.92 0.01 80);
-	--ring: oklch(0.55 0.1 35);
-	--radius: 0.45rem;
-	--sidebar: oklch(0.978 0.006 85);
-	--sidebar-foreground: oklch(0.28 0.025 55);
-	--sidebar-primary: oklch(0.55 0.1 35);
-	--sidebar-primary-foreground: oklch(0.99 0 0);
-	--sidebar-accent: oklch(0.96 0.022 45);
-	--sidebar-accent-foreground: oklch(0.32 0.03 55);
-	--sidebar-border: oklch(0.92 0.01 80);
-	--sidebar-ring: oklch(0.55 0.1 35);
-}
-
-/* .dark {
 	--background: oklch(0.145 0 0);
 	--foreground: oklch(0.985 0 0);
 	--card: oklch(0.205 0 0);
@@ -96,7 +64,7 @@
 	--sidebar-accent-foreground: oklch(0.985 0 0);
 	--sidebar-border: oklch(1 0 0 / 10%);
 	--sidebar-ring: oklch(0.556 0 0);
-} */
+}
 
 @theme inline {
 	--font-sans: "Inter Variable", sans-serif;
@@ -203,9 +171,9 @@
 	font-weight: 500;
 }
 
-/* Lexical links – aligned with primary teal-sage */
+/* Lexical links – distinct link styling (color, underline, cursor) */
 .notes-link {
-	color: var(--primary);
+	color: oklch(0.45 0.2 264);
 	text-decoration: underline;
 	text-underline-offset: 2px;
 	cursor: pointer;
@@ -215,7 +183,7 @@
 	opacity: 0.85;
 }
 .dark .notes-link {
-	color: var(--primary);
+	color: oklch(0.65 0.2 264);
 }
 .dark .notes-link:hover {
 	opacity: 0.9;
