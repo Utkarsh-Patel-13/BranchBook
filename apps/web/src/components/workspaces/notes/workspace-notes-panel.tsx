@@ -22,9 +22,19 @@ import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { TabIndentationPlugin } from "@lexical/react/LexicalTabIndentationPlugin";
 import { HeadingNode, QuoteNode } from "@lexical/rich-text";
-import { TableCellNode, TableNode, TableRowNode } from "@lexical/table";
+import {
+	$isTableNode,
+	TableCellNode,
+	TableNode,
+	TableRowNode,
+} from "@lexical/table";
 import type { EditorState, LexicalEditor } from "lexical";
-import { $getRoot, TextNode } from "lexical";
+import {
+	$createParagraphNode,
+	$getRoot,
+	type LexicalNode,
+	TextNode,
+} from "lexical";
 import { AlertCircleIcon, NotebookIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Label } from "@/components/ui/label";
@@ -89,6 +99,24 @@ const NODES = [
 	HashtagNode,
 	OverflowNode,
 ];
+
+/** RootNode only accepts element or decorator nodes. Wrap text/linebreak in a paragraph. */
+function nodesForRoot(nodes: LexicalNode[]): LexicalNode[] {
+	return nodes.flatMap((node) => {
+		const type = node.getType();
+		if (type === "text" || type === "linebreak") {
+			const p = $createParagraphNode();
+			p.append(node);
+			return [p];
+		}
+		return [node];
+	});
+}
+
+function isEmptyParagraphContent(html: string): boolean {
+	const t = html.trim();
+	return t === "" || t === "<p><br></p>" || t === "<p></p>";
+}
 
 const DEBOUNCE_MS = 2000;
 const SAVED_FLASH_MS = 2000;
@@ -162,11 +190,11 @@ function ExternalContentSyncPlugin({
 	const lastContentRef = useRef<string | null>(null);
 
 	useEffect(() => {
-		if (content == null || content === "") {
+		if (content == null) {
 			return;
 		}
-
-		const contentToSync = content;
+		const contentToSync =
+			content === "" || isEmptyParagraphContent(content) ? "" : content;
 
 		// Skip JSON-serialized editor state (we only handle HTML)
 		const trimmed = contentToSync.trimStart();
@@ -201,6 +229,16 @@ function ExternalContentSyncPlugin({
 
 			function doSync() {
 				setLastSyncedHash(currentHash);
+				lastContentRef.current = contentToSync;
+
+				if (contentToSync === "") {
+					editor.update(() => {
+						const root = $getRoot();
+						root.clear();
+						root.append($createParagraphNode());
+					});
+					return;
+				}
 
 				// If editing, check if this is an append operation
 				if (
@@ -217,27 +255,87 @@ function ExternalContentSyncPlugin({
 							const dom = parser.parseFromString(appendedContent, "text/html");
 							const nodes = $generateNodesFromDOM(editor, dom);
 							const root = $getRoot();
-							root.append(...nodes);
+							root.append(...nodesForRoot(nodes));
 						});
 					}
-					lastContentRef.current = contentToSync;
 					return;
 				}
 
 				// Full sync (for view mode or non-append changes)
-				lastContentRef.current = contentToSync;
 				editor.update(() => {
-					const parser = new DOMParser();
-					const dom = parser.parseFromString(contentToSync, "text/html");
-					const nodes = $generateNodesFromDOM(editor, dom);
 					const root = $getRoot();
 					root.clear();
-					root.append(...nodes);
+					if (contentToSync === "") {
+						root.append($createParagraphNode());
+					} else {
+						const parser = new DOMParser();
+						const dom = parser.parseFromString(contentToSync, "text/html");
+						const nodes = $generateNodesFromDOM(editor, dom);
+						root.append(...nodesForRoot(nodes));
+					}
 				});
 			}
 		});
 	}, [content, editor, isEditing, lastSyncedHash]);
 
+	return null;
+}
+
+function applyTableNormalization() {
+	const root = $getRoot();
+	const children = root.getChildren();
+	if (children.length === 0) {
+		return;
+	}
+
+	const first = children[0];
+	if (
+		children.length === 1 &&
+		$isTableNode(first) &&
+		first.getTextContent().trim() === ""
+	) {
+		const p = $createParagraphNode();
+		root.splice(0, 1, [p]);
+		p.selectStart();
+		return;
+	}
+	if ($isTableNode(first)) {
+		root.insertBefore($createParagraphNode());
+	}
+	const lastNow = root.getLastChild();
+	if (lastNow !== null && $isTableNode(lastNow)) {
+		root.append($createParagraphNode());
+	}
+}
+
+function TableNormalizationPlugin() {
+	const [editor] = useLexicalComposerContext();
+	useEffect(() => {
+		return editor.registerUpdateListener(({ editorState }) => {
+			editorState.read(() => {
+				const root = $getRoot();
+				const children = root.getChildren();
+				const size = children.length;
+				if (size === 0) {
+					return;
+				}
+
+				const first = children[0];
+				const last = children[size - 1];
+				const replaceEmptyTable =
+					size === 1 &&
+					$isTableNode(first) &&
+					first.getTextContent().trim() === "";
+				const needLeading = $isTableNode(first);
+				const needTrailing = $isTableNode(last);
+				if (!(replaceEmptyTable || needLeading || needTrailing)) {
+					return;
+				}
+
+				editor.update(() => applyTableNormalization());
+			});
+		});
+	}, [editor]);
 	return null;
 }
 
@@ -390,7 +488,8 @@ function NotesPanelContent({ nodeId, editMode }: NotesPanelContentProps) {
 				editor.read(() => {
 					const html = $generateHtmlFromNodes(editor, null);
 					if (html.length <= NOTE_CHAR_LIMIT) {
-						upsert({ nodeId, content: html });
+						const content = isEmptyParagraphContent(html) ? "" : html;
+						upsert({ nodeId, content });
 					}
 				});
 			}, DEBOUNCE_MS);
@@ -408,7 +507,7 @@ function NotesPanelContent({ nodeId, editMode }: NotesPanelContentProps) {
 
 	const initialEditorState = (() => {
 		const raw = note?.content;
-		if (raw == null || raw === "") {
+		if (raw == null || raw === "" || isEmptyParagraphContent(raw)) {
 			return undefined;
 		}
 		const trimmed = raw.trimStart();
@@ -421,7 +520,7 @@ function NotesPanelContent({ nodeId, editMode }: NotesPanelContentProps) {
 			const nodes = $generateNodesFromDOM(editor, dom);
 			const root = $getRoot();
 			root.clear();
-			root.append(...nodes);
+			root.append(...nodesForRoot(nodes));
 		};
 	})();
 
@@ -448,7 +547,7 @@ function NotesPanelContent({ nodeId, editMode }: NotesPanelContentProps) {
 
 				{editMode && <NoteToolbar />}
 
-				{note || editMode ? (
+				{(note?.content && note.content.trim() !== "") || editMode ? (
 					<div className="relative min-h-0 flex-1 overflow-y-auto px-4 py-3">
 						<RichTextPlugin
 							contentEditable={
@@ -493,6 +592,7 @@ function NotesPanelContent({ nodeId, editMode }: NotesPanelContentProps) {
 
 			<EditabilityPlugin isEditing={editMode} />
 			<CharacterLimitPlugin charset="UTF-16" maxLength={NOTE_CHAR_LIMIT} />
+			<TableNormalizationPlugin />
 			<HistoryPlugin />
 			<ListPlugin />
 			<CheckListPlugin />
