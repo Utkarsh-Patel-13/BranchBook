@@ -13,7 +13,6 @@ import {
 	GitBranchIcon,
 	GlobeIcon,
 	LightbulbIcon,
-	MessageSquareIcon,
 	Volume2Icon,
 	VolumeXIcon,
 } from "lucide-react";
@@ -603,35 +602,45 @@ function ChatContent({
 
 	return (
 		<div className="flex min-h-0 flex-1 flex-col">
-			<header className="sticky top-0 flex min-h-10 shrink-0 items-center justify-between border-b px-4 py-2">
-				<div className="flex items-center gap-2">
-					<MessageSquareIcon className="size-3.5 shrink-0 text-primary" />
-					<span className="font-medium text-primary text-sm">Chat</span>
-				</div>
-				<div className="flex items-center gap-2">
-					<Button
-						aria-label={summarized ? "Added to note" : "Summarize chat to note"}
-						className={cn(
-							"flex flex-row items-center gap-1.5",
-							summarized &&
-								"border-emerald-500/50 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-						)}
-						disabled={messages.length === 0 || isStreaming || summarizing}
-						onClick={handleSummarizeToNote}
-						size="xs"
-						title="Summarize whole chat into note as study notes"
-						variant="ghost"
-					>
-						{summarized ? (
-							<CheckIcon className="size-3.5" />
-						) : (
-							<FileTextIcon className="size-3.5" />
-						)}
-						<span className="text-xs">
-							{summarized ? "Added to note" : "Summarize to note"}
-						</span>
-					</Button>
-				</div>
+			<header className="sticky top-0 flex min-h-12 shrink-0 items-center justify-between border-b px-4 py-2">
+				<Select
+					disabled={isStreaming}
+					onValueChange={handleModelChange}
+					value={selectedModel.value}
+				>
+					<SelectTrigger className="" size="sm">
+						<SelectValue placeholder="Model">{selectedModel.label}</SelectValue>
+					</SelectTrigger>
+					<SelectContent>
+						{CHAT_MODELS.map((model) => (
+							<SelectItem key={model.value} value={model.value}>
+								{model.label}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+				<Button
+					aria-label={summarized ? "Added to note" : "Summarize chat to note"}
+					className={cn(
+						"flex flex-row items-center gap-1.5",
+						summarized &&
+							"border-emerald-500/50 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+					)}
+					disabled={messages.length === 0 || isStreaming || summarizing}
+					onClick={handleSummarizeToNote}
+					size="xs"
+					title="Summarize whole chat into note as study notes"
+					variant="ghost"
+				>
+					{summarized ? (
+						<CheckIcon className="size-3.5" />
+					) : (
+						<FileTextIcon className="size-3.5" />
+					)}
+					<span className="text-xs">
+						{summarized ? "Added to note" : "Summarize to note"}
+					</span>
+				</Button>
 			</header>
 			<Conversation>
 				<ConversationContent
@@ -698,24 +707,6 @@ function ChatContent({
 					/>
 					<PromptInputFooter className="px-2 pb-1.5">
 						<PromptInputTools>
-							<Select
-								disabled={isStreaming}
-								onValueChange={handleModelChange}
-								value={selectedModel.value}
-							>
-								<SelectTrigger className="" size="sm">
-									<SelectValue placeholder="Model">
-										{selectedModel.label}
-									</SelectValue>
-								</SelectTrigger>
-								<SelectContent>
-									{CHAT_MODELS.map((model) => (
-										<SelectItem key={model.value} value={model.value}>
-											{model.label}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
 							{selectedModel.supportsThinking && (
 								<PromptInputButton
 									aria-pressed={thinking}

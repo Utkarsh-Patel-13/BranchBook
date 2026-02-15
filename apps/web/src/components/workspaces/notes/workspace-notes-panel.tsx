@@ -305,7 +305,7 @@ function NotesPanelHeader({
 	const { editMode, setEditMode } = useWorkspaceLayoutStore();
 
 	return (
-		<header className="flex min-h-10 shrink-0 items-center justify-between border-b px-4 py-2">
+		<header className="flex min-h-12 shrink-0 items-center justify-between border-b px-4 py-2">
 			<div className="flex items-center gap-2">
 				<NotebookIcon className="size-3.5 shrink-0 text-primary" />
 				<span
