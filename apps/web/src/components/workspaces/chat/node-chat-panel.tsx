@@ -6,15 +6,19 @@ import { useRouter } from "@tanstack/react-router";
 import type { UIMessage } from "ai";
 import { DefaultChatTransport, isReasoningUIPart, isTextUIPart } from "ai";
 import {
+	BrainIcon,
 	CheckIcon,
 	ChevronDownIcon,
 	CopyIcon,
+	CrosshairIcon,
 	FileTextIcon,
 	GitBranchIcon,
 	GlobeIcon,
 	LightbulbIcon,
+	SparklesIcon,
 	Volume2Icon,
 	VolumeXIcon,
+	ZapIcon,
 } from "lucide-react";
 import { parse } from "marked";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -55,16 +59,17 @@ import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
+	DropdownMenuGroup,
 	DropdownMenuItem,
+	DropdownMenuPortal,
+	DropdownMenuRadioGroup,
+	DropdownMenuRadioItem,
+	DropdownMenuSeparator,
+	DropdownMenuSub,
+	DropdownMenuSubContent,
+	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { CreateNodeDialog } from "@/components/workspaces/nodes/create-node-dialog";
 import { useListMessages } from "@/hooks/use-messages";
 import { useBranchesForNode, useNodeById } from "@/hooks/use-nodes";
@@ -120,10 +125,31 @@ const CHAT_MODELS: ChatModelItem[] = [
 	},
 ];
 
+const MODE_TO_MODEL: Record<string, string> = {
+	Fast: "gemini-2.5-flash-lite-preview-09-2025",
+	Deep: "gemini-2.5-flash-preview-09-2025",
+	Precise: "gemini-3-flash-preview",
+};
+
+const CHAT_MODES = [
+	{ label: "Fast", value: MODE_TO_MODEL.Fast, icon: ZapIcon },
+	{ label: "Deep", value: MODE_TO_MODEL.Deep, icon: BrainIcon },
+	{ label: "Precise", value: MODE_TO_MODEL.Precise, icon: CrosshairIcon },
+] as const;
+
 const DEFAULT_CHAT_MODEL =
 	CHAT_MODELS.find(
 		(m) => m.value === "gemini-2.5-flash-lite-preview-09-2025"
 	) ?? CHAT_MODELS[0];
+
+function getModeLabel(modelValue: string): string {
+	const mode = CHAT_MODES.find((m) => m.value === modelValue);
+	if (mode) {
+		return mode.label;
+	}
+	const model = CHAT_MODELS.find((m) => m.value === modelValue);
+	return model?.label ?? modelValue;
+}
 
 interface ChatContentProps {
 	nodeId: string;
@@ -603,22 +629,59 @@ function ChatContent({
 	return (
 		<div className="flex min-h-0 flex-1 flex-col">
 			<header className="sticky top-0 flex min-h-12 shrink-0 items-center justify-between border-b px-4 py-2">
-				<Select
-					disabled={isStreaming}
-					onValueChange={handleModelChange}
-					value={selectedModel.value}
-				>
-					<SelectTrigger className="" size="sm">
-						<SelectValue placeholder="Model">{selectedModel.label}</SelectValue>
-					</SelectTrigger>
-					<SelectContent>
-						{CHAT_MODELS.map((model) => (
-							<SelectItem key={model.value} value={model.value}>
-								{model.label}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
+				<div className="flex items-center gap-2">
+					<span className="text-muted-foreground text-xs">Mode</span>
+					<DropdownMenu>
+						<DropdownMenuTrigger
+							disabled={isStreaming}
+							render={
+								<Button
+									aria-label="Chat mode"
+									className="min-w-0 border-border/60 font-normal"
+									size="xs"
+									variant="outline"
+								>
+									{getModeLabel(selectedModel.value)}
+									<ChevronDownIcon className="size-3.5 opacity-60" />
+								</Button>
+							}
+						/>
+						<DropdownMenuContent align="start" className="min-w-48">
+							<DropdownMenuGroup>
+								<DropdownMenuRadioGroup
+									onValueChange={(value) => handleModelChange(value)}
+									value={selectedModel.value}
+								>
+									{CHAT_MODES.map(({ label, value, icon: Icon }) => (
+										<DropdownMenuRadioItem key={value} value={value}>
+											<Icon className="size-3.5" />
+											{label}
+										</DropdownMenuRadioItem>
+									))}
+								</DropdownMenuRadioGroup>
+							</DropdownMenuGroup>
+							<DropdownMenuSeparator />
+							<DropdownMenuSub>
+								<DropdownMenuSubTrigger>
+									<GlobeIcon className="size-3.5" />
+									Google
+								</DropdownMenuSubTrigger>
+								<DropdownMenuPortal>
+									<DropdownMenuSubContent>
+										{CHAT_MODELS.map((model) => (
+											<DropdownMenuItem
+												key={model.value}
+												onClick={() => handleModelChange(model.value)}
+											>
+												{model.label}
+											</DropdownMenuItem>
+										))}
+									</DropdownMenuSubContent>
+								</DropdownMenuPortal>
+							</DropdownMenuSub>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
 				<Button
 					aria-label={summarized ? "Added to note" : "Summarize chat to note"}
 					className={cn(
@@ -630,12 +693,12 @@ function ChatContent({
 					onClick={handleSummarizeToNote}
 					size="xs"
 					title="Summarize whole chat into note as study notes"
-					variant="ghost"
+					variant={summarized ? "ghost" : "default"}
 				>
 					{summarized ? (
 						<CheckIcon className="size-3.5" />
 					) : (
-						<FileTextIcon className="size-3.5" />
+						<SparklesIcon className="size-3.5" />
 					)}
 					<span className="text-xs">
 						{summarized ? "Added to note" : "Summarize to note"}
