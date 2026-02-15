@@ -5,9 +5,11 @@ export const getByNodeIdInputSchema = z.object({
 	nodeId: z.string().cuid(),
 });
 
+const NOTE_CONTENT_MAX_LENGTH = 25_000;
+
 export const upsertNoteInputSchema = z.object({
 	nodeId: z.string().cuid(),
-	content: z.string().min(1),
+	content: z.string().min(1).max(NOTE_CONTENT_MAX_LENGTH),
 });
 
 export const removeNoteInputSchema = z.object({

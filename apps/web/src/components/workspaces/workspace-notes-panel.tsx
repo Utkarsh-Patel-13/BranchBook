@@ -4,7 +4,9 @@ import { $generateHtmlFromNodes, $generateNodesFromDOM } from "@lexical/html";
 import { AutoLinkNode, LinkNode } from "@lexical/link";
 import { ListItemNode, ListNode } from "@lexical/list";
 import { TRANSFORMERS } from "@lexical/markdown";
+import { OverflowNode } from "@lexical/overflow";
 import { AutoLinkPlugin } from "@lexical/react/LexicalAutoLinkPlugin";
+import { CharacterLimitPlugin } from "@lexical/react/LexicalCharacterLimitPlugin";
 import { CheckListPlugin } from "@lexical/react/LexicalCheckListPlugin";
 import { ClickableLinkPlugin } from "@lexical/react/LexicalClickableLinkPlugin";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
@@ -90,11 +92,13 @@ const NODES = [
 	TableCellNode,
 	TableRowNode,
 	HashtagNode,
+	OverflowNode,
 ];
 
 const DEBOUNCE_MS = 1000;
 const SAVED_FLASH_MS = 2000;
 const WORD_SPLIT_RE = /\s+/;
+const NOTE_CHAR_LIMIT = 25_000;
 
 const EDITOR_THEME = {
 	text: {
@@ -295,7 +299,9 @@ function NotesPanelContent({ nodeId, editMode }: NotesPanelContentProps) {
 			saveTimerRef.current = setTimeout(() => {
 				editor.read(() => {
 					const html = $generateHtmlFromNodes(editor, null);
-					upsert({ nodeId, content: html });
+					if (html.length <= NOTE_CHAR_LIMIT) {
+						upsert({ nodeId, content: html });
+					}
 				});
 			}, DEBOUNCE_MS);
 		},
@@ -391,13 +397,15 @@ function NotesPanelContent({ nodeId, editMode }: NotesPanelContentProps) {
 					<div className="flex shrink-0 items-center justify-end border-t px-4 py-1">
 						<span className="text-muted-foreground text-xs tabular-nums">
 							{wordCount.words} {wordCount.words === 1 ? "word" : "words"} ·{" "}
-							{wordCount.chars} {wordCount.chars === 1 ? "char" : "chars"}
+							{wordCount.chars.toLocaleString()} /{" "}
+							{NOTE_CHAR_LIMIT.toLocaleString()} chars
 						</span>
 					</div>
 				)}
 			</div>
 
 			<EditabilityPlugin isEditing={editMode} />
+			<CharacterLimitPlugin charset="UTF-16" maxLength={NOTE_CHAR_LIMIT} />
 			<HistoryPlugin />
 			<ListPlugin />
 			<CheckListPlugin />
