@@ -147,6 +147,81 @@ function WordCountPlugin({
 	return null;
 }
 
+async function hashString(str: string): Promise<string> {
+	const encoder = new TextEncoder();
+	const data = encoder.encode(str);
+	const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+	const hashArray = Array.from(new Uint8Array(hashBuffer));
+	return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function ExternalContentSyncPlugin({
+	content,
+	isEditing,
+}: {
+	content: string | null;
+	isEditing: boolean;
+}) {
+	const [editor] = useLexicalComposerContext();
+	const [lastSyncedHash, setLastSyncedHash] = useState<string | null>(null);
+	const lastContentRef = useRef<string | null>(null);
+
+	useEffect(() => {
+		if (content == null || content === "") {
+			return;
+		}
+
+		// Skip JSON-serialized editor state (we only handle HTML)
+		const trimmed = content.trimStart();
+		if (trimmed.startsWith("{")) {
+			return;
+		}
+
+		// Hash the content and compare
+		hashString(content).then((currentHash) => {
+			if (currentHash === lastSyncedHash) {
+				return;
+			}
+
+			setLastSyncedHash(currentHash);
+
+			// If editing, check if this is an append operation
+			if (
+				isEditing &&
+				lastContentRef.current &&
+				content.startsWith(lastContentRef.current)
+			) {
+				const appendedContent = content.slice(lastContentRef.current.length);
+				if (appendedContent) {
+					// Append only the new content to the end
+					editor.update(() => {
+						const parser = new DOMParser();
+						const dom = parser.parseFromString(appendedContent, "text/html");
+						const nodes = $generateNodesFromDOM(editor, dom);
+						const root = $getRoot();
+						root.append(...nodes);
+					});
+				}
+				lastContentRef.current = content;
+				return;
+			}
+
+			// Full sync (for view mode or non-append changes)
+			lastContentRef.current = content;
+			editor.update(() => {
+				const parser = new DOMParser();
+				const dom = parser.parseFromString(content, "text/html");
+				const nodes = $generateNodesFromDOM(editor, dom);
+				const root = $getRoot();
+				root.clear();
+				root.append(...nodes);
+			});
+		});
+	}, [content, editor, isEditing, lastSyncedHash]);
+
+	return null;
+}
+
 function NotesLoadingState() {
 	return (
 		<div className="flex h-full flex-col gap-3 p-4">
@@ -416,6 +491,10 @@ function NotesPanelContent({ nodeId, editMode }: NotesPanelContentProps) {
 			<TabIndentationPlugin />
 			<MarkdownShortcutPlugin transformers={TRANSFORMERS} />
 			<OnChangePlugin ignoreSelectionChange onChange={handleChange} />
+			<ExternalContentSyncPlugin
+				content={note?.content ?? null}
+				isEditing={editMode}
+			/>
 			{editMode && <FloatingTextFormatPlugin />}
 			{editMode && <WordCountPlugin onCount={handleCount} />}
 		</LexicalComposer>

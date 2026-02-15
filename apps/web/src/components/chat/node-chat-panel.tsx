@@ -67,6 +67,7 @@ import {
 } from "@/components/ui/select";
 import { useListMessages } from "@/hooks/use-messages";
 import { useBranchesForNode, useNodeById } from "@/hooks/use-nodes";
+import { useNote, useUpsertNote } from "@/hooks/use-note";
 import { cn } from "@/lib/utils";
 import { buildNodePath } from "@/lib/workspace-navigation";
 import { useWorkspaceLayoutStore } from "@/stores/workspace-layout-store";
@@ -171,23 +172,97 @@ const CopyAction = memo(({ content }: CopyActionProps) => {
 
 CopyAction.displayName = "CopyAction";
 
-const ConvertToNoteAction = memo(() => {
-	const handleClick = useCallback(() => {
-		// TODO: Implement convert to note functionality
+function SpeakButton({ content }: { content: string }) {
+	const [speaking, setSpeaking] = useState(false);
+
+	const handleSpeak = useCallback(() => {
+		if (!("speechSynthesis" in window)) {
+			return;
+		}
+
+		if (speaking) {
+			window.speechSynthesis.cancel();
+			setSpeaking(false);
+			return;
+		}
+
+		const utterance = new SpeechSynthesisUtterance(content);
+		utterance.onstart = () => setSpeaking(true);
+		utterance.onend = () => setSpeaking(false);
+		utterance.onerror = () => setSpeaking(false);
+		window.speechSynthesis.speak(utterance);
+	}, [content, speaking]);
+
+	useEffect(() => {
+		return () => {
+			window.speechSynthesis.cancel();
+		};
 	}, []);
 
 	return (
 		<MessageAction
-			className="flex w-full flex-row items-center gap-1 p-2"
-			label="Add to Note"
-			onClick={handleClick}
-			tooltip="Add to Note"
+			label={speaking ? "Stop speaking" : "Read aloud"}
+			onClick={handleSpeak}
+			tooltip={speaking ? "Stop" : "Read aloud"}
 		>
-			<FileTextIcon className="size-3.5" />
-			<span className="text-xs">Add to Note</span>
+			{speaking ? (
+				<VolumeXIcon className="size-3.5" />
+			) : (
+				<Volume2Icon className="size-3.5" />
+			)}
 		</MessageAction>
 	);
-});
+}
+
+interface ConvertToNoteActionProps {
+	content: string;
+	nodeId: string;
+}
+
+async function convertToHtmlBody(content: string): Promise<string> {
+	const htmlBody = (await parse(content, { gfm: true })) as string;
+	return htmlBody;
+}
+
+const ConvertToNoteAction = memo(
+	({ content, nodeId }: ConvertToNoteActionProps) => {
+		const { data: note } = useNote(nodeId);
+		const { mutate: upsert } = useUpsertNote(nodeId);
+		const [added, setAdded] = useState(false);
+
+		const handleClick = useCallback(async () => {
+			const htmlContent = await convertToHtmlBody(content);
+			const currentContent = note?.content ?? "";
+			const newContent = currentContent + htmlContent;
+
+			upsert(
+				{ nodeId, content: newContent },
+				{
+					onSuccess: () => {
+						setAdded(true);
+						setTimeout(() => setAdded(false), 2000);
+					},
+				}
+			);
+		}, [content, nodeId, note?.content, upsert]);
+
+		return (
+			<MessageAction
+				className="flex w-full flex-row items-center gap-1 p-2"
+				label="Add to Note"
+				onClick={handleClick}
+				tooltip="Add to Note"
+			>
+				{added ? (
+					<CheckIcon className="size-3.5" />
+				) : (
+					<FileTextIcon className="size-3.5" />
+				)}
+				<span className="text-xs">{added ? "Added" : "Add to Note"}</span>
+			</MessageAction>
+		);
+	}
+);
 
 ConvertToNoteAction.displayName = "ConvertToNoteAction";
 
@@ -291,48 +366,6 @@ const BranchesDropdown = memo(
 );
 BranchesDropdown.displayName = "BranchesDropdown";
 
-function SpeakButton({ content }: { content: string }) {
-	const [speaking, setSpeaking] = useState(false);
-
-	const handleSpeak = useCallback(() => {
-		if (!("speechSynthesis" in window)) {
-			return;
-		}
-
-		if (speaking) {
-			window.speechSynthesis.cancel();
-			setSpeaking(false);
-			return;
-		}
-
-		const utterance = new SpeechSynthesisUtterance(content);
-		utterance.onstart = () => setSpeaking(true);
-		utterance.onend = () => setSpeaking(false);
-		utterance.onerror = () => setSpeaking(false);
-		window.speechSynthesis.speak(utterance);
-	}, [content, speaking]);
-
-	useEffect(() => {
-		return () => {
-			window.speechSynthesis.cancel();
-		};
-	}, []);
-
-	return (
-		<MessageAction
-			label={speaking ? "Stop speaking" : "Read aloud"}
-			onClick={handleSpeak}
-			tooltip={speaking ? "Stop" : "Read aloud"}
-		>
-			{speaking ? (
-				<VolumeXIcon className="size-3.5" />
-			) : (
-				<Volume2Icon className="size-3.5" />
-			)}
-		</MessageAction>
-	);
-}
-
 function ChatMessage({
 	msg,
 	isLastStreaming,
@@ -405,7 +438,7 @@ function ChatMessage({
 				</div>
 				{msg.role === "assistant" && (
 					<div className="flex flex-row items-center gap-1">
-						<ConvertToNoteAction />
+						<ConvertToNoteAction content={content} nodeId={nodeId} />
 						<BranchAction
 							messageId={msg.id}
 							nodeId={nodeId}
