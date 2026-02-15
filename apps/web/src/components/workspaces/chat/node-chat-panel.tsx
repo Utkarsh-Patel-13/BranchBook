@@ -13,11 +13,13 @@ import {
 	GitBranchIcon,
 	GlobeIcon,
 	LightbulbIcon,
+	MessageSquareIcon,
 	Volume2Icon,
 	VolumeXIcon,
 } from "lucide-react";
 import { parse } from "marked";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import {
 	Conversation,
 	ConversationContent,
@@ -503,6 +505,45 @@ function ChatContent({
 	const { mutateAsync: createMessage } = useMutation(
 		trpc.message.create.mutationOptions()
 	);
+	const { data: note } = useNote(nodeId);
+	const { mutate: upsertNote } = useUpsertNote(nodeId);
+	const [summarizing, setSummarizing] = useState(false);
+	const [summarized, setSummarized] = useState(false);
+
+	const handleSummarizeToNote = useCallback(async () => {
+		setSummarizing(true);
+		try {
+			const res = await fetch(`${env.VITE_SERVER_URL}/api/chat/summarize`, {
+				method: "POST",
+				credentials: "include",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ nodeId }),
+			});
+			if (!res.ok) {
+				const data = (await res.json().catch(() => ({}))) as {
+					error?: string;
+				};
+				throw new Error(data.error ?? "Summarization failed");
+			}
+			const { html } = (await res.json()) as { html: string };
+			const current = note?.content ?? "";
+			upsertNote(
+				{ nodeId, content: current + html },
+				{
+					onSuccess: () => {
+						setSummarized(true);
+						setTimeout(() => setSummarized(false), 3000);
+					},
+				}
+			);
+		} catch (err) {
+			toast.error(
+				err instanceof Error ? err.message : "Failed to summarize chat to note"
+			);
+		} finally {
+			setSummarizing(false);
+		}
+	}, [nodeId, note?.content, upsertNote]);
 
 	const [selectedModel, setSelectedModel] =
 		useState<ChatModelItem>(DEFAULT_CHAT_MODEL);
@@ -562,6 +603,36 @@ function ChatContent({
 
 	return (
 		<div className="flex min-h-0 flex-1 flex-col">
+			<header className="sticky top-0 flex min-h-10 shrink-0 items-center justify-between border-b px-4 py-2">
+				<div className="flex items-center gap-2">
+					<MessageSquareIcon className="size-3.5 shrink-0 text-primary" />
+					<span className="font-medium text-primary text-sm">Chat</span>
+				</div>
+				<div className="flex items-center gap-2">
+					<Button
+						aria-label={summarized ? "Added to note" : "Summarize chat to note"}
+						className={cn(
+							"flex flex-row items-center gap-1.5",
+							summarized &&
+								"border-emerald-500/50 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+						)}
+						disabled={messages.length === 0 || isStreaming || summarizing}
+						onClick={handleSummarizeToNote}
+						size="xs"
+						title="Summarize whole chat into note as study notes"
+						variant="ghost"
+					>
+						{summarized ? (
+							<CheckIcon className="size-3.5" />
+						) : (
+							<FileTextIcon className="size-3.5" />
+						)}
+						<span className="text-xs">
+							{summarized ? "Added to note" : "Summarize to note"}
+						</span>
+					</Button>
+				</div>
+			</header>
 			<Conversation>
 				<ConversationContent
 					className={cn(

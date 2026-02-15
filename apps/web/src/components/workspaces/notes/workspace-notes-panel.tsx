@@ -25,12 +25,7 @@ import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import { TableCellNode, TableNode, TableRowNode } from "@lexical/table";
 import type { EditorState, LexicalEditor } from "lexical";
 import { $getRoot, TextNode } from "lexical";
-import {
-	AlertCircleIcon,
-	EyeIcon,
-	NotebookIcon,
-	PencilIcon,
-} from "lucide-react";
+import { AlertCircleIcon, NotebookIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -95,7 +90,7 @@ const NODES = [
 	OverflowNode,
 ];
 
-const DEBOUNCE_MS = 1000;
+const DEBOUNCE_MS = 2000;
 const SAVED_FLASH_MS = 2000;
 const WORD_SPLIT_RE = /\s+/;
 const NOTE_CHAR_LIMIT = 25_000;
@@ -310,13 +305,9 @@ function NotesPanelHeader({
 	const { editMode, setEditMode } = useWorkspaceLayoutStore();
 
 	return (
-		<div className="flex shrink-0 items-center justify-between border-b px-4 py-2">
+		<header className="flex min-h-10 shrink-0 items-center justify-between border-b px-4 py-2">
 			<div className="flex items-center gap-2">
-				{isEditing ? (
-					<PencilIcon className="size-3.5 shrink-0 text-primary" />
-				) : (
-					<EyeIcon className="size-3.5 shrink-0 text-muted-foreground" />
-				)}
+				<NotebookIcon className="size-3.5 shrink-0 text-primary" />
 				<span
 					className={
 						isEditing
@@ -348,7 +339,7 @@ function NotesPanelHeader({
 					Edit
 				</Label>
 			</div>
-		</div>
+		</header>
 	);
 }
 

@@ -42,7 +42,91 @@ const chatBodySchema = z.object({
 	options: chatOptionsSchema,
 });
 
+const summarizeBodySchema = z.object({
+	nodeId: z.string().min(1),
+});
+
+const LEXICAL_HTML_INSTRUCTIONS = `Generate study notes from the discussion. Output ONLY a raw HTML fragment.
+Use ONLY these tags: <p>, <h1>, <h2>, <h3>, <blockquote>, <ul>, <ol>, <li>, <a href="...">, <code>, <pre>, <strong>, <em>, <u>, <s>, <span>.
+Do NOT use: <html>, <body>, <head>, <meta>, or any other tags.
+Structure the content with headings and paragraphs for clarity. Output just the fragment, no document wrapper. The text should be only the note text, no additional info text or markup. Direct notes.`;
+
+function stripDocumentWrapper(html: string): string {
+	let out = html.trim();
+	out = out.replace(/<\/?html[^>]*>/gi, "");
+	out = out.replace(/<\/?body[^>]*>/gi, "");
+	out = out.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, "");
+	out = out.replace(/<meta[^>]*>/gi, "");
+	return out.trim();
+}
+
 export const registerChatRoute = (fastify: FastifyInstance): void => {
+	fastify.post("/api/chat/summarize", async (request, reply) => {
+		const session = await auth.api.getSession({
+			headers: new Headers(
+				Object.entries(request.headers).flatMap(([k, v]) => {
+					if (Array.isArray(v)) {
+						return v.map((val): [string, string] => [k, val]);
+					}
+					return v ? [[k, v] as [string, string]] : [];
+				})
+			),
+		});
+
+		if (!session?.user?.id) {
+			return reply.status(401).send({ error: "Unauthorized" });
+		}
+
+		const parsed = summarizeBodySchema.safeParse(request.body);
+		if (!parsed.success) {
+			return reply.status(400).send({ error: "Invalid request body" });
+		}
+
+		const { nodeId } = parsed.data;
+
+		const node = await prisma.node.findFirst({
+			where: { id: nodeId, deletedAt: null },
+			include: { workspace: { select: { ownerId: true } } },
+		});
+
+		if (!node || node.workspace.ownerId !== session.user.id) {
+			return reply.status(403).send({ error: "Forbidden" });
+		}
+
+		const messages = await prisma.message.findMany({
+			where: { nodeId },
+			orderBy: { createdAt: "asc" },
+			select: { role: true, content: true },
+		});
+
+		if (messages.length === 0) {
+			return reply.status(400).send({ error: "No messages to summarize" });
+		}
+
+		const conversationText = messages
+			.map((m) => {
+				const label = m.role === "USER" ? "User" : "Assistant";
+				return `${label}:\n${m.content}`;
+			})
+			.join("\n\n---\n\n");
+
+		try {
+			const { text } = await generateText({
+				model: google("gemini-2.5-flash-lite-preview-09-2025"),
+				system: LEXICAL_HTML_INSTRUCTIONS,
+				prompt: `Discussion:\n\n${conversationText}`,
+			});
+
+			const html = stripDocumentWrapper(text);
+			reply.raw.setHeader("Access-Control-Allow-Origin", env.CORS_ORIGIN);
+			reply.raw.setHeader("Access-Control-Allow-Credentials", "true");
+			return reply.send({ html });
+		} catch (err) {
+			fastify.log.error({ err }, "Chat summarize failed");
+			return reply.status(500).send({ error: "Summarization failed" });
+		}
+	});
+
 	fastify.post("/api/chat", async (request, reply) => {
 		const session = await auth.api.getSession({
 			headers: new Headers(
