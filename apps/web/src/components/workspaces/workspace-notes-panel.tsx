@@ -171,51 +171,75 @@ function ExternalContentSyncPlugin({
 			return;
 		}
 
+		const contentToSync = content;
+
 		// Skip JSON-serialized editor state (we only handle HTML)
-		const trimmed = content.trimStart();
+		const trimmed = contentToSync.trimStart();
 		if (trimmed.startsWith("{")) {
 			return;
 		}
 
 		// Hash the content and compare
-		hashString(content).then((currentHash) => {
+		hashString(contentToSync).then((currentHash) => {
 			if (currentHash === lastSyncedHash) {
 				return;
 			}
 
-			setLastSyncedHash(currentHash);
-
-			// If editing, check if this is an append operation
-			if (
-				isEditing &&
-				lastContentRef.current &&
-				content.startsWith(lastContentRef.current)
-			) {
-				const appendedContent = content.slice(lastContentRef.current.length);
-				if (appendedContent) {
-					// Append only the new content to the end
-					editor.update(() => {
-						const parser = new DOMParser();
-						const dom = parser.parseFromString(appendedContent, "text/html");
-						const nodes = $generateNodesFromDOM(editor, dom);
-						const root = $getRoot();
-						root.append(...nodes);
-					});
-				}
-				lastContentRef.current = content;
-				return;
+			// When editing, skip sync if incoming content matches current editor state
+			// (e.g. from our own autosave refetch). Avoids replacing content and losing cursor.
+			if (isEditing) {
+				let editorHtml = "";
+				editor.getEditorState().read(() => {
+					editorHtml = $generateHtmlFromNodes(editor, null);
+				});
+				hashString(editorHtml).then((editorHash) => {
+					if (editorHash === currentHash) {
+						setLastSyncedHash(currentHash);
+						lastContentRef.current = contentToSync;
+						return;
+					}
+					doSync();
+				});
+			} else {
+				doSync();
 			}
 
-			// Full sync (for view mode or non-append changes)
-			lastContentRef.current = content;
-			editor.update(() => {
-				const parser = new DOMParser();
-				const dom = parser.parseFromString(content, "text/html");
-				const nodes = $generateNodesFromDOM(editor, dom);
-				const root = $getRoot();
-				root.clear();
-				root.append(...nodes);
-			});
+			function doSync() {
+				setLastSyncedHash(currentHash);
+
+				// If editing, check if this is an append operation
+				if (
+					isEditing &&
+					lastContentRef.current &&
+					contentToSync.startsWith(lastContentRef.current)
+				) {
+					const appendedContent = contentToSync.slice(
+						lastContentRef.current.length
+					);
+					if (appendedContent) {
+						editor.update(() => {
+							const parser = new DOMParser();
+							const dom = parser.parseFromString(appendedContent, "text/html");
+							const nodes = $generateNodesFromDOM(editor, dom);
+							const root = $getRoot();
+							root.append(...nodes);
+						});
+					}
+					lastContentRef.current = contentToSync;
+					return;
+				}
+
+				// Full sync (for view mode or non-append changes)
+				lastContentRef.current = contentToSync;
+				editor.update(() => {
+					const parser = new DOMParser();
+					const dom = parser.parseFromString(contentToSync, "text/html");
+					const nodes = $generateNodesFromDOM(editor, dom);
+					const root = $getRoot();
+					root.clear();
+					root.append(...nodes);
+				});
+			}
 		});
 	}, [content, editor, isEditing, lastSyncedHash]);
 
@@ -402,11 +426,8 @@ function NotesPanelContent({ nodeId, editMode }: NotesPanelContentProps) {
 		}
 		return (editor: LexicalEditor) => {
 			const parser = new DOMParser();
-			console.log(raw);
 			const dom = parser.parseFromString(raw, "text/html");
-			console.log(dom);
 			const nodes = $generateNodesFromDOM(editor, dom);
-			console.log(nodes);
 			const root = $getRoot();
 			root.clear();
 			root.append(...nodes);
