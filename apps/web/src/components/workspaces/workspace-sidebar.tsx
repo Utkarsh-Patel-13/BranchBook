@@ -13,8 +13,6 @@ import {
 import type * as React from "react";
 import { Fragment, useMemo, useState } from "react";
 import { ModeToggle } from "@/components/mode-toggle";
-import { CreateNodeDialog } from "@/components/nodes/create-node-dialog";
-import { DeleteNodeDialog } from "@/components/nodes/delete-node-dialog";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
@@ -35,6 +33,8 @@ import {
 	SidebarRail,
 } from "@/components/ui/sidebar";
 import UserMenu from "@/components/user-menu";
+import { CreateNodeDialog } from "@/components/workspaces/nodes/create-node-dialog";
+import { DeleteNodeDialog } from "@/components/workspaces/nodes/delete-node-dialog";
 import { useNodeTree } from "@/hooks/use-nodes";
 import { cn } from "@/lib/utils";
 import { Separator } from "../ui/separator";

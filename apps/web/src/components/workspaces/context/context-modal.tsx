@@ -1,10 +1,10 @@
-import { ContextPanel } from "@/components/context/ContextPanel";
 import {
 	Dialog,
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { ContextPanel } from "@/components/workspaces/context/context-panel";
 import { useContextForPanel } from "@/hooks/use-nodes";
 import { useWorkspaceLayoutStore } from "@/stores/workspace-layout-store";
 

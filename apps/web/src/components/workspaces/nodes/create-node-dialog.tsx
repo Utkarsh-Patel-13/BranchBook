@@ -4,7 +4,7 @@ import {
 	useBranchFromMessage,
 	useCreateNode,
 	useUpdateNode,
-} from "../../hooks/use-nodes";
+} from "../../../hooks/use-nodes";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -14,9 +14,9 @@ import {
 	AlertDialogFooter,
 	AlertDialogHeader,
 	AlertDialogTitle,
-} from "../ui/alert-dialog";
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
+} from "../../ui/alert-dialog";
+import { Input } from "../../ui/input";
+import { Label } from "../../ui/label";
 
 function validateTitle(value: string): string | null {
 	if (value.trim().length < 3) {

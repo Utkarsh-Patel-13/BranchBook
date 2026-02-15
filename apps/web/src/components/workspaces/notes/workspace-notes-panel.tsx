@@ -32,13 +32,13 @@ import {
 	PencilIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { FloatingTextFormatPlugin } from "@/components/notes/note-floating-toolbar";
-import { NoteToolbar } from "@/components/notes/note-toolbar";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { FloatingTextFormatPlugin } from "@/components/workspaces/notes/note-floating-toolbar";
+import { NoteToolbar } from "@/components/workspaces/notes/note-toolbar";
 import { useNote, useUpsertNote } from "@/hooks/use-note";
 import { useWorkspaceLayoutStore } from "@/stores/workspace-layout-store";
-import { ExtendedTextNode } from "../nodes/styled-text-node";
+import { ExtendedTextNode } from "./styled-text-node";
 
 const URL_MATCHER =
 	/((https?:\/\/(www\.)?)|(www\.))[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)/;

@@ -1,7 +1,7 @@
 import { NetworkIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
-import { CreateNodeDialog } from "@/components/nodes/create-node-dialog";
 import { Button } from "@/components/ui/button";
+import { CreateNodeDialog } from "@/components/workspaces/nodes/create-node-dialog";
 
 interface WorkspaceEmptyViewProps {
 	workspaceId: string;

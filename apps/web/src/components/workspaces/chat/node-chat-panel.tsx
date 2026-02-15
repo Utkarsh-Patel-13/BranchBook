@@ -50,7 +50,6 @@ import {
 	SourcesContent,
 	SourcesTrigger,
 } from "@/components/ai-elements/sources";
-import { CreateNodeDialog } from "@/components/nodes/create-node-dialog";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -65,6 +64,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { CreateNodeDialog } from "@/components/workspaces/nodes/create-node-dialog";
 import { useListMessages } from "@/hooks/use-messages";
 import { useBranchesForNode, useNodeById } from "@/hooks/use-nodes";
 import { useNote, useUpsertNote } from "@/hooks/use-note";

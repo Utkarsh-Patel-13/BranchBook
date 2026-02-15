@@ -1,6 +1,6 @@
 import type { NodeTree } from "@nexus/types";
 import { toast } from "sonner";
-import { useDeleteNode } from "../../hooks/use-nodes";
+import { useDeleteNode } from "../../../hooks/use-nodes";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -10,7 +10,7 @@ import {
 	AlertDialogFooter,
 	AlertDialogHeader,
 	AlertDialogTitle,
-} from "../ui/alert-dialog";
+} from "../../ui/alert-dialog";
 
 function countDescendants(node: NodeTree): number {
 	let count = 0;

@@ -2,14 +2,14 @@ import type { NodeTree } from "@nexus/types";
 import { useRouter } from "@tanstack/react-router";
 import { MessageSquareDashedIcon } from "lucide-react";
 import { useEffect } from "react";
-import { NodeChatPanel } from "@/components/chat/node-chat-panel";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { NodeChatPanel } from "@/components/workspaces/chat/node-chat-panel";
+import { ContextModal } from "@/components/workspaces/context/context-modal";
+import { WorkspaceNotesPanel } from "@/components/workspaces/notes/workspace-notes-panel";
+import { WorkspaceHeader } from "@/components/workspaces/workspace-header";
+import { WorkspaceSidebar } from "@/components/workspaces/workspace-sidebar";
 import { buildNodePath } from "@/lib/workspace-navigation";
 import { useWorkspaceLayoutStore } from "@/stores/workspace-layout-store";
-import { ContextModal } from "./context-modal";
-import { WorkspaceHeader } from "./workspace-header";
-import { WorkspaceNotesPanel } from "./workspace-notes-panel";
-import { WorkspaceSidebar } from "./workspace-sidebar";
 
 function ChatEmptyState() {
 	return (
