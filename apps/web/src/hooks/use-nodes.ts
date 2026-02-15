@@ -25,6 +25,12 @@ export const useNodeById = (nodeId: string) => {
 	});
 };
 
+export const useBranchesForNode = (nodeId: string) =>
+	useQuery({
+		...trpc.node.getBranchesForNode.queryOptions({ nodeId }),
+		enabled: !!nodeId,
+	});
+
 const invalidateNodeTree = (workspaceId: string) =>
 	queryClient.invalidateQueries(
 		trpc.node.getTree.queryOptions({ workspaceId })
@@ -51,7 +57,16 @@ export const useDeleteNode = (workspaceId: string) =>
 export const useBranchFromMessage = (workspaceId: string) =>
 	useMutation({
 		...trpc.node.branchFromMessage.mutationOptions(),
-		onSuccess: () => invalidateNodeTree(workspaceId),
+		onSuccess: (newNode) => {
+			invalidateNodeTree(workspaceId);
+			if (newNode.parentId) {
+				queryClient.invalidateQueries(
+					trpc.node.getBranchesForNode.queryOptions({
+						nodeId: newNode.parentId,
+					})
+				);
+			}
+		},
 	});
 
 export const useContextForPanel = (nodeId: string) =>

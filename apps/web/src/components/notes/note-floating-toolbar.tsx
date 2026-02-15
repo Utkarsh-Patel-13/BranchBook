@@ -1,5 +1,10 @@
+import { $isLinkNode, TOGGLE_LINK_COMMAND } from "@lexical/link";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import { mergeRegister } from "@lexical/utils";
+import {
+	$getSelectionStyleValueForProperty,
+	$patchStyleText,
+} from "@lexical/selection";
+import { $findMatchingParent, mergeRegister } from "@lexical/utils";
 import {
 	$getSelection,
 	$isRangeSelection,
@@ -10,13 +15,26 @@ import {
 import {
 	BoldIcon,
 	CodeIcon,
+	EraserIcon,
+	HighlighterIcon,
 	ItalicIcon,
+	LinkIcon,
 	StrikethroughIcon,
 	UnderlineIcon,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuLabel,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+
+const DEFAULT_HIGHLIGHT = "rgba(255, 212, 0, 0.45)";
 
 interface FormatState {
 	isBold: boolean;
@@ -24,6 +42,9 @@ interface FormatState {
 	isUnderline: boolean;
 	isStrikethrough: boolean;
 	isCode: boolean;
+	highlightColor: string;
+	isLink: boolean;
+	linkUrl: string;
 }
 
 interface ButtonProps {
@@ -63,6 +84,12 @@ function FloatingPopup({ editor, selectionRect, formatState }: PopupProps) {
 	const ref = useRef<HTMLDivElement>(null);
 	const [left, setLeft] = useState<number | null>(null);
 	const [top, setTop] = useState<number | null>(null);
+	const [linkMenuOpen, setLinkMenuOpen] = useState(false);
+	const [linkUrl, setLinkUrl] = useState(formatState.linkUrl);
+
+	useEffect(() => {
+		setLinkUrl(formatState.linkUrl);
+	}, [formatState.linkUrl]);
 
 	// Calculate position after first render so offsetWidth/Height are available
 	useEffect(() => {
@@ -85,8 +112,55 @@ function FloatingPopup({ editor, selectionRect, formatState }: PopupProps) {
 		setTop(Math.max(GAP, y));
 	}, [selectionRect]);
 
-	const { isBold, isItalic, isUnderline, isStrikethrough, isCode } =
-		formatState;
+	const {
+		isBold,
+		isItalic,
+		isUnderline,
+		isStrikethrough,
+		isCode,
+		highlightColor,
+		isLink,
+	} = formatState;
+
+	const hasHighlight = Boolean(highlightColor);
+
+	const toggleHighlight = useCallback(() => {
+		editor.update(() => {
+			const selection = $getSelection();
+			if (!$isRangeSelection(selection)) {
+				return;
+			}
+			$patchStyleText(selection, {
+				"background-color": hasHighlight ? "" : DEFAULT_HIGHLIGHT,
+			});
+		});
+	}, [editor, hasHighlight]);
+
+	const clearFormatting = useCallback(() => {
+		editor.update(() => {
+			const selection = $getSelection();
+			if (!$isRangeSelection(selection)) {
+				return;
+			}
+			$patchStyleText(selection, { "background-color": "" });
+		});
+		if (isBold) {
+			editor.dispatchCommand(FORMAT_TEXT_COMMAND, "bold");
+		}
+		if (isItalic) {
+			editor.dispatchCommand(FORMAT_TEXT_COMMAND, "italic");
+		}
+		if (isUnderline) {
+			editor.dispatchCommand(FORMAT_TEXT_COMMAND, "underline");
+		}
+		if (isStrikethrough) {
+			editor.dispatchCommand(FORMAT_TEXT_COMMAND, "strikethrough");
+		}
+		if (isCode) {
+			editor.dispatchCommand(FORMAT_TEXT_COMMAND, "code");
+		}
+		editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
+	}, [editor, isBold, isItalic, isUnderline, isStrikethrough, isCode]);
 
 	return (
 		<div
@@ -128,13 +202,87 @@ function FloatingPopup({ editor, selectionRect, formatState }: PopupProps) {
 			>
 				<StrikethroughIcon className="size-3.5" />
 			</FloatButton>
-			<div className="mx-0.5 h-4 w-px shrink-0 bg-border" />
 			<FloatButton
 				active={isCode}
 				label="Inline code"
 				onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "code")}
 			>
 				<CodeIcon className="size-3.5" />
+			</FloatButton>
+			<div className="mx-0.5 h-4 w-px shrink-0 bg-border" />
+			<DropdownMenu onOpenChange={setLinkMenuOpen} open={linkMenuOpen}>
+				<DropdownMenuTrigger
+					aria-label="Insert or edit link"
+					aria-pressed={isLink}
+					className={`flex h-7 w-7 items-center justify-center rounded text-xs transition-colors ${
+						isLink
+							? "bg-accent text-accent-foreground"
+							: "text-popover-foreground hover:bg-muted"
+					}`}
+					onMouseDown={(e: React.MouseEvent) => e.preventDefault()}
+				>
+					<LinkIcon className="size-3.5" />
+				</DropdownMenuTrigger>
+				<DropdownMenuContent align="center" className="min-w-56 p-2">
+					<DropdownMenuGroup>
+						<DropdownMenuLabel>Link URL</DropdownMenuLabel>
+						<div className="flex flex-col gap-2 px-1.5 py-1">
+							<Input
+								onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+									setLinkUrl(e.target.value)
+								}
+								onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+									if (e.key === "Enter" && linkUrl.trim()) {
+										e.preventDefault();
+										editor.dispatchCommand(TOGGLE_LINK_COMMAND, linkUrl.trim());
+										setLinkMenuOpen(false);
+									}
+								}}
+								placeholder="https://..."
+								value={linkUrl}
+							/>
+							<div className="flex gap-1">
+								<button
+									className="flex flex-1 items-center justify-center rounded-md border border-input bg-background px-2 py-1.5 font-medium text-xs transition-colors hover:bg-muted"
+									onClick={() => {
+										if (linkUrl.trim()) {
+											editor.dispatchCommand(
+												TOGGLE_LINK_COMMAND,
+												linkUrl.trim()
+											);
+											setLinkMenuOpen(false);
+										}
+									}}
+									type="button"
+								>
+									Apply
+								</button>
+								<button
+									className="flex flex-1 items-center justify-center rounded-md border border-input bg-background px-2 py-1.5 font-medium text-xs transition-colors hover:bg-muted"
+									onClick={() => {
+										editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
+										setLinkMenuOpen(false);
+									}}
+									type="button"
+								>
+									Remove
+								</button>
+							</div>
+						</div>
+					</DropdownMenuGroup>
+				</DropdownMenuContent>
+			</DropdownMenu>
+			<div className="mx-0.5 h-4 w-px shrink-0 bg-border" />
+			<FloatButton
+				active={hasHighlight}
+				label="Highlight"
+				onClick={toggleHighlight}
+			>
+				<HighlighterIcon className="size-3.5" />
+			</FloatButton>
+			<div className="mx-0.5 h-4 w-px shrink-0 bg-border" />
+			<FloatButton label="Clear formatting" onClick={clearFormatting}>
+				<EraserIcon className="size-3.5" />
 			</FloatButton>
 		</div>
 	);
@@ -149,6 +297,9 @@ export function FloatingTextFormatPlugin() {
 		isUnderline: false,
 		isStrikethrough: false,
 		isCode: false,
+		highlightColor: "",
+		isLink: false,
+		linkUrl: "",
 	});
 
 	const updateToolbar = useCallback(() => {
@@ -167,6 +318,8 @@ export function FloatingTextFormatPlugin() {
 			setSelectionRect(null);
 			return;
 		}
+		const anchorNode = selection.anchor.getNode();
+		const linkParent = $findMatchingParent(anchorNode, $isLinkNode);
 		setSelectionRect(rect);
 		setFormatState({
 			isBold: selection.hasFormat("bold"),
@@ -174,6 +327,13 @@ export function FloatingTextFormatPlugin() {
 			isUnderline: selection.hasFormat("underline"),
 			isStrikethrough: selection.hasFormat("strikethrough"),
 			isCode: selection.hasFormat("code"),
+			highlightColor: $getSelectionStyleValueForProperty(
+				selection,
+				"background-color",
+				""
+			),
+			isLink: linkParent !== null,
+			linkUrl: linkParent?.getURL() ?? "",
 		});
 	}, []);
 

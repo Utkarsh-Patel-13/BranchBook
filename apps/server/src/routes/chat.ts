@@ -11,8 +11,26 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { runResummarization } from "../jobs/resummarize";
 
+const CHAT_MODEL_IDS = [
+	"gemini-2.0-flash",
+	"gemini-2.5-pro",
+	"gemini-2.5-flash-lite-preview-09-2025",
+	"gemini-2.5-flash-preview-09-2025",
+	"gemini-3-flash-preview",
+	"gemini-3-pro-preview",
+] as const;
+
+const DEFAULT_CHAT_MODEL = "gemini-2.5-flash-lite-preview-09-2025";
+
 const chatOptionsSchema = z
 	.object({
+		model: z
+			.string()
+			.refine((id) =>
+				CHAT_MODEL_IDS.includes(id as (typeof CHAT_MODEL_IDS)[number])
+			)
+			.optional()
+			.default(DEFAULT_CHAT_MODEL),
 		thinking: z.boolean().optional().default(false),
 		webSearch: z.boolean().optional().default(false),
 	})
@@ -63,10 +81,9 @@ export const registerChatRoute = (fastify: FastifyInstance): void => {
 
 		const useThinking = options?.thinking ?? false;
 		const useWebSearch = options?.webSearch ?? false;
+		const modelId = options?.model ?? DEFAULT_CHAT_MODEL;
 
-		const model = useThinking
-			? google("gemini-2.5-flash")
-			: google("gemini-2.0-flash");
+		const model = google(modelId);
 
 		const baseSystem =
 			"You are a helpful assistant in Nexus, a knowledge workspace app. Be concise and accurate.";

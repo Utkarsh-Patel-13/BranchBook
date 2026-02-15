@@ -2,6 +2,7 @@ import {
 	branchFromMessageSchema,
 	createNodeInputSchema,
 	deleteNodeInputSchema,
+	getBranchesForNodeOutputSchema,
 	getContextForPanelInputSchema,
 	getContextForPanelOutputSchema,
 	getNodeByIdInputSchema,
@@ -19,6 +20,7 @@ import {
 	createBranchFromMessage,
 	createNode,
 	deleteNodeCascade,
+	getBranchesForNode,
 	getNodeById,
 	getNodeTree,
 	listNodes,
@@ -164,6 +166,20 @@ export const nodeRouter = router({
 			}
 
 			return createBranchFromMessage(ctx.session.user.id, input);
+		}),
+
+	getBranchesForNode: protectedProcedure
+		.input(getNodeByIdInputSchema)
+		.output(getBranchesForNodeOutputSchema)
+		.query(({ ctx, input }) => {
+			if (!ctx.session?.user?.id) {
+				throw new TRPCError({
+					code: "UNAUTHORIZED",
+					message: "Authentication required.",
+				});
+			}
+
+			return getBranchesForNode(ctx.session.user.id, input);
 		}),
 
 	getContextForPanel: protectedProcedure

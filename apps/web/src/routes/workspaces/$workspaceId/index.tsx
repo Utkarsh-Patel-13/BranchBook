@@ -41,8 +41,6 @@ function WorkspaceSplitViewRouteComponent() {
 		return <WorkspaceEmptyView workspaceId={workspaceId} />;
 	}
 
-	console.log({ tree, workspaceId });
-
 	// Show workspace with no node selected - user must select from sidebar
 	return (
 		<WorkspaceSplitLayout

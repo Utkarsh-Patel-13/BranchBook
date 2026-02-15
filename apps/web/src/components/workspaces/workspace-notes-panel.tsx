@@ -1,9 +1,12 @@
 import { CodeHighlightNode, CodeNode } from "@lexical/code";
 import { HashtagNode } from "@lexical/hashtag";
+import { $generateHtmlFromNodes, $generateNodesFromDOM } from "@lexical/html";
 import { AutoLinkNode, LinkNode } from "@lexical/link";
 import { ListItemNode, ListNode } from "@lexical/list";
 import { TRANSFORMERS } from "@lexical/markdown";
+import { OverflowNode } from "@lexical/overflow";
 import { AutoLinkPlugin } from "@lexical/react/LexicalAutoLinkPlugin";
+import { CharacterLimitPlugin } from "@lexical/react/LexicalCharacterLimitPlugin";
 import { CheckListPlugin } from "@lexical/react/LexicalCheckListPlugin";
 import { ClickableLinkPlugin } from "@lexical/react/LexicalClickableLinkPlugin";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
@@ -20,8 +23,8 @@ import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { TabIndentationPlugin } from "@lexical/react/LexicalTabIndentationPlugin";
 import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import { TableCellNode, TableNode, TableRowNode } from "@lexical/table";
-import type { EditorState } from "lexical";
-import { $getRoot } from "lexical";
+import type { EditorState, LexicalEditor } from "lexical";
+import { $getRoot, TextNode } from "lexical";
 import {
 	AlertCircleIcon,
 	EyeIcon,
@@ -35,6 +38,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useNote, useUpsertNote } from "@/hooks/use-note";
 import { useWorkspaceLayoutStore } from "@/stores/workspace-layout-store";
+import { ExtendedTextNode } from "../nodes/styled-text-node";
 
 const URL_MATCHER =
 	/((https?:\/\/(www\.)?)|(www\.))[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)/;
@@ -70,6 +74,12 @@ const AUTOLINK_MATCHERS = [
 ];
 
 const NODES = [
+	ExtendedTextNode,
+	{
+		replace: TextNode,
+		with: (node: TextNode) => new ExtendedTextNode(node.__text),
+		withKlass: ExtendedTextNode,
+	},
 	HeadingNode,
 	QuoteNode,
 	ListNode,
@@ -82,11 +92,13 @@ const NODES = [
 	TableCellNode,
 	TableRowNode,
 	HashtagNode,
+	OverflowNode,
 ];
 
 const DEBOUNCE_MS = 1000;
 const SAVED_FLASH_MS = 2000;
 const WORD_SPLIT_RE = /\s+/;
+const NOTE_CHAR_LIMIT = 25_000;
 
 const EDITOR_THEME = {
 	text: {
@@ -97,7 +109,7 @@ const EDITOR_THEME = {
 		underlineStrikethrough: "underline line-through",
 		code: "rounded bg-muted px-1 py-0.5 font-mono text-sm",
 	},
-	link: "text-primary underline underline-offset-2 hover:opacity-75",
+	link: "notes-link",
 	list: {
 		listitemChecked: "notes-listitem-checked",
 		listitemUnchecked: "notes-listitem-unchecked",
@@ -132,6 +144,81 @@ function WordCountPlugin({
 			});
 		});
 	}, [editor, onCount]);
+	return null;
+}
+
+async function hashString(str: string): Promise<string> {
+	const encoder = new TextEncoder();
+	const data = encoder.encode(str);
+	const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+	const hashArray = Array.from(new Uint8Array(hashBuffer));
+	return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function ExternalContentSyncPlugin({
+	content,
+	isEditing,
+}: {
+	content: string | null;
+	isEditing: boolean;
+}) {
+	const [editor] = useLexicalComposerContext();
+	const [lastSyncedHash, setLastSyncedHash] = useState<string | null>(null);
+	const lastContentRef = useRef<string | null>(null);
+
+	useEffect(() => {
+		if (content == null || content === "") {
+			return;
+		}
+
+		// Skip JSON-serialized editor state (we only handle HTML)
+		const trimmed = content.trimStart();
+		if (trimmed.startsWith("{")) {
+			return;
+		}
+
+		// Hash the content and compare
+		hashString(content).then((currentHash) => {
+			if (currentHash === lastSyncedHash) {
+				return;
+			}
+
+			setLastSyncedHash(currentHash);
+
+			// If editing, check if this is an append operation
+			if (
+				isEditing &&
+				lastContentRef.current &&
+				content.startsWith(lastContentRef.current)
+			) {
+				const appendedContent = content.slice(lastContentRef.current.length);
+				if (appendedContent) {
+					// Append only the new content to the end
+					editor.update(() => {
+						const parser = new DOMParser();
+						const dom = parser.parseFromString(appendedContent, "text/html");
+						const nodes = $generateNodesFromDOM(editor, dom);
+						const root = $getRoot();
+						root.append(...nodes);
+					});
+				}
+				lastContentRef.current = content;
+				return;
+			}
+
+			// Full sync (for view mode or non-append changes)
+			lastContentRef.current = content;
+			editor.update(() => {
+				const parser = new DOMParser();
+				const dom = parser.parseFromString(content, "text/html");
+				const nodes = $generateNodesFromDOM(editor, dom);
+				const root = $getRoot();
+				root.clear();
+				root.append(...nodes);
+			});
+		});
+	}, [content, editor, isEditing, lastSyncedHash]);
+
 	return null;
 }
 
@@ -213,7 +300,7 @@ function NotesPanelHeader({
 							: "font-medium text-primary text-sm"
 					}
 				>
-					{isEditing ? "Editing" : "View"}
+					{isEditing ? "Editing" : "Read Only"}
 				</span>
 				{isSaving && (
 					<span className="text-muted-foreground text-sm">· Saving…</span>
@@ -277,7 +364,7 @@ function NotesPanelContent({ nodeId, editMode }: NotesPanelContentProps) {
 	);
 
 	const handleChange = useCallback(
-		(editorState: EditorState) => {
+		(_editorState: EditorState, editor: LexicalEditor) => {
 			if (!editMode) {
 				return;
 			}
@@ -285,8 +372,12 @@ function NotesPanelContent({ nodeId, editMode }: NotesPanelContentProps) {
 				clearTimeout(saveTimerRef.current);
 			}
 			saveTimerRef.current = setTimeout(() => {
-				const content = JSON.stringify(editorState.toJSON());
-				upsert({ nodeId, content });
+				editor.read(() => {
+					const html = $generateHtmlFromNodes(editor, null);
+					if (html.length <= NOTE_CHAR_LIMIT) {
+						upsert({ nodeId, content: html });
+					}
+				});
 			}, DEBOUNCE_MS);
 		},
 		[editMode, nodeId, upsert]
@@ -300,6 +391,28 @@ function NotesPanelContent({ nodeId, editMode }: NotesPanelContentProps) {
 		return <NotesErrorState onRetry={() => refetch()} />;
 	}
 
+	const initialEditorState = (() => {
+		const raw = note?.content;
+		if (raw == null || raw === "") {
+			return undefined;
+		}
+		const trimmed = raw.trimStart();
+		if (trimmed.startsWith("{")) {
+			return raw;
+		}
+		return (editor: LexicalEditor) => {
+			const parser = new DOMParser();
+			console.log(raw);
+			const dom = parser.parseFromString(raw, "text/html");
+			console.log(dom);
+			const nodes = $generateNodesFromDOM(editor, dom);
+			console.log(nodes);
+			const root = $getRoot();
+			root.clear();
+			root.append(...nodes);
+		};
+	})();
+
 	return (
 		<LexicalComposer
 			initialConfig={{
@@ -307,7 +420,7 @@ function NotesPanelContent({ nodeId, editMode }: NotesPanelContentProps) {
 				theme: EDITOR_THEME,
 				editable: false,
 				nodes: NODES,
-				editorState: note?.content ?? undefined,
+				editorState: initialEditorState,
 				onError: (error) => {
 					throw error;
 				},
@@ -359,13 +472,15 @@ function NotesPanelContent({ nodeId, editMode }: NotesPanelContentProps) {
 					<div className="flex shrink-0 items-center justify-end border-t px-4 py-1">
 						<span className="text-muted-foreground text-xs tabular-nums">
 							{wordCount.words} {wordCount.words === 1 ? "word" : "words"} ·{" "}
-							{wordCount.chars} {wordCount.chars === 1 ? "char" : "chars"}
+							{wordCount.chars.toLocaleString()} /{" "}
+							{NOTE_CHAR_LIMIT.toLocaleString()} chars
 						</span>
 					</div>
 				)}
 			</div>
 
 			<EditabilityPlugin isEditing={editMode} />
+			<CharacterLimitPlugin charset="UTF-16" maxLength={NOTE_CHAR_LIMIT} />
 			<HistoryPlugin />
 			<ListPlugin />
 			<CheckListPlugin />
@@ -376,6 +491,10 @@ function NotesPanelContent({ nodeId, editMode }: NotesPanelContentProps) {
 			<TabIndentationPlugin />
 			<MarkdownShortcutPlugin transformers={TRANSFORMERS} />
 			<OnChangePlugin ignoreSelectionChange onChange={handleChange} />
+			<ExternalContentSyncPlugin
+				content={note?.content ?? null}
+				isEditing={editMode}
+			/>
 			{editMode && <FloatingTextFormatPlugin />}
 			{editMode && <WordCountPlugin onCount={handleCount} />}
 		</LexicalComposer>

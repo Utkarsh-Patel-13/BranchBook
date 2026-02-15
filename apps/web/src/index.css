@@ -170,3 +170,21 @@
 	color: var(--sidebar-primary);
 	font-weight: 500;
 }
+
+/* Lexical links – distinct link styling (color, underline, cursor) */
+.notes-link {
+	color: oklch(0.45 0.2 264);
+	text-decoration: underline;
+	text-underline-offset: 2px;
+	cursor: pointer;
+}
+.notes-link:hover {
+	text-decoration: underline;
+	opacity: 0.85;
+}
+.dark .notes-link {
+	color: oklch(0.65 0.2 264);
+}
+.dark .notes-link:hover {
+	opacity: 0.9;
+}

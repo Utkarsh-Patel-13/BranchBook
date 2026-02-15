@@ -1,11 +1,13 @@
 import { useChat } from "@ai-sdk/react";
 import { env } from "@nexus/env/web";
-import type { MessageType } from "@nexus/types";
+import type { MessageType, NodeTree } from "@nexus/types";
 import { useMutation } from "@tanstack/react-query";
+import { useRouter } from "@tanstack/react-router";
 import type { UIMessage } from "ai";
 import { DefaultChatTransport, isReasoningUIPart, isTextUIPart } from "ai";
 import {
 	CheckIcon,
+	ChevronDownIcon,
 	CopyIcon,
 	FileTextIcon,
 	GitBranchIcon,
@@ -14,6 +16,7 @@ import {
 	Volume2Icon,
 	VolumeXIcon,
 } from "lucide-react";
+import { parse } from "marked";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	Conversation,
@@ -47,34 +50,107 @@ import {
 	SourcesContent,
 	SourcesTrigger,
 } from "@/components/ai-elements/sources";
-import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
+import { CreateNodeDialog } from "@/components/nodes/create-node-dialog";
+import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { useListMessages } from "@/hooks/use-messages";
-import { useBranchFromMessage, useNodeById } from "@/hooks/use-nodes";
+import { useBranchesForNode, useNodeById } from "@/hooks/use-nodes";
+import { useNote, useUpsertNote } from "@/hooks/use-note";
 import { cn } from "@/lib/utils";
+import { buildNodePath } from "@/lib/workspace-navigation";
 import { useWorkspaceLayoutStore } from "@/stores/workspace-layout-store";
 import { trpc } from "@/utils/trpc";
 
-const CHAT_SUGGESTIONS = [
-	"Summarize this topic",
-	"What are the key concepts?",
-	"Give me related questions to explore",
-	"Create a study outline",
+interface ChatModelItem {
+	label: string;
+	value: string;
+	supportsWeb: boolean;
+	supportsThinking: boolean;
+}
+
+const CHAT_MODELS: ChatModelItem[] = [
+	{
+		label: "Gemini 2.0 Flash",
+		value: "gemini-2.0-flash",
+		supportsWeb: true,
+		supportsThinking: true,
+	},
+	{
+		label: "Gemini 2.5 Pro",
+		value: "gemini-2.5-pro",
+		supportsWeb: true,
+		supportsThinking: true,
+	},
+	{
+		label: "Gemini 2.5 Flash Lite",
+		value: "gemini-2.5-flash-lite-preview-09-2025",
+		supportsWeb: true,
+		supportsThinking: true,
+	},
+	{
+		label: "Gemini 2.5 Flash",
+		value: "gemini-2.5-flash-preview-09-2025",
+		supportsWeb: true,
+		supportsThinking: true,
+	},
+	{
+		label: "Gemini 3 Flash",
+		value: "gemini-3-flash-preview",
+		supportsWeb: true,
+		supportsThinking: true,
+	},
+	{
+		label: "Gemini 3 Preview",
+		value: "gemini-3-pro-preview",
+		supportsWeb: true,
+		supportsThinking: true,
+	},
 ];
+
+const DEFAULT_CHAT_MODEL =
+	CHAT_MODELS.find(
+		(m) => m.value === "gemini-2.5-flash-lite-preview-09-2025"
+	) ?? CHAT_MODELS[0];
 
 interface ChatContentProps {
 	nodeId: string;
 	dbMessages: MessageType[];
 	workspaceId: string;
+	tree: NodeTree[];
 }
 
 interface CopyActionProps {
 	content: string;
 }
 
+async function copyToClipboard(content: string) {
+	const htmlBody = (await parse(content, { gfm: true })) as string;
+	const htmlDocument = `<meta charset='utf-8'><html><head></head><body>${htmlBody}</body></html>`;
+
+	await navigator.clipboard.write([
+		new ClipboardItem({
+			"text/plain": new Blob([content], { type: "text/plain" }),
+			"text/html": new Blob([htmlDocument], { type: "text/html" }),
+		}),
+	]);
+}
+
 const CopyAction = memo(({ content }: CopyActionProps) => {
 	const [copied, setCopied] = useState(false);
 	const handleClick = useCallback(() => {
-		navigator.clipboard.writeText(content);
+		copyToClipboard(content);
 		setCopied(true);
 		setTimeout(() => setCopied(false), 2000);
 	}, [content]);
@@ -95,63 +171,6 @@ const CopyAction = memo(({ content }: CopyActionProps) => {
 });
 
 CopyAction.displayName = "CopyAction";
-
-const ConvertToNoteAction = memo(() => {
-	const handleClick = useCallback(() => {
-		// TODO: Implement convert to note functionality
-	}, []);
-
-	return (
-		<MessageAction
-			className="flex w-full flex-row items-center gap-1 p-2"
-			label="Convert to Note"
-			onClick={handleClick}
-			tooltip="Convert to Note"
-		>
-			<FileTextIcon className="size-3.5" />
-			<span className="text-xs">Convert to Note</span>
-		</MessageAction>
-	);
-});
-
-ConvertToNoteAction.displayName = "ConvertToNoteAction";
-
-interface BranchActionProps {
-	messageId: string;
-	nodeId: string;
-	workspaceId: string;
-}
-
-const BranchAction = memo(
-	({ messageId, nodeId, workspaceId }: BranchActionProps) => {
-		const setSelectedNodeId = useWorkspaceLayoutStore(
-			(s) => s.setSelectedNodeId
-		);
-		const { mutate, isPending } = useBranchFromMessage(workspaceId);
-
-		const handleClick = useCallback(() => {
-			mutate(
-				{ nodeId, messageId },
-				{ onSuccess: (childNode) => setSelectedNodeId(childNode.id) }
-			);
-		}, [mutate, nodeId, messageId, setSelectedNodeId]);
-
-		return (
-			<MessageAction
-				className="flex w-full flex-row items-center gap-1 p-2"
-				disabled={isPending}
-				label="Branch from here"
-				onClick={handleClick}
-				tooltip="Branch from here"
-			>
-				<GitBranchIcon className="size-3.5" />
-				<span className="text-xs">Branch</span>
-			</MessageAction>
-		);
-	}
-);
-
-BranchAction.displayName = "BranchAction";
 
 function SpeakButton({ content }: { content: string }) {
 	const [speaking, setSpeaking] = useState(false);
@@ -195,17 +214,172 @@ function SpeakButton({ content }: { content: string }) {
 	);
 }
 
+interface ConvertToNoteActionProps {
+	content: string;
+	nodeId: string;
+}
+
+async function convertToHtmlBody(content: string): Promise<string> {
+	const htmlBody = (await parse(content, { gfm: true })) as string;
+	return htmlBody;
+}
+
+const ConvertToNoteAction = memo(
+	({ content, nodeId }: ConvertToNoteActionProps) => {
+		const { data: note } = useNote(nodeId);
+		const { mutate: upsert } = useUpsertNote(nodeId);
+		const [added, setAdded] = useState(false);
+
+		const handleClick = useCallback(async () => {
+			const htmlContent = await convertToHtmlBody(content);
+			const currentContent = note?.content ?? "";
+			const newContent = currentContent + htmlContent;
+
+			upsert(
+				{ nodeId, content: newContent },
+				{
+					onSuccess: () => {
+						setAdded(true);
+						setTimeout(() => setAdded(false), 2000);
+					},
+				}
+			);
+		}, [content, nodeId, note?.content, upsert]);
+
+		return (
+			<MessageAction
+				className="flex w-full flex-row items-center gap-1 p-2"
+				label="Add to Note"
+				onClick={handleClick}
+				tooltip="Add to Note"
+			>
+				{added ? (
+					<CheckIcon className="size-3.5" />
+				) : (
+					<FileTextIcon className="size-3.5" />
+				)}
+				<span className="text-xs">{added ? "Added" : "Add to Note"}</span>
+			</MessageAction>
+		);
+	}
+);
+
+ConvertToNoteAction.displayName = "ConvertToNoteAction";
+
+interface BranchActionProps {
+	messageId: string;
+	nodeId: string;
+	workspaceId: string;
+}
+
+const BranchAction = memo(
+	({ messageId, nodeId, workspaceId }: BranchActionProps) => {
+		const [branchDialogOpen, setBranchDialogOpen] = useState(false);
+		const setSelectedNodeId = useWorkspaceLayoutStore(
+			(s) => s.setSelectedNodeId
+		);
+
+		const handleBranchCreated = useCallback(
+			(node: { id: string }) => {
+				setSelectedNodeId(node.id);
+			},
+			[setSelectedNodeId]
+		);
+
+		return (
+			<>
+				<MessageAction
+					className="flex w-full flex-row items-center gap-1 p-2"
+					label="Branch from here"
+					onClick={() => setBranchDialogOpen(true)}
+					tooltip="Branch from here"
+				>
+					<GitBranchIcon className="size-3.5" />
+					<span className="text-xs">Branch</span>
+				</MessageAction>
+				<CreateNodeDialog
+					branch={{ messageId, nodeId }}
+					onBranchCreated={handleBranchCreated}
+					onOpenChange={setBranchDialogOpen}
+					open={branchDialogOpen}
+					workspaceId={workspaceId}
+				/>
+			</>
+		);
+	}
+);
+
+BranchAction.displayName = "BranchAction";
+
+interface BranchesDropdownProps {
+	branches: { id: string; title: string }[];
+	workspaceId: string;
+	tree: NodeTree[];
+}
+
+const BranchesDropdown = memo(
+	({ branches, workspaceId, tree }: BranchesDropdownProps) => {
+		const router = useRouter();
+
+		if (branches.length === 0) {
+			return null;
+		}
+
+		const handleSelectBranch = (branchId: string) => {
+			const path = buildNodePath(tree, branchId);
+			if (path) {
+				router.navigate({
+					to: `/workspaces/${workspaceId}/${path.join("/")}` as never,
+				});
+			}
+		};
+
+		return (
+			<DropdownMenu>
+				<DropdownMenuTrigger
+					render={
+						<Button
+							aria-label={`${branches.length} branch${branches.length === 1 ? "" : "es"} from this message`}
+							className="flex flex-row items-center gap-1 p-2"
+							size="icon-sm"
+							title={`${branches.length} branch${branches.length === 1 ? "" : "es"} from this message`}
+							variant="ghost"
+						>
+							<ChevronDownIcon className="size-3.5" />
+						</Button>
+					}
+				/>
+				<DropdownMenuContent align="end">
+					<DropdownMenuItem disabled>Branches</DropdownMenuItem>
+					{branches.map((branch) => (
+						<DropdownMenuItem
+							key={branch.id}
+							onClick={() => handleSelectBranch(branch.id)}
+						>
+							{branch.title}
+						</DropdownMenuItem>
+					))}
+				</DropdownMenuContent>
+			</DropdownMenu>
+		);
+	}
+);
+BranchesDropdown.displayName = "BranchesDropdown";
+
 function ChatMessage({
 	msg,
 	isLastStreaming,
 	nodeId,
 	workspaceId,
+	branches = [],
+	tree = [],
 }: {
 	msg: UIMessage;
 	isLastStreaming: boolean;
 	nodeId: string;
 	workspaceId: string;
-	// isDbMessage: boolean;
+	branches?: { id: string; title: string }[];
+	tree?: NodeTree[];
 }) {
 	const textPart = msg.parts.find(isTextUIPart);
 	const content = textPart?.text ?? "";
@@ -264,13 +438,19 @@ function ChatMessage({
 				</div>
 				{msg.role === "assistant" && (
 					<div className="flex flex-row items-center gap-1">
-						<ConvertToNoteAction />
-
+						<ConvertToNoteAction content={content} nodeId={nodeId} />
 						<BranchAction
 							messageId={msg.id}
 							nodeId={nodeId}
 							workspaceId={workspaceId}
 						/>
+						{branches.length > 0 && (
+							<BranchesDropdown
+								branches={branches}
+								tree={tree}
+								workspaceId={workspaceId}
+							/>
+						)}
 					</div>
 				)}
 			</MessageActions>
@@ -278,11 +458,13 @@ function ChatMessage({
 	);
 }
 
-function ChatContent({ nodeId, dbMessages, workspaceId }: ChatContentProps) {
-	// const dbMessageIds = useMemo(
-	// 	() => new Set(dbMessages.map((m) => m.id)),
-	// 	[dbMessages]
-	// );
+function ChatContent({
+	nodeId,
+	dbMessages,
+	workspaceId,
+	tree,
+}: ChatContentProps) {
+	const { data: branchesByMessageId = {} } = useBranchesForNode(nodeId);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional snapshot — useChat initialises state once at mount
 	const initialMessages = useMemo<UIMessage[]>(
@@ -322,10 +504,39 @@ function ChatContent({ nodeId, dbMessages, workspaceId }: ChatContentProps) {
 		trpc.message.create.mutationOptions()
 	);
 
+	const [selectedModel, setSelectedModel] =
+		useState<ChatModelItem>(DEFAULT_CHAT_MODEL);
 	const [thinking, setThinking] = useState(false);
 	const [webSearch, setWebSearch] = useState(false);
-	const chatOptionsRef = useRef({ thinking: false, webSearch: false });
-	chatOptionsRef.current = { thinking, webSearch };
+	const chatOptionsRef = useRef({
+		model: DEFAULT_CHAT_MODEL.value,
+		thinking: false,
+		webSearch: false,
+	});
+	chatOptionsRef.current = {
+		model: selectedModel.value,
+		thinking,
+		webSearch,
+	};
+
+	useEffect(() => {
+		if (!selectedModel.supportsThinking) {
+			setThinking(false);
+		}
+		if (!selectedModel.supportsWeb) {
+			setWebSearch(false);
+		}
+	}, [selectedModel]);
+
+	const handleModelChange = useCallback((value: string | null) => {
+		if (!value) {
+			return;
+		}
+		const model = CHAT_MODELS.find((m) => m.value === value);
+		if (model) {
+			setSelectedModel(model);
+		}
+	}, []);
 
 	const transport = useMemo(
 		() =>
@@ -360,28 +571,22 @@ function ChatContent({ nodeId, dbMessages, workspaceId }: ChatContentProps) {
 					)}
 				>
 					{messages.length === 0 && !isStreaming ? (
-						<>
-							<div className="space-y-1 text-center">
-								<h3 className="font-medium text-sm">Start a conversation</h3>
-								<p className="text-muted-foreground text-xs">
-									Ask anything about this topic
-								</p>
-							</div>
-							<Suggestions className="mt-2">
-								{CHAT_SUGGESTIONS.map((s) => (
-									<Suggestion key={s} onClick={handleSubmit} suggestion={s} />
-								))}
-							</Suggestions>
-						</>
+						<div className="space-y-1 text-center">
+							<h3 className="font-medium text-sm">Start a conversation</h3>
+							<p className="text-muted-foreground text-xs">
+								Ask anything about this topic
+							</p>
+						</div>
 					) : (
 						<>
 							{messages.map((msg, i) => (
 								<ChatMessage
-									// isDbMessage={dbMessageIds.has(msg.id)}
+									branches={branchesByMessageId[msg.id] ?? []}
 									isLastStreaming={isStreaming && i === messages.length - 1}
 									key={msg.id}
 									msg={msg}
 									nodeId={nodeId}
+									tree={tree}
 									workspaceId={workspaceId}
 								/>
 							))}
@@ -418,32 +623,64 @@ function ChatContent({ nodeId, dbMessages, workspaceId }: ChatContentProps) {
 						className="max-h-32 min-h-10 text-sm"
 						disabled={isStreaming}
 						maxLength={4000}
-						placeholder="Ask a follow up…"
+						placeholder="Ask me anything ..."
 					/>
 					<PromptInputFooter className="px-2 pb-1.5">
 						<PromptInputTools>
-							<PromptInputButton
-								className={cn(thinking && "bg-background text-primary")}
-								onClick={() => setThinking((v) => !v)}
-								tooltip={{
-									content: thinking ? "Thinking on" : "Enable thinking",
-									side: "top",
-								}}
-								variant="default"
+							<Select
+								disabled={isStreaming}
+								onValueChange={handleModelChange}
+								value={selectedModel.value}
 							>
-								<LightbulbIcon className="size-3.5" />
-							</PromptInputButton>
-							<PromptInputButton
-								className={cn(webSearch && "bg-background text-primary")}
-								onClick={() => setWebSearch((v) => !v)}
-								tooltip={{
-									content: webSearch ? "Web search on" : "Enable web search",
-									side: "top",
-								}}
-								variant="default"
-							>
-								<GlobeIcon className="size-3.5" />
-							</PromptInputButton>
+								<SelectTrigger className="" size="sm">
+									<SelectValue placeholder="Model">
+										{selectedModel.label}
+									</SelectValue>
+								</SelectTrigger>
+								<SelectContent>
+									{CHAT_MODELS.map((model) => (
+										<SelectItem key={model.value} value={model.value}>
+											{model.label}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+							{selectedModel.supportsThinking && (
+								<PromptInputButton
+									aria-pressed={thinking}
+									className={cn(
+										"rounded-[4px] transition-colors",
+										thinking &&
+											"border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
+									)}
+									onClick={() => setThinking((v) => !v)}
+									tooltip={{
+										content: thinking ? "Thinking on" : "Enable thinking",
+										side: "top",
+									}}
+									variant="outline"
+								>
+									<LightbulbIcon className="size-3.5" />
+								</PromptInputButton>
+							)}
+							{selectedModel.supportsWeb && (
+								<PromptInputButton
+									aria-pressed={webSearch}
+									className={cn(
+										"rounded-[4px] transition-colors",
+										webSearch &&
+											"border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
+									)}
+									onClick={() => setWebSearch((v) => !v)}
+									tooltip={{
+										content: webSearch ? "Web search on" : "Enable web search",
+										side: "top",
+									}}
+									variant="outline"
+								>
+									<GlobeIcon className="size-3.5" />
+								</PromptInputButton>
+							)}
 						</PromptInputTools>
 						<PromptInputSubmit status={status} />
 					</PromptInputFooter>
@@ -455,9 +692,10 @@ function ChatContent({ nodeId, dbMessages, workspaceId }: ChatContentProps) {
 
 interface NodeChatPanelProps {
 	nodeId: string;
+	tree: NodeTree[];
 }
 
-export function NodeChatPanel({ nodeId }: NodeChatPanelProps) {
+export function NodeChatPanel({ nodeId, tree }: NodeChatPanelProps) {
 	const { data: node } = useNodeById(nodeId);
 	const { data: dbMessages, isLoading } = useListMessages(nodeId);
 
@@ -486,6 +724,7 @@ export function NodeChatPanel({ nodeId }: NodeChatPanelProps) {
 					dbMessages={dbMessages}
 					key={nodeId}
 					nodeId={nodeId}
+					tree={tree}
 					workspaceId={node.workspaceId}
 				/>
 			)}
