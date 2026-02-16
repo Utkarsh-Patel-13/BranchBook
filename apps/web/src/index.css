@@ -188,3 +188,19 @@
 .dark .notes-link:hover {
 	opacity: 0.9;
 }
+
+/* Lexical tables in notes – cell borders and spacing */
+.notes-editor .prose table {
+	border-collapse: collapse;
+	width: 100%;
+}
+.notes-editor .prose table td,
+.notes-editor .prose table th {
+	border: 1px solid var(--border);
+	padding: 0.25rem 0.5rem;
+	vertical-align: top;
+}
+.notes-editor .prose table th {
+	font-weight: 600;
+	background-color: var(--muted);
+}

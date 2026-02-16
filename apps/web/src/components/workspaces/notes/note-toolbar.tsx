@@ -17,6 +17,12 @@ import {
 	$getSelectionStyleValueForProperty,
 	$patchStyleText,
 } from "@lexical/selection";
+import {
+	$createTableNodeWithDimensions,
+	$insertTableColumnAtSelection,
+	$insertTableRowAtSelection,
+	$isTableCellNode,
+} from "@lexical/table";
 import { $findMatchingParent, mergeRegister } from "@lexical/utils";
 import type { ElementFormatType } from "lexical";
 import {
@@ -35,6 +41,7 @@ import {
 	BoldIcon,
 	CheckSquareIcon,
 	CodeIcon,
+	Columns2Icon,
 	HighlighterIcon,
 	ItalicIcon,
 	LinkIcon,
@@ -44,7 +51,9 @@ import {
 	PlusIcon,
 	QuoteIcon,
 	Redo2Icon,
+	Rows2Icon,
 	StrikethroughIcon,
+	TableIcon,
 	UnderlineIcon,
 	Undo2Icon,
 } from "lucide-react";
@@ -54,6 +63,7 @@ import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuGroup,
+	DropdownMenuItem,
 	DropdownMenuLabel,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -373,6 +383,7 @@ export function NoteToolbar() {
 	const [isLink, setIsLink] = useState(false);
 	const [linkUrl, setLinkUrl] = useState("");
 	const [linkMenuOpen, setLinkMenuOpen] = useState(false);
+	const [isInTable, setIsInTable] = useState(false);
 	const linkInputRef = useRef<HTMLInputElement>(null);
 
 	useEffect(() => {
@@ -396,6 +407,12 @@ export function NoteToolbar() {
 			editor.registerUpdateListener(({ editorState }) => {
 				editorState.read(() => {
 					readBlockType(setBlockType);
+					const sel = $getSelection();
+					const inTable =
+						sel !== null &&
+						$findMatchingParent(sel.anchor.getNode(), $isTableCellNode) !==
+							null;
+					setIsInTable(inTable);
 					syncFormatStateFromSelection(
 						setIsBold,
 						setIsItalic,
@@ -701,6 +718,97 @@ export function NoteToolbar() {
 			>
 				<CheckSquareIcon className="size-3.5" />
 			</ToolbarButton>
+			<ToolbarButton
+				label="Insert table"
+				onClick={() => {
+					editor.update(() => {
+						const selection = $getSelection();
+						if (!$isRangeSelection(selection)) {
+							return;
+						}
+						const tableNode = $createTableNodeWithDimensions(3, 3, true);
+						selection.insertNodes([tableNode]);
+						const firstRow = tableNode.getFirstChild();
+						if (firstRow) {
+							const firstCell = firstRow.getFirstChild();
+							if (firstCell && $isTableCellNode(firstCell)) {
+								const paragraph = firstCell.getFirstChild();
+								if (paragraph) {
+									paragraph.selectStart();
+								}
+							}
+						}
+					});
+				}}
+			>
+				<TableIcon className="size-3.5" />
+			</ToolbarButton>
+			{isInTable && (
+				<>
+					<DropdownMenu>
+						<DropdownMenuTrigger
+							aria-label="Insert table row or column"
+							className="flex h-7 min-w-7 items-center justify-center rounded px-1.5 text-muted-foreground text-xs transition-colors hover:bg-muted hover:text-foreground"
+							onMouseDown={(e) => e.preventDefault()}
+						>
+							<Rows2Icon className="size-3.5" />
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="start">
+							<DropdownMenuItem
+								onClick={() => {
+									editor.update(() => {
+										$insertTableRowAtSelection(false);
+									});
+								}}
+								onMouseDown={(e) => e.preventDefault()}
+							>
+								Insert row above
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={() => {
+									editor.update(() => {
+										$insertTableRowAtSelection(true);
+									});
+								}}
+								onMouseDown={(e) => e.preventDefault()}
+							>
+								Insert row below
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+					<DropdownMenu>
+						<DropdownMenuTrigger
+							aria-label="Insert table column"
+							className="flex h-7 min-w-7 items-center justify-center rounded px-1.5 text-muted-foreground text-xs transition-colors hover:bg-muted hover:text-foreground"
+							onMouseDown={(e) => e.preventDefault()}
+						>
+							<Columns2Icon className="size-3.5" />
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="start">
+							<DropdownMenuItem
+								onClick={() => {
+									editor.update(() => {
+										$insertTableColumnAtSelection(false);
+									});
+								}}
+								onMouseDown={(e) => e.preventDefault()}
+							>
+								Insert column left
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={() => {
+									editor.update(() => {
+										$insertTableColumnAtSelection(true);
+									});
+								}}
+								onMouseDown={(e) => e.preventDefault()}
+							>
+								Insert column right
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</>
+			)}
 			<Separator />
 
 			{/* Alignment (dropdown, same pattern as font family) */}

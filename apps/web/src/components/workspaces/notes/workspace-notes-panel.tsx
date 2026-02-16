@@ -21,6 +21,7 @@ import { MarkdownShortcutPlugin } from "@lexical/react/LexicalMarkdownShortcutPl
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { TabIndentationPlugin } from "@lexical/react/LexicalTabIndentationPlugin";
+import { TablePlugin } from "@lexical/react/LexicalTablePlugin";
 import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import {
 	$isTableNode,
@@ -228,6 +229,7 @@ function ExternalContentSyncPlugin({
 			}
 
 			function doSync() {
+				const previousContent = lastContentRef.current;
 				setLastSyncedHash(currentHash);
 				lastContentRef.current = contentToSync;
 
@@ -240,15 +242,13 @@ function ExternalContentSyncPlugin({
 					return;
 				}
 
-				// If editing, check if this is an append operation
+				// If editing, check if this is an append operation (e.g. "Add to Note" from chat)
 				if (
 					isEditing &&
-					lastContentRef.current &&
-					contentToSync.startsWith(lastContentRef.current)
+					previousContent != null &&
+					contentToSync.startsWith(previousContent)
 				) {
-					const appendedContent = contentToSync.slice(
-						lastContentRef.current.length
-					);
+					const appendedContent = contentToSync.slice(previousContent.length);
 					if (appendedContent) {
 						editor.update(() => {
 							const parser = new DOMParser();
@@ -300,7 +300,7 @@ function applyTableNormalization() {
 		return;
 	}
 	if ($isTableNode(first)) {
-		root.insertBefore($createParagraphNode());
+		root.splice(0, 0, [$createParagraphNode()]);
 	}
 	const lastNow = root.getLastChild();
 	if (lastNow !== null && $isTableNode(lastNow)) {
@@ -548,7 +548,7 @@ function NotesPanelContent({ nodeId, editMode }: NotesPanelContentProps) {
 				{editMode && <NoteToolbar />}
 
 				{(note?.content && note.content.trim() !== "") || editMode ? (
-					<div className="relative min-h-0 flex-1 overflow-y-auto px-4 py-3">
+					<div className="notes-editor relative min-h-0 flex-1 overflow-y-auto px-4 py-3">
 						<RichTextPlugin
 							contentEditable={
 								<ContentEditable
@@ -593,6 +593,7 @@ function NotesPanelContent({ nodeId, editMode }: NotesPanelContentProps) {
 			<EditabilityPlugin isEditing={editMode} />
 			<CharacterLimitPlugin charset="UTF-16" maxLength={NOTE_CHAR_LIMIT} />
 			<TableNormalizationPlugin />
+			<TablePlugin />
 			<HistoryPlugin />
 			<ListPlugin />
 			<CheckListPlugin />
