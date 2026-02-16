@@ -1,10 +1,12 @@
 const STORAGE_KEY_PREFIX = "nexus:workspace:layout";
 
+export type DesktopView = "chat" | "both" | "notes";
+
 interface WorkspaceLayout {
 	selectedNodeId: string | null;
 	sidebarOpen: boolean;
 	panelSizes: number[];
-	notesVisible: boolean;
+	desktopView: DesktopView;
 	editMode: boolean;
 }
 
@@ -12,7 +14,7 @@ const DEFAULT_LAYOUT: WorkspaceLayout = {
 	selectedNodeId: null,
 	sidebarOpen: true,
 	panelSizes: [50, 50],
-	notesVisible: true,
+	desktopView: "both",
 	editMode: false,
 };
 
@@ -42,12 +44,22 @@ function parseLayout(raw: unknown): WorkspaceLayout {
 			? (obj.panelSizes as number[])
 			: [50, 50];
 
-	const notesVisible =
-		typeof obj.notesVisible === "boolean" ? obj.notesVisible : true;
+	const desktopView = (() => {
+		if (
+			obj.desktopView === "chat" ||
+			obj.desktopView === "both" ||
+			obj.desktopView === "notes"
+		) {
+			return obj.desktopView;
+		}
+		const legacyNotesVisible =
+			typeof obj.notesVisible === "boolean" ? obj.notesVisible : true;
+		return legacyNotesVisible ? "both" : "chat";
+	})();
 
 	const editMode = typeof obj.editMode === "boolean" ? obj.editMode : false;
 
-	return { selectedNodeId, sidebarOpen, panelSizes, notesVisible, editMode };
+	return { selectedNodeId, sidebarOpen, panelSizes, desktopView, editMode };
 }
 
 export function getLayout(workspaceId: string): WorkspaceLayout {

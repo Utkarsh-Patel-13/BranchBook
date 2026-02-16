@@ -2,8 +2,7 @@ import type { NodeTree } from "@nexus/types";
 import { useRouter } from "@tanstack/react-router";
 import {
 	ChevronLeftIcon,
-	EyeIcon,
-	EyeOffIcon,
+	Columns2,
 	InfoIcon,
 	MessageSquareIcon,
 	StickyNoteIcon,
@@ -21,6 +20,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { DesktopView } from "@/lib/workspace-layout-storage";
 import { buildNodePath, findNodeById } from "@/lib/workspace-navigation";
 import { useWorkspaceLayoutStore } from "@/stores/workspace-layout-store";
 
@@ -61,9 +62,9 @@ export function WorkspaceHeader({
 }: WorkspaceHeaderProps) {
 	const router = useRouter();
 	const {
-		notesVisible,
+		desktopView,
 		mobileView,
-		setNotesVisible,
+		setDesktopView,
 		setContextModalOpen,
 		setMobileView,
 	} = useWorkspaceLayoutStore();
@@ -204,20 +205,26 @@ export function WorkspaceHeader({
 
 				{/* Desktop controls */}
 				<div className="hidden items-center gap-2 lg:flex">
-					{/* Notes toggle */}
-					<Button
-						aria-label={notesVisible ? "Hide notes" : "Show notes"}
-						onClick={() => setNotesVisible(!notesVisible)}
-						size="sm"
-						variant="ghost"
+					<Tabs
+						className="w-fit"
+						onValueChange={(v) => setDesktopView(v as DesktopView)}
+						value={desktopView}
 					>
-						{notesVisible ? (
-							<EyeOffIcon className="size-4" />
-						) : (
-							<EyeIcon className="size-4" />
-						)}
-						<span className="ml-1.5 text-xs">Notes</span>
-					</Button>
+						<TabsList className="text-xs">
+							<TabsTrigger aria-label="Show chat only" value="chat">
+								<MessageSquareIcon className="size-4" />
+								Chat
+							</TabsTrigger>
+							<TabsTrigger aria-label="Show chat and notes" value="both">
+								<Columns2 className="size-4" />
+								Both
+							</TabsTrigger>
+							<TabsTrigger aria-label="Show notes only" value="notes">
+								<StickyNoteIcon className="size-4" />
+								Notes
+							</TabsTrigger>
+						</TabsList>
+					</Tabs>
 
 					<Separator className="h-6" orientation="vertical" />
 

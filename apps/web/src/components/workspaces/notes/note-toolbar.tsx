@@ -28,6 +28,7 @@ import type { ElementFormatType } from "lexical";
 import {
 	$createParagraphNode,
 	$getSelection,
+	$isElementNode,
 	$isRangeSelection,
 	CAN_REDO_COMMAND,
 	CAN_UNDO_COMMAND,
@@ -409,7 +410,7 @@ export function NoteToolbar() {
 					readBlockType(setBlockType);
 					const sel = $getSelection();
 					const inTable =
-						sel !== null &&
+						$isRangeSelection(sel) &&
 						$findMatchingParent(sel.anchor.getNode(), $isTableCellNode) !==
 							null;
 					setIsInTable(inTable);
@@ -729,7 +730,7 @@ export function NoteToolbar() {
 						const tableNode = $createTableNodeWithDimensions(3, 3, true);
 						selection.insertNodes([tableNode]);
 						const firstRow = tableNode.getFirstChild();
-						if (firstRow) {
+						if (firstRow && $isElementNode(firstRow)) {
 							const firstCell = firstRow.getFirstChild();
 							if (firstCell && $isTableCellNode(firstCell)) {
 								const paragraph = firstCell.getFirstChild();
