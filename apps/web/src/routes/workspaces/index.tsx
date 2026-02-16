@@ -295,7 +295,7 @@ function WorkspacesListRouteComponent() {
 						</p>
 					</div>
 					<Link to="/workspaces/trash">
-						<Button variant="outline">
+						<Button>
 							<Trash2Icon className="mr-2 size-4" />
 							Trash
 						</Button>

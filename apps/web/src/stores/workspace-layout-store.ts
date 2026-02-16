@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { DesktopView } from "@/lib/workspace-layout-storage";
 import { getLayout, setLayout } from "@/lib/workspace-layout-storage";
 
 interface WorkspaceLayoutState {
@@ -6,7 +7,7 @@ interface WorkspaceLayoutState {
 	selectedNodeId: string | null;
 	sidebarOpen: boolean;
 	panelSizes: number[];
-	notesVisible: boolean;
+	desktopView: DesktopView;
 	editMode: boolean;
 	contextModalOpen: boolean;
 	mobileView: "chat" | "notes";
@@ -14,7 +15,7 @@ interface WorkspaceLayoutState {
 	setSelectedNodeId: (nodeId: string | null) => void;
 	setSidebarOpen: (open: boolean) => void;
 	setPanelSizes: (sizes: number[]) => void;
-	setNotesVisible: (visible: boolean) => void;
+	setDesktopView: (view: DesktopView) => void;
 	setEditMode: (enabled: boolean) => void;
 	setContextModalOpen: (open: boolean) => void;
 	setMobileView: (view: "chat" | "notes") => void;
@@ -26,7 +27,7 @@ export const useWorkspaceLayoutStore = create<WorkspaceLayoutState>(
 		selectedNodeId: null,
 		sidebarOpen: true,
 		panelSizes: [50, 50],
-		notesVisible: true,
+		desktopView: "both",
 		editMode: false,
 		contextModalOpen: false,
 		mobileView: "chat",
@@ -38,7 +39,7 @@ export const useWorkspaceLayoutStore = create<WorkspaceLayoutState>(
 				selectedNodeId: layout.selectedNodeId,
 				sidebarOpen: layout.sidebarOpen,
 				panelSizes: layout.panelSizes,
-				notesVisible: layout.notesVisible,
+				desktopView: layout.desktopView,
 				editMode: layout.editMode,
 			});
 		},
@@ -67,11 +68,11 @@ export const useWorkspaceLayoutStore = create<WorkspaceLayoutState>(
 			}
 		},
 
-		setNotesVisible: (visible: boolean) => {
+		setDesktopView: (view: DesktopView) => {
 			const { workspaceId } = get();
-			set({ notesVisible: visible });
+			set({ desktopView: view });
 			if (workspaceId) {
-				setLayout(workspaceId, { notesVisible: visible });
+				setLayout(workspaceId, { desktopView: view });
 			}
 		},
 

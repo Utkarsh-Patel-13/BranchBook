@@ -41,7 +41,7 @@ export function WorkspaceSplitLayout({
 	const router = useRouter();
 	const {
 		sidebarOpen,
-		notesVisible,
+		desktopView,
 		editMode,
 		mobileView,
 		initLayout,
@@ -87,21 +87,27 @@ export function WorkspaceSplitLayout({
 					{/* absolute inset-0 gives the flex container a definite pixel height */}
 					<div className="absolute inset-0 top-14">
 						<div className="flex h-full">
-							{/* Desktop: Split view */}
-							<div
-								className={`hidden flex-col overflow-hidden border-r lg:flex ${
-									notesVisible ? "w-[50%]" : "w-full"
-								}`}
-							>
-								{currentNodeId ? (
-									<NodeChatPanel nodeId={currentNodeId} tree={tree} />
-								) : (
-									<ChatEmptyState />
-								)}
-							</div>
+							{/* Desktop: chat / both / notes */}
+							{(desktopView === "chat" || desktopView === "both") && (
+								<div
+									className={`hidden flex-col overflow-hidden border-r lg:flex ${
+										desktopView === "both" ? "w-[50%]" : "w-full"
+									}`}
+								>
+									{currentNodeId ? (
+										<NodeChatPanel nodeId={currentNodeId} tree={tree} />
+									) : (
+										<ChatEmptyState />
+									)}
+								</div>
+							)}
 
-							{notesVisible && (
-								<div className="hidden w-[50%] overflow-hidden lg:block">
+							{(desktopView === "notes" || desktopView === "both") && (
+								<div
+									className={`hidden overflow-hidden lg:block ${
+										desktopView === "both" ? "w-[50%]" : "w-full"
+									}`}
+								>
 									<WorkspaceNotesPanel
 										editMode={editMode}
 										selectedNodeId={currentNodeId}

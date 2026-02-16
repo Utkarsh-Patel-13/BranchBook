@@ -1,8 +1,8 @@
 import type { NodeTree } from "@nexus/types";
 import { useRouter } from "@tanstack/react-router";
 import {
-	EyeIcon,
-	EyeOffIcon,
+	ChevronLeftIcon,
+	Columns2,
 	InfoIcon,
 	MessageSquareIcon,
 	StickyNoteIcon,
@@ -10,6 +10,7 @@ import {
 import { Fragment, useMemo } from "react";
 import {
 	Breadcrumb,
+	BreadcrumbEllipsis,
 	BreadcrumbItem,
 	BreadcrumbLink,
 	BreadcrumbList,
@@ -19,6 +20,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { DesktopView } from "@/lib/workspace-layout-storage";
 import { buildNodePath, findNodeById } from "@/lib/workspace-navigation";
 import { useWorkspaceLayoutStore } from "@/stores/workspace-layout-store";
 
@@ -59,9 +62,9 @@ export function WorkspaceHeader({
 }: WorkspaceHeaderProps) {
 	const router = useRouter();
 	const {
-		notesVisible,
+		desktopView,
 		mobileView,
-		setNotesVisible,
+		setDesktopView,
 		setContextModalOpen,
 		setMobileView,
 	} = useWorkspaceLayoutStore();
@@ -81,14 +84,41 @@ export function WorkspaceHeader({
 		}
 	};
 
+	const breadcrumbSegments = useMemo(() => {
+		const len = breadcrumbPath.length;
+		if (len <= 4) {
+			return breadcrumbPath.map((node, i) => ({ node, isLast: i === len - 1 }));
+		}
+		const first = breadcrumbPath[0];
+		const lastTwo = breadcrumbPath.slice(-2);
+		return [
+			{ node: first, isLast: false },
+			{ node: null, isLast: false, ellipsis: true },
+			...lastTwo.map((node, i) => ({
+				node,
+				isLast: i === lastTwo.length - 1,
+			})),
+		];
+	}, [breadcrumbPath]);
+
 	return (
 		<header className="flex h-14 shrink-0 items-center gap-2 border-b bg-background px-4">
 			{/* Sidebar Toggle */}
 			<SidebarTrigger />
 
+			{/* Back */}
+			<Button
+				aria-label="Go back"
+				className="size-8 shrink-0 md:size-9"
+				onClick={() => router.navigate({ to: "/workspaces" })}
+				variant="ghost"
+			>
+				<ChevronLeftIcon className="size-4" />
+			</Button>
+
 			{/* Breadcrumbs */}
-			<Breadcrumb className="hidden flex-1 md:flex">
-				<BreadcrumbList>
+			<Breadcrumb className="hidden min-w-0 flex-1 md:flex">
+				<BreadcrumbList className="min-w-0 flex-wrap">
 					{breadcrumbPath.length === 0 && (
 						<BreadcrumbItem>
 							<BreadcrumbPage className="text-muted-foreground">
@@ -96,24 +126,36 @@ export function WorkspaceHeader({
 							</BreadcrumbPage>
 						</BreadcrumbItem>
 					)}
-					{breadcrumbPath.slice(-3).map((node, index) => {
-						const isLast =
-							breadcrumbPath.length < 3
-								? index === breadcrumbPath.length - 1
-								: index === 2;
+					{breadcrumbSegments.map((segment) => {
+						if (segment.ellipsis) {
+							return (
+								<Fragment key="breadcrumb-ellipsis">
+									<BreadcrumbItem>
+										<BreadcrumbEllipsis />
+									</BreadcrumbItem>
+									<BreadcrumbSeparator />
+								</Fragment>
+							);
+						}
+						const { node, isLast } = segment;
+						if (!node) {
+							return null;
+						}
+						const title = node.title.trim() || "Untitled";
 						return (
 							<Fragment key={node.id}>
-								<BreadcrumbItem>
+								<BreadcrumbItem className="min-w-0 max-w-48">
 									{isLast ? (
-										<BreadcrumbPage>{node.title}</BreadcrumbPage>
+										<BreadcrumbPage className="truncate" title={title}>
+											{title}
+										</BreadcrumbPage>
 									) : (
 										<BreadcrumbLink
-											className="cursor-pointer"
+											className="cursor-pointer truncate"
 											onClick={() => handleNodeClick(node)}
+											title={title}
 										>
-											{node.title.length > 10
-												? `${node.title.slice(0, 10)}...`
-												: node.title}
+											{title}
 										</BreadcrumbLink>
 									)}
 								</BreadcrumbItem>
@@ -163,20 +205,26 @@ export function WorkspaceHeader({
 
 				{/* Desktop controls */}
 				<div className="hidden items-center gap-2 lg:flex">
-					{/* Notes toggle */}
-					<Button
-						aria-label={notesVisible ? "Hide notes" : "Show notes"}
-						onClick={() => setNotesVisible(!notesVisible)}
-						size="sm"
-						variant="ghost"
+					<Tabs
+						className="w-fit"
+						onValueChange={(v) => setDesktopView(v as DesktopView)}
+						value={desktopView}
 					>
-						{notesVisible ? (
-							<EyeOffIcon className="size-4" />
-						) : (
-							<EyeIcon className="size-4" />
-						)}
-						<span className="ml-1.5 text-xs">Notes</span>
-					</Button>
+						<TabsList className="text-xs">
+							<TabsTrigger aria-label="Show chat only" value="chat">
+								<MessageSquareIcon className="size-4" />
+								Chat
+							</TabsTrigger>
+							<TabsTrigger aria-label="Show chat and notes" value="both">
+								<Columns2 className="size-4" />
+								Both
+							</TabsTrigger>
+							<TabsTrigger aria-label="Show notes only" value="notes">
+								<StickyNoteIcon className="size-4" />
+								Notes
+							</TabsTrigger>
+						</TabsList>
+					</Tabs>
 
 					<Separator className="h-6" orientation="vertical" />
 

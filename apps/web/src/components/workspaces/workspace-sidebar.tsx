@@ -10,6 +10,7 @@ import {
 	SearchIcon,
 	Trash2Icon,
 } from "lucide-react";
+import { motion } from "motion/react";
 import type * as React from "react";
 import { Fragment, useMemo, useState } from "react";
 import { ModeToggle } from "@/components/mode-toggle";
@@ -88,13 +89,10 @@ function NodeRow({
 	const row = (
 		<ButtonGroup
 			className={cn(
-				"group/node row relative w-full min-w-0 flex-1 [&:hover_.row-actions]:opacity-100 [&_.row-actions]:opacity-0",
-				isSelected && "bg-sidebar-accent text-sidebar-accent-foreground"
+				"group/node row relative w-full min-w-0 flex-1 rounded-lg [&:hover_.row-actions]:opacity-100 [&_.row-actions]:opacity-0",
+				isSelected && "bg-primary/10 text-sidebar-foreground dark:bg-primary/15"
 			)}
 		>
-			{isSelected && (
-				<div className="absolute top-1.5 bottom-1.5 left-0 w-1 rounded-r bg-primary" />
-			)}
 			{hasChildren ? (
 				<Button
 					aria-label={open ? "Collapse" : "Expand"}
@@ -144,7 +142,7 @@ function NodeRow({
 					render={
 						<Button
 							aria-label="Node options"
-							className="size-6 cursor-pointer rounded"
+							className="row-actions size-6 cursor-pointer rounded"
 							onClick={(e) => e.stopPropagation()}
 							size="icon"
 							variant="ghost"
@@ -215,7 +213,12 @@ function NodeRow({
 		>
 			<div className="relative flex min-w-0 items-center">{row}</div>
 			<CollapsibleContent>
-				<div className="relative ml-2 border-sidebar-border border-l">
+				<motion.div
+					animate={{ opacity: 1 }}
+					className="relative ml-2 border-sidebar-border border-l"
+					initial={{ opacity: 0 }}
+					transition={{ duration: 0.15, ease: "easeOut" }}
+				>
 					{node.children.map((child) => (
 						<NodeRow
 							key={child.id}
@@ -225,7 +228,7 @@ function NodeRow({
 							workspaceId={workspaceId}
 						/>
 					))}
-				</div>
+				</motion.div>
 			</CollapsibleContent>
 		</Collapsible>
 	);
@@ -311,12 +314,25 @@ export function WorkspaceSidebar({
 								</Button>
 							</div>
 							{isLoading && (
-								<div className="px-3 py-4 text-center text-muted-foreground text-xs">
+								<motion.div
+									animate={{ opacity: [0.6, 1, 0.6] }}
+									className="px-3 py-4 text-center text-muted-foreground text-xs"
+									transition={{
+										duration: 1.5,
+										repeat: Number.POSITIVE_INFINITY,
+										ease: "easeInOut",
+									}}
+								>
 									Loading nodes…
-								</div>
+								</motion.div>
 							)}
 							{!isLoading && filteredNodes.length === 0 && (
-								<div className="flex flex-col items-center gap-3 px-3 py-6 text-center">
+								<motion.div
+									animate={{ opacity: 1, y: 0 }}
+									className="flex flex-col items-center gap-3 px-3 py-6 text-center"
+									initial={{ opacity: 0, y: 6 }}
+									transition={{ duration: 0.2, ease: "easeOut" }}
+								>
 									<p className="text-muted-foreground text-xs">
 										{nodes.length === 0
 											? "No nodes yet"
@@ -332,24 +348,51 @@ export function WorkspaceSidebar({
 											Create node
 										</Button>
 									)}
-								</div>
+								</motion.div>
 							)}
 							{!isLoading && filteredNodes.length > 0 && (
-								<div className="min-w-0 flex-1 space-y-4">
+								<motion.div
+									animate="visible"
+									className="min-w-0 flex-1 space-y-4"
+									initial="hidden"
+									variants={{
+										hidden: {},
+										visible: {
+											transition: {
+												staggerChildren: 0.03,
+												delayChildren: 0.02,
+											},
+										},
+									}}
+								>
 									{filteredNodes.map((node, index) => (
 										<Fragment key={node.id}>
-											<NodeRow
-												node={node}
-												onSelectNode={onSelectNode}
-												selectedNodeId={selectedNodeId}
-												workspaceId={workspaceId}
-											/>
+											<motion.div
+												variants={{
+													hidden: { opacity: 0, x: -6 },
+													visible: {
+														opacity: 1,
+														x: 0,
+														transition: {
+															duration: 0.2,
+															ease: "easeOut",
+														},
+													},
+												}}
+											>
+												<NodeRow
+													node={node}
+													onSelectNode={onSelectNode}
+													selectedNodeId={selectedNodeId}
+													workspaceId={workspaceId}
+												/>
+											</motion.div>
 											{index < filteredNodes.length - 1 && (
 												<Separator className="my-2" />
 											)}
 										</Fragment>
 									))}
-								</div>
+								</motion.div>
 							)}
 						</div>
 					</div>
