@@ -21,6 +21,7 @@ model Workspace {
   nodes       Node[]
 
   @@index([ownerId])
+  @@index([ownerId, deletedAt])
   @@map("workspace")
 }
 
@@ -47,6 +48,7 @@ model Node {
   branchPointMessageId String?
 
   @@index([workspaceId])
+  @@index([workspaceId, deletedAt])
   @@index([parentId])
   @@index([deletedAt])
   @@map("node")

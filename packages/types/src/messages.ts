@@ -26,4 +26,11 @@ export interface CreateMessageInput {
 
 export interface MessageListInput {
 	nodeId: string;
+	cursor?: string;
+	limit?: number;
+}
+
+export interface MessageListOutput {
+	items: MessageType[];
+	nextCursor: string | null;
 }

@@ -30,6 +30,13 @@ export interface WorkspaceCreateInput {
 export interface WorkspaceListInput {
 	sortBy?: WorkspaceSortBy;
 	sortDirection?: WorkspaceSortDirection;
+	cursor?: string;
+	limit?: number;
+}
+
+export interface WorkspaceListOutput {
+	items: WorkspaceListItem[];
+	nextCursor: string | null;
 }
 
 export interface WorkspaceGetByIdInput {

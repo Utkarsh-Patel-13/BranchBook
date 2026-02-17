@@ -1,7 +1,7 @@
 import type { NodeTree } from "@nexus/types";
 import { useRouter } from "@tanstack/react-router";
 import { MessageSquareDashedIcon } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { NodeChatPanel } from "@/components/workspaces/chat/node-chat-panel";
 import { ContextModal } from "@/components/workspaces/context/context-modal";
@@ -39,14 +39,16 @@ export function WorkspaceSplitLayout({
 	tree,
 }: WorkspaceSplitLayoutProps) {
 	const router = useRouter();
-	const {
-		sidebarOpen,
-		desktopView,
-		editMode,
-		mobileView,
-		initLayout,
-		setSidebarOpen,
-	} = useWorkspaceLayoutStore();
+	const sidebarOpen = useWorkspaceLayoutStore((s) => s.sidebarOpen);
+	const desktopView = useWorkspaceLayoutStore((s) => s.desktopView);
+	const editMode = useWorkspaceLayoutStore((s) => s.editMode);
+	const mobileView = useWorkspaceLayoutStore((s) => s.mobileView);
+	const initLayout = useWorkspaceLayoutStore((s) => s.initLayout);
+	const setSidebarOpen = useWorkspaceLayoutStore((s) => s.setSidebarOpen);
+	const panelSizes = useWorkspaceLayoutStore((s) => s.panelSizes);
+	const setPanelSizes = useWorkspaceLayoutStore((s) => s.setPanelSizes);
+
+	const panelContainerRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		initLayout(rootId);
@@ -64,6 +66,32 @@ export function WorkspaceSplitLayout({
 		}
 	};
 
+	const handleResizeMouseDown = (e: React.MouseEvent) => {
+		e.preventDefault();
+		const container = panelContainerRef.current;
+		if (!container) {
+			return;
+		}
+
+		const handleMouseMove = (moveEvent: MouseEvent) => {
+			const rect = container.getBoundingClientRect();
+			const leftPct = Math.min(
+				90,
+				Math.max(10, ((moveEvent.clientX - rect.left) / rect.width) * 100)
+			);
+			const rightPct = 100 - leftPct;
+			setPanelSizes([leftPct, rightPct]);
+		};
+
+		const handleMouseUp = () => {
+			document.removeEventListener("mousemove", handleMouseMove);
+			document.removeEventListener("mouseup", handleMouseUp);
+		};
+
+		document.addEventListener("mousemove", handleMouseMove);
+		document.addEventListener("mouseup", handleMouseUp);
+	};
+
 	return (
 		<>
 			<SidebarProvider
@@ -74,6 +102,7 @@ export function WorkspaceSplitLayout({
 				<WorkspaceSidebar
 					onSelectNode={handleSelectNode}
 					selectedNodeId={currentNodeId}
+					tree={tree}
 					workspaceId={rootId}
 				/>
 
@@ -86,13 +115,15 @@ export function WorkspaceSplitLayout({
 
 					{/* absolute inset-0 gives the flex container a definite pixel height */}
 					<div className="absolute inset-0 top-14">
-						<div className="flex h-full">
+						<div className="flex h-full" ref={panelContainerRef}>
 							{/* Desktop: chat / both / notes */}
 							{(desktopView === "chat" || desktopView === "both") && (
 								<div
-									className={`hidden flex-col overflow-hidden border-r lg:flex ${
-										desktopView === "both" ? "w-[50%]" : "w-full"
-									}`}
+									className="hidden flex-col overflow-hidden border-r lg:flex"
+									style={{
+										width:
+											desktopView === "both" ? `${panelSizes[0]}%` : "100%",
+									}}
 								>
 									{currentNodeId ? (
 										<NodeChatPanel nodeId={currentNodeId} tree={tree} />
@@ -102,11 +133,22 @@ export function WorkspaceSplitLayout({
 								</div>
 							)}
 
+							{/* Drag-to-resize handle (desktop only, both-panel view) */}
+							{desktopView === "both" && (
+								<div
+									aria-hidden
+									className="relative z-10 hidden w-1 cursor-col-resize bg-border hover:bg-primary/40 active:bg-primary/60 lg:block"
+									onMouseDown={handleResizeMouseDown}
+								/>
+							)}
+
 							{(desktopView === "notes" || desktopView === "both") && (
 								<div
-									className={`hidden overflow-hidden lg:block ${
-										desktopView === "both" ? "w-[50%]" : "w-full"
-									}`}
+									className="hidden overflow-hidden lg:block"
+									style={{
+										width:
+											desktopView === "both" ? `${panelSizes[1]}%` : "100%",
+									}}
 								>
 									<WorkspaceNotesPanel
 										editMode={editMode}

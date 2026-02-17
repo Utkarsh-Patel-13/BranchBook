@@ -6,13 +6,26 @@ import type {
 	WorkspaceGetByIdInput,
 	WorkspaceListInput,
 	WorkspaceListItem,
+	WorkspaceListOutput,
 	WorkspaceRestoreInput,
 	WorkspaceUpdateInput,
 } from "@nexus/types";
 import type { FastifyBaseLogger } from "fastify";
+import {
+	logWorkspaceCreated,
+	logWorkspaceDeleted,
+	logWorkspaceRestored,
+	logWorkspaceUpdated,
+} from "./workspace.logging";
 
 const RECOVERY_WINDOW_DAYS = 30;
 const RECOVERY_WINDOW_MS = RECOVERY_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+
+const CACHE_TTL_MS = 30_000;
+const workspaceListCache = new Map<
+	string,
+	{ data: WorkspaceListItem[]; expiresAt: number }
+>();
 
 const toWorkspace = (record: {
 	id: string;
@@ -37,6 +50,7 @@ export const createWorkspace = async (
 	input: WorkspaceCreateInput,
 	logger?: FastifyBaseLogger
 ): Promise<Workspace> => {
+	workspaceListCache.delete(ownerId);
 	const workspace = await prisma.workspace.create({
 		data: {
 			ownerId,
@@ -46,7 +60,6 @@ export const createWorkspace = async (
 	});
 
 	if (logger) {
-		const { logWorkspaceCreated } = await import("./workspace.logging");
 		logWorkspaceCreated(logger, {
 			workspaceId: workspace.id,
 			userId: ownerId,
@@ -59,9 +72,17 @@ export const createWorkspace = async (
 export const listWorkspaces = async (
 	ownerId: string,
 	input: WorkspaceListInput
-): Promise<WorkspaceListItem[]> => {
+): Promise<WorkspaceListOutput> => {
+	const limit = input.limit ?? 50;
 	const sortBy = input.sortBy ?? "lastUpdated";
 	const sortDirection = input.sortDirection ?? "desc";
+
+	if (!input.cursor) {
+		const cached = workspaceListCache.get(ownerId);
+		if (cached && Date.now() < cached.expiresAt) {
+			return { items: cached.data, nextCursor: null };
+		}
+	}
 
 	type OrderByOption =
 		| { name: typeof sortDirection }
@@ -82,6 +103,8 @@ export const listWorkspaces = async (
 			deletedAt: null,
 		},
 		orderBy,
+		take: limit,
+		...(input.cursor ? { skip: 1, cursor: { id: input.cursor } } : {}),
 		select: {
 			id: true,
 			name: true,
@@ -91,13 +114,27 @@ export const listWorkspaces = async (
 		},
 	});
 
-	return workspaces.map(toWorkspaceListItem);
+	const items = workspaces.map(toWorkspaceListItem);
+	const nextCursor = items.length === limit ? (items.at(-1)?.id ?? null) : null;
+
+	if (!input.cursor) {
+		workspaceListCache.set(ownerId, {
+			data: items,
+			expiresAt: Date.now() + CACHE_TTL_MS,
+		});
+	}
+
+	return { items, nextCursor };
 };
 
 export const listDeletedWorkspaces = async (
 	ownerId: string,
 	input: WorkspaceListInput
-): Promise<(WorkspaceListItem & { deletedAt: Date })[]> => {
+): Promise<{
+	items: (WorkspaceListItem & { deletedAt: Date })[];
+	nextCursor: string | null;
+}> => {
+	const limit = input.limit ?? 50;
 	const sortBy = input.sortBy ?? "lastUpdated";
 	const sortDirection = input.sortDirection ?? "desc";
 
@@ -126,6 +163,8 @@ export const listDeletedWorkspaces = async (
 			},
 		},
 		orderBy,
+		take: limit,
+		...(input.cursor ? { skip: 1, cursor: { id: input.cursor } } : {}),
 		select: {
 			id: true,
 			name: true,
@@ -136,7 +175,7 @@ export const listDeletedWorkspaces = async (
 		},
 	});
 
-	return workspaces.map((w) => {
+	const items = workspaces.map((w) => {
 		if (w.deletedAt == null) {
 			throw new Error(
 				"Invariant failed: deleted workspace is missing deletedAt."
@@ -148,6 +187,10 @@ export const listDeletedWorkspaces = async (
 			deletedAt: w.deletedAt,
 		};
 	});
+
+	const nextCursor = items.length === limit ? (items.at(-1)?.id ?? null) : null;
+
+	return { items, nextCursor };
 };
 
 export const getWorkspaceById = async (
@@ -174,40 +217,49 @@ export const updateWorkspace = async (
 	input: WorkspaceUpdateInput,
 	logger?: FastifyBaseLogger
 ): Promise<Workspace | null> => {
-	const existing = await prisma.workspace.findFirst({
-		where: {
-			id: input.workspaceId,
-			ownerId,
-			deletedAt: null,
-		},
-	});
-
-	if (!existing) {
-		return null;
-	}
-
-	const workspace = await prisma.workspace.update({
-		where: {
-			id: input.workspaceId,
-		},
-		data: {
-			name: input.name ?? existing.name,
-			description:
-				input.description !== undefined
-					? input.description
-					: existing.description,
-		},
-	});
-
-	if (logger) {
-		const { logWorkspaceUpdated } = await import("./workspace.logging");
-		logWorkspaceUpdated(logger, {
-			workspaceId: workspace.id,
-			userId: ownerId,
+	workspaceListCache.delete(ownerId);
+	try {
+		const workspace = await prisma.workspace.update({
+			where: {
+				id: input.workspaceId,
+				ownerId,
+				deletedAt: null,
+			},
+			data: {
+				...(input.name !== undefined && { name: input.name }),
+				...(input.description !== undefined && {
+					description: input.description,
+				}),
+			},
 		});
-	}
 
-	return toWorkspace(workspace);
+		if (logger) {
+			logWorkspaceUpdated(logger, {
+				workspaceId: workspace.id,
+				userId: ownerId,
+			});
+		}
+
+		return toWorkspace(workspace);
+	} catch (error) {
+		if (
+			typeof error === "object" &&
+			error !== null &&
+			"code" in error &&
+			(error as { code: unknown }).code === "P2025"
+		) {
+			logger?.warn(
+				{
+					event: "workspace.update.not_found",
+					workspaceId: input.workspaceId,
+					userId: ownerId,
+				},
+				"Workspace not found for update"
+			);
+			return null;
+		}
+		throw error;
+	}
 };
 
 export const deleteWorkspace = async (
@@ -215,43 +267,44 @@ export const deleteWorkspace = async (
 	input: WorkspaceDeleteInput,
 	logger?: FastifyBaseLogger
 ): Promise<Workspace | null> => {
-	const existing = await prisma.workspace.findFirst({
-		where: {
-			id: input.workspaceId,
-			ownerId,
-		},
-	});
-
-	if (!existing || existing.deletedAt) {
-		return null;
-	}
-
+	workspaceListCache.delete(ownerId);
 	const deletedAt = new Date();
 
-	// Soft delete workspace and all its nodes in a transaction
+	// Soft delete workspace and all its nodes in a single atomic transaction
 	const workspace = await prisma.$transaction(async (tx) => {
+		const found = await tx.workspace.findFirst({
+			where: { id: input.workspaceId, ownerId, deletedAt: null },
+			select: { id: true },
+		});
+
+		if (!found) {
+			return null;
+		}
+
 		const updatedWorkspace = await tx.workspace.update({
-			where: {
-				id: input.workspaceId,
-			},
-			data: {
-				deletedAt,
-			},
+			where: { id: input.workspaceId },
+			data: { deletedAt },
 		});
 		await tx.node.updateMany({
-			where: {
-				workspaceId: input.workspaceId,
-				deletedAt: null,
-			},
-			data: {
-				deletedAt,
-			},
+			where: { workspaceId: input.workspaceId, deletedAt: null },
+			data: { deletedAt },
 		});
 		return updatedWorkspace;
 	});
 
+	if (!workspace) {
+		logger?.warn(
+			{
+				event: "workspace.delete.not_found",
+				workspaceId: input.workspaceId,
+				userId: ownerId,
+			},
+			"Workspace not found for delete"
+		);
+		return null;
+	}
+
 	if (logger) {
-		const { logWorkspaceDeleted } = await import("./workspace.logging");
 		logWorkspaceDeleted(logger, {
 			workspaceId: workspace.id,
 			userId: ownerId,
@@ -266,48 +319,48 @@ export const restoreWorkspace = async (
 	input: WorkspaceRestoreInput,
 	logger?: FastifyBaseLogger
 ): Promise<Workspace | null> => {
-	const existing = await prisma.workspace.findFirst({
-		where: {
-			id: input.workspaceId,
-			ownerId,
-		},
-	});
+	workspaceListCache.delete(ownerId);
 
-	if (!existing?.deletedAt) {
-		return null;
-	}
-
-	const now = Date.now();
-	const deletedAtTime = existing.deletedAt.getTime();
-
-	if (now - deletedAtTime > RECOVERY_WINDOW_MS) {
-		return null;
-	}
-
-	// Restore workspace and all its nodes in a transaction
+	// Restore workspace and all its nodes in a single atomic transaction
 	const workspace = await prisma.$transaction(async (tx) => {
+		const found = await tx.workspace.findFirst({
+			where: { id: input.workspaceId, ownerId },
+			select: { id: true, deletedAt: true },
+		});
+
+		if (!found?.deletedAt) {
+			return null;
+		}
+
+		const now = Date.now();
+		if (now - found.deletedAt.getTime() > RECOVERY_WINDOW_MS) {
+			return null;
+		}
+
 		const updatedWorkspace = await tx.workspace.update({
-			where: {
-				id: input.workspaceId,
-			},
-			data: {
-				deletedAt: null,
-			},
+			where: { id: input.workspaceId },
+			data: { deletedAt: null },
 		});
 		await tx.node.updateMany({
-			where: {
-				workspaceId: input.workspaceId,
-				deletedAt: existing.deletedAt,
-			},
-			data: {
-				deletedAt: null,
-			},
+			where: { workspaceId: input.workspaceId, deletedAt: found.deletedAt },
+			data: { deletedAt: null },
 		});
 		return updatedWorkspace;
 	});
 
+	if (!workspace) {
+		logger?.warn(
+			{
+				event: "workspace.restore.not_found",
+				workspaceId: input.workspaceId,
+				userId: ownerId,
+			},
+			"Workspace not found for restore"
+		);
+		return null;
+	}
+
 	if (logger) {
-		const { logWorkspaceRestored } = await import("./workspace.logging");
 		logWorkspaceRestored(logger, {
 			workspaceId: workspace.id,
 			userId: ownerId,

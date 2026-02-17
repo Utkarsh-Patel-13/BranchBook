@@ -170,7 +170,7 @@ function WorkspacesListRouteComponent() {
 	const updateMutation = useUpdateWorkspaceMutation();
 	const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
-	const workspaces = listQuery.data ?? [];
+	const workspaces = listQuery.data?.items ?? [];
 	const filtered = useMemo(() => {
 		if (!deferredSearchQuery.trim()) {
 			return workspaces;
@@ -522,7 +522,7 @@ function AddWorkspaceCard({ onOpenModal }: { onOpenModal: () => void }) {
 
 type WorkspaceItem = NonNullable<
 	ReturnType<typeof useWorkspaceListQuery>["data"]
->[number];
+>["items"][number];
 
 function WorkspaceCard({
 	workspace,

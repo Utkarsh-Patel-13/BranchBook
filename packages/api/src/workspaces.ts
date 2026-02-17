@@ -1,5 +1,6 @@
 import {
 	workspaceCreateInputSchema,
+	workspaceDeletedListOutputSchema,
 	workspaceDeleteInputSchema,
 	workspaceDeleteOutputSchema,
 	workspaceGetByIdInputSchema,
@@ -10,7 +11,6 @@ import {
 	workspaceUpdateInputSchema,
 } from "@nexus/validators/workspaces";
 import { TRPCError } from "@trpc/server";
-import { z } from "zod";
 import { protectedProcedure, router } from "./index";
 import {
 	createWorkspace,
@@ -58,18 +58,7 @@ export const workspaceRouter = router({
 
 	listDeleted: protectedProcedure
 		.input(workspaceListInputSchema)
-		.output(
-			z.array(
-				z.object({
-					id: z.string(),
-					name: z.string(),
-					description: z.string().nullable(),
-					createdAt: z.date(),
-					updatedAt: z.date(),
-					deletedAt: z.date(),
-				})
-			)
-		)
+		.output(workspaceDeletedListOutputSchema)
 		.query(({ ctx, input }) => {
 			const userId = requireUserId(
 				ctx.session?.user?.id,

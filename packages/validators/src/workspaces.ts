@@ -5,6 +5,7 @@ import type {
 	WorkspaceGetByIdInput,
 	WorkspaceListInput,
 	WorkspaceListItem,
+	WorkspaceListOutput,
 	WorkspaceRestoreInput,
 	WorkspaceSortBy,
 	WorkspaceSortDirection,
@@ -52,6 +53,8 @@ export const workspaceListInputSchema: z.ZodType<WorkspaceListInput> = z.object(
 		sortDirection: z
 			.enum(["asc", "desc"] satisfies WorkspaceSortDirection[])
 			.optional(),
+		cursor: z.string().optional(),
+		limit: z.number().int().min(1).max(50).optional().default(50),
 	}
 );
 
@@ -103,7 +106,25 @@ export const workspaceListItemSchema: z.ZodType<WorkspaceListItem> = z.object({
 	updatedAt: z.date(),
 });
 
-export const workspaceListOutputSchema = workspaceListItemSchema.array();
+export const workspaceListOutputSchema: z.ZodType<WorkspaceListOutput> =
+	z.object({
+		items: z.array(workspaceListItemSchema),
+		nextCursor: z.string().nullable(),
+	});
+
+export const workspaceDeletedListOutputSchema = z.object({
+	items: z.array(
+		z.object({
+			id: z.string(),
+			name: z.string(),
+			description: z.string().nullable(),
+			createdAt: z.date(),
+			updatedAt: z.date(),
+			deletedAt: z.date(),
+		})
+	),
+	nextCursor: z.string().nullable(),
+});
 
 export const workspaceDeleteOutputSchema = z.object({
 	id: workspaceIdSchema,

@@ -5,24 +5,17 @@ import { create } from "zustand";
 import { queryClient, trpc } from "@/utils/trpc";
 
 interface WorkspaceStoreState {
-	selectedWorkspaceId: WorkspaceId | null;
 	sort: Required<Pick<WorkspaceListInput, "sortBy" | "sortDirection">>;
-	setSelectedWorkspaceId: (workspaceId: WorkspaceId | null) => void;
 	setSort: (sort: WorkspaceListInput) => void;
 }
 
 export const useWorkspaceStore = create<WorkspaceStoreState>((set) => ({
-	selectedWorkspaceId: null,
 	sort: {
 		sortBy: "lastUpdated",
 		sortDirection: "desc",
 	},
-	setSelectedWorkspaceId: (workspaceId) => {
-		set({ selectedWorkspaceId: workspaceId });
-	},
 	setSort: (sort) => {
 		set((current) => ({
-			...current,
 			sort: {
 				sortBy: sort.sortBy ?? current.sort.sortBy,
 				sortDirection: sort.sortDirection ?? current.sort.sortDirection,
@@ -46,10 +39,12 @@ export const useWorkspaceByIdQuery = (workspaceId: WorkspaceId | null) =>
 	});
 
 const invalidateWorkspaceList = () =>
-	queryClient.invalidateQueries(trpc.workspace.list.queryOptions({}));
+	queryClient.invalidateQueries({ queryKey: trpc.workspace.list.queryKey() });
 
 const invalidateDeletedWorkspaceList = () =>
-	queryClient.invalidateQueries(trpc.workspace.listDeleted.queryOptions({}));
+	queryClient.invalidateQueries({
+		queryKey: trpc.workspace.listDeleted.queryKey(),
+	});
 
 export const useCreateWorkspaceMutation = () =>
 	useMutation({

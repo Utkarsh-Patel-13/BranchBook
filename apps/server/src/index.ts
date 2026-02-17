@@ -35,6 +35,12 @@ const fastify = Fastify({
 
 fastify.register(fastifyCors, baseCorsConfig);
 
+await fastify.register(import("@fastify/rate-limit"), {
+	max: 100,
+	timeWindow: "1 minute",
+	keyGenerator: (req) => req.ip,
+});
+
 registerWorkspaceFeatures(fastify);
 registerChatRoute(fastify);
 
@@ -77,7 +83,10 @@ fastify.register(fastifyTRPCPlugin, {
 		router: appRouter,
 		createContext,
 		onError({ path, error }) {
-			console.error(`Error in tRPC handler on path '${path}':`, error);
+			fastify.log.error(
+				{ path, error: error.message, code: error.code },
+				"tRPC procedure error"
+			);
 		},
 	} satisfies FastifyTRPCPluginOptions<AppRouter>["trpcOptions"],
 });

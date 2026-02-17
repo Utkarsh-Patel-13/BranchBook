@@ -2,7 +2,8 @@ const STORAGE_KEY_PREFIX = "nexus:workspace:layout";
 
 export type DesktopView = "chat" | "both" | "notes";
 
-interface WorkspaceLayout {
+export interface PersistedWorkspaceLayout {
+	version: 1;
 	selectedNodeId: string | null;
 	sidebarOpen: boolean;
 	panelSizes: number[];
@@ -10,7 +11,8 @@ interface WorkspaceLayout {
 	editMode: boolean;
 }
 
-const DEFAULT_LAYOUT: WorkspaceLayout = {
+const DEFAULT_LAYOUT: PersistedWorkspaceLayout = {
+	version: 1,
 	selectedNodeId: null,
 	sidebarOpen: true,
 	panelSizes: [50, 50],
@@ -22,12 +24,13 @@ function storageKey(workspaceId: string): string {
 	return `${STORAGE_KEY_PREFIX}:${workspaceId}`;
 }
 
-function parseLayout(raw: unknown): WorkspaceLayout {
+function parseLayout(raw: unknown): PersistedWorkspaceLayout {
 	if (typeof raw !== "object" || raw === null) {
 		return { ...DEFAULT_LAYOUT };
 	}
 
 	const obj = raw as Record<string, unknown>;
+	const isLegacy = !("version" in obj);
 
 	const selectedNodeId =
 		typeof obj.selectedNodeId === "string" || obj.selectedNodeId === null
@@ -52,17 +55,27 @@ function parseLayout(raw: unknown): WorkspaceLayout {
 		) {
 			return obj.desktopView;
 		}
-		const legacyNotesVisible =
-			typeof obj.notesVisible === "boolean" ? obj.notesVisible : true;
-		return legacyNotesVisible ? "both" : "chat";
+		if (isLegacy) {
+			const legacyNotesVisible =
+				typeof obj.notesVisible === "boolean" ? obj.notesVisible : true;
+			return legacyNotesVisible ? "notes" : "both";
+		}
+		return "both";
 	})();
 
 	const editMode = typeof obj.editMode === "boolean" ? obj.editMode : false;
 
-	return { selectedNodeId, sidebarOpen, panelSizes, desktopView, editMode };
+	return {
+		version: 1,
+		selectedNodeId,
+		sidebarOpen,
+		panelSizes,
+		desktopView,
+		editMode,
+	};
 }
 
-export function getLayout(workspaceId: string): WorkspaceLayout {
+export function getLayout(workspaceId: string): PersistedWorkspaceLayout {
 	try {
 		const raw = localStorage.getItem(storageKey(workspaceId));
 		if (raw === null) {
@@ -76,12 +89,18 @@ export function getLayout(workspaceId: string): WorkspaceLayout {
 
 export function setLayout(
 	workspaceId: string,
-	payload: Partial<WorkspaceLayout>
+	layout: PersistedWorkspaceLayout
 ): void {
 	try {
-		const current = getLayout(workspaceId);
-		const next = { ...current, ...payload };
-		localStorage.setItem(storageKey(workspaceId), JSON.stringify(next));
+		localStorage.setItem(storageKey(workspaceId), JSON.stringify(layout));
+	} catch {
+		// localStorage may be unavailable (e.g. private browsing with storage disabled)
+	}
+}
+
+export function clearLayout(workspaceId: string): void {
+	try {
+		localStorage.removeItem(storageKey(workspaceId));
 	} catch {
 		// localStorage may be unavailable (e.g. private browsing with storage disabled)
 	}

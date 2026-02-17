@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import type * as React from "react";
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, memo, useMemo, useState } from "react";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
@@ -36,7 +36,6 @@ import {
 import UserMenu from "@/components/user-menu";
 import { CreateNodeDialog } from "@/components/workspaces/nodes/create-node-dialog";
 import { DeleteNodeDialog } from "@/components/workspaces/nodes/delete-node-dialog";
-import { useNodeTree } from "@/hooks/use-nodes";
 import { cn } from "@/lib/utils";
 import { Separator } from "../ui/separator";
 
@@ -69,7 +68,7 @@ interface NodeRowProps {
 	onSelectNode: (nodeId: string) => void;
 }
 
-function NodeRow({
+const NodeRow = memo(function NodeRow({
 	node,
 	workspaceId,
 	selectedNodeId,
@@ -232,12 +231,13 @@ function NodeRow({
 			</CollapsibleContent>
 		</Collapsible>
 	);
-}
+});
 
 interface WorkspaceSidebarProps {
 	workspaceId: string;
 	selectedNodeId: string | null;
 	onSelectNode: (nodeId: string) => void;
+	tree: NodeTree[];
 	workspaceName?: string;
 }
 
@@ -245,17 +245,16 @@ export function WorkspaceSidebar({
 	workspaceId,
 	selectedNodeId,
 	onSelectNode,
+	tree,
 	workspaceName,
 	...props
 }: WorkspaceSidebarProps & React.ComponentProps<typeof Sidebar>) {
-	const { data: tree, isLoading } = useNodeTree(workspaceId);
 	const [createRootOpen, setCreateRootOpen] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
 
-	const nodes = tree ?? [];
 	const filteredNodes = useMemo(
-		() => filterTree(nodes, searchQuery),
-		[nodes, searchQuery]
+		() => filterTree(tree, searchQuery),
+		[tree, searchQuery]
 	);
 
 	return (
@@ -277,7 +276,7 @@ export function WorkspaceSidebar({
 								{workspaceName || "Workspace"}
 							</span>
 							<span className="text-muted-foreground text-xs">
-								{nodes.length} {nodes.length === 1 ? "node" : "nodes"}
+								{tree.length} {tree.length === 1 ? "node" : "nodes"}
 							</span>
 						</div>
 					</div>
@@ -313,20 +312,7 @@ export function WorkspaceSidebar({
 									<PlusIcon className="size-4" />
 								</Button>
 							</div>
-							{isLoading && (
-								<motion.div
-									animate={{ opacity: [0.6, 1, 0.6] }}
-									className="px-3 py-4 text-center text-muted-foreground text-xs"
-									transition={{
-										duration: 1.5,
-										repeat: Number.POSITIVE_INFINITY,
-										ease: "easeInOut",
-									}}
-								>
-									Loading nodes…
-								</motion.div>
-							)}
-							{!isLoading && filteredNodes.length === 0 && (
+							{filteredNodes.length === 0 && (
 								<motion.div
 									animate={{ opacity: 1, y: 0 }}
 									className="flex flex-col items-center gap-3 px-3 py-6 text-center"
@@ -334,11 +320,11 @@ export function WorkspaceSidebar({
 									transition={{ duration: 0.2, ease: "easeOut" }}
 								>
 									<p className="text-muted-foreground text-xs">
-										{nodes.length === 0
+										{tree.length === 0
 											? "No nodes yet"
 											: "No nodes match your search"}
 									</p>
-									{nodes.length === 0 && (
+									{tree.length === 0 && (
 										<Button
 											onClick={() => setCreateRootOpen(true)}
 											size="sm"
@@ -350,7 +336,7 @@ export function WorkspaceSidebar({
 									)}
 								</motion.div>
 							)}
-							{!isLoading && filteredNodes.length > 0 && (
+							{filteredNodes.length > 0 && (
 								<motion.div
 									animate="visible"
 									className="min-w-0 flex-1 space-y-4"

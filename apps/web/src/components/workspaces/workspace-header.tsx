@@ -22,7 +22,7 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { DesktopView } from "@/lib/workspace-layout-storage";
-import { buildNodePath, findNodeById } from "@/lib/workspace-navigation";
+import { buildBreadcrumbPath } from "@/lib/workspace-navigation";
 import { useWorkspaceLayoutStore } from "@/stores/workspace-layout-store";
 
 interface WorkspaceHeaderProps {
@@ -31,43 +31,19 @@ interface WorkspaceHeaderProps {
 	workspaceId: string;
 }
 
-function buildBreadcrumbPath(
-	tree: NodeTree[],
-	nodeId: string | null
-): NodeTree[] | null {
-	if (!nodeId) {
-		return null;
-	}
-
-	const pathIds = buildNodePath(tree, nodeId);
-	if (!pathIds) {
-		return null;
-	}
-
-	const nodes: NodeTree[] = [];
-	for (const id of pathIds) {
-		const node = findNodeById(tree, id);
-		if (node) {
-			nodes.push(node);
-		}
-	}
-
-	return nodes;
-}
-
 export function WorkspaceHeader({
 	currentNodeId,
 	tree,
 	workspaceId,
 }: WorkspaceHeaderProps) {
 	const router = useRouter();
-	const {
-		desktopView,
-		mobileView,
-		setDesktopView,
-		setContextModalOpen,
-		setMobileView,
-	} = useWorkspaceLayoutStore();
+	const desktopView = useWorkspaceLayoutStore((s) => s.desktopView);
+	const mobileView = useWorkspaceLayoutStore((s) => s.mobileView);
+	const setDesktopView = useWorkspaceLayoutStore((s) => s.setDesktopView);
+	const setContextModalOpen = useWorkspaceLayoutStore(
+		(s) => s.setContextModalOpen
+	);
+	const setMobileView = useWorkspaceLayoutStore((s) => s.setMobileView);
 
 	const breadcrumbPath = useMemo(() => {
 		if (!currentNodeId) {
@@ -77,9 +53,10 @@ export function WorkspaceHeader({
 	}, [tree, currentNodeId]);
 
 	const handleNodeClick = (node: NodeTree) => {
-		const path = buildNodePath(tree, node.id);
-		if (path) {
-			const urlPath = `/workspaces/${workspaceId}/${path.join("/")}`;
+		const idx = breadcrumbPath.findIndex((n) => n.id === node.id);
+		if (idx >= 0) {
+			const pathIds = breadcrumbPath.slice(0, idx + 1).map((n) => n.id);
+			const urlPath = `/workspaces/${workspaceId}/${pathIds.join("/")}`;
 			router.navigate({ to: urlPath as never });
 		}
 	};
