@@ -1,9 +1,9 @@
-import prisma from "@nexus/db";
+import prisma from "@branchbook/db";
 import {
 	getByNodeIdInputSchema,
 	removeNoteInputSchema,
 	upsertNoteInputSchema,
-} from "@nexus/validators";
+} from "@branchbook/validators";
 import { TRPCError } from "@trpc/server";
 import { protectedProcedure, router } from "../index";
 import { getNoteByNodeId, removeNote, upsertNote } from "../note.service";

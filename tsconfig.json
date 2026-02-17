@@ -1,10 +1,10 @@
 {
-  "extends": "@nexus/config/tsconfig.base.json",
+  "extends": "@branchbook/config/tsconfig.base.json",
   "compilerOptions": {
     "strictNullChecks": true,
     "baseUrl": ".",
     "paths": {
-      "@nexus/types": ["packages/types/src/index.ts"]
+      "@branchbook/types": ["packages/types/src/index.ts"]
     }
   }
 }

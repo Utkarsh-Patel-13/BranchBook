@@ -1,5 +1,5 @@
 {
-  "name": "nexus",
+  "name": "branchbook",
   "private": true,
   "workspaces": {
     "packages": [
@@ -29,27 +29,27 @@
     "dev:native": "turbo -F native dev",
     "dev:web": "turbo -F web dev",
     "dev:server": "turbo -F server dev",
-    "db:push": "turbo -F @nexus/db db:push",
-    "db:studio": "turbo -F @nexus/db db:studio",
-    "db:generate": "turbo -F @nexus/db db:generate",
-    "db:migrate": "turbo -F @nexus/db db:migrate",
-    "db:start": "turbo -F @nexus/db db:start",
-    "db:watch": "turbo -F @nexus/db db:watch",
-    "db:stop": "turbo -F @nexus/db db:stop",
-    "db:down": "turbo -F @nexus/db db:down",
+    "db:push": "turbo -F @branchbook/db db:push",
+    "db:studio": "turbo -F @branchbook/db db:studio",
+    "db:generate": "turbo -F @branchbook/db db:generate",
+    "db:migrate": "turbo -F @branchbook/db db:migrate",
+    "db:start": "turbo -F @branchbook/db db:start",
+    "db:watch": "turbo -F @branchbook/db db:watch",
+    "db:stop": "turbo -F @branchbook/db db:stop",
+    "db:down": "turbo -F @branchbook/db db:down",
     "check": "ultracite check",
     "fix": "ultracite fix",
     "prepare": "husky"
   },
   "dependencies": {
-    "@nexus/env": "workspace:*",
+    "@branchbook/env": "workspace:*",
+    "@branchbook/config": "workspace:*",
     "dotenv": "^17.3.1",
     "marked": "^17.0.2",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.0",
-    "@nexus/config": "workspace:*",
     "@types/bun": "^1.3.9",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",

@@ -1,6 +1,6 @@
-import type { AppRouter } from "@nexus/api/routers/index";
+import type { AppRouter } from "@branchbook/api/routers/index";
 
-import { env } from "@nexus/env/web";
+import { env } from "@branchbook/env/web";
 import { QueryCache, QueryClient } from "@tanstack/react-query";
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";

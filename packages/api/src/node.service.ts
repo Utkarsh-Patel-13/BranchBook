@@ -1,4 +1,4 @@
-import prisma from "@nexus/db";
+import prisma from "@branchbook/db";
 import type {
 	CreateNodeInput,
 	DeleteNodeInput,
@@ -9,8 +9,8 @@ import type {
 	NodeListItem,
 	NodeTree,
 	UpdateNodeInput,
-} from "@nexus/types";
-import type { BranchFromMessageInput } from "@nexus/validators";
+} from "@branchbook/types";
+import type { BranchFromMessageInput } from "@branchbook/validators";
 import { TRPCError } from "@trpc/server";
 import { assembleContextPayload } from "./context-engine.service";
 

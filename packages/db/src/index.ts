@@ -1,4 +1,4 @@
-import { env } from "@nexus/env/server";
+import { env } from "@branchbook/env/server";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "../prisma/generated/client";

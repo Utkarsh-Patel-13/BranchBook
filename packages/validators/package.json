@@ -1,5 +1,5 @@
 {
-  "name": "@nexus/validators",
+  "name": "@branchbook/validators",
   "type": "module",
   "exports": {
     ".": {
@@ -11,11 +11,11 @@
   },
   "scripts": {},
   "dependencies": {
-    "@nexus/types": "workspace:*",
+    "@branchbook/types": "workspace:*",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@nexus/config": "workspace:*",
+    "@branchbook/config": "workspace:*",
     "typescript": "catalog:"
   }
 }

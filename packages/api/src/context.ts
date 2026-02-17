@@ -1,4 +1,4 @@
-import { auth } from "@nexus/auth";
+import { auth } from "@branchbook/auth";
 import type { CreateFastifyContextOptions } from "@trpc/server/adapters/fastify";
 import { fromNodeHeaders } from "better-auth/node";
 

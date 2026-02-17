@@ -1,5 +1,8 @@
-import prisma from "@nexus/db";
-import { createMessageSchema, listMessagesSchema } from "@nexus/validators";
+import prisma from "@branchbook/db";
+import {
+	createMessageSchema,
+	listMessagesSchema,
+} from "@branchbook/validators";
 import { TRPCError } from "@trpc/server";
 import { protectedProcedure, router } from "../index";
 import { createMessage, listMessages } from "../message.service";

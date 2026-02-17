@@ -1,5 +1,5 @@
-import { SUMMARY_THRESHOLD } from "@nexus/config";
-import prisma from "@nexus/db";
+import { SUMMARY_THRESHOLD } from "@branchbook/config";
+import prisma from "@branchbook/db";
 import { assembleContextPayload } from "./context-engine.service";
 
 /**

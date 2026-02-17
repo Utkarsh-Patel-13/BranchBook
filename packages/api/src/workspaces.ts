@@ -9,7 +9,7 @@ import {
 	workspaceRestoreInputSchema,
 	workspaceSchema,
 	workspaceUpdateInputSchema,
-} from "@nexus/validators/workspaces";
+} from "@branchbook/validators/workspaces";
 import { TRPCError } from "@trpc/server";
 import { protectedProcedure, router } from "./index";
 import {

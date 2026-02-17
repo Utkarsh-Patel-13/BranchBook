@@ -1,5 +1,5 @@
 import { expoClient } from "@better-auth/expo/client";
-import { env } from "@nexus/env/native";
+import { env } from "@branchbook/env/native";
 import { createAuthClient } from "better-auth/react";
 import Constants from "expo-constants";
 // biome-ignore lint/performance/noNamespaceImport: we need to use the namespace import

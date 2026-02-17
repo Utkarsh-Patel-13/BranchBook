@@ -1,4 +1,4 @@
-const STORAGE_KEY_PREFIX = "nexus:workspace:layout";
+const STORAGE_KEY_PREFIX = "branchbook:workspace:layout";
 
 export type DesktopView = "chat" | "both" | "notes";
 

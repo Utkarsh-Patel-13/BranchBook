@@ -1,6 +1,6 @@
 import { expo } from "@better-auth/expo";
-import prisma from "@nexus/db";
-import { env } from "@nexus/env/server";
+import prisma from "@branchbook/db";
+import { env } from "@branchbook/env/server";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 

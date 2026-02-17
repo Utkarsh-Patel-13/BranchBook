@@ -1,5 +1,5 @@
 {
-  "name": "@nexus/db",
+  "name": "@branchbook/db",
   "type": "module",
   "exports": {
     ".": {
@@ -20,7 +20,7 @@
     "db:down": "docker compose down"
   },
   "dependencies": {
-    "@nexus/env": "workspace:*",
+    "@branchbook/env": "workspace:*",
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "catalog:",
     "dotenv": "catalog:",
@@ -28,7 +28,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@nexus/config": "workspace:*",
+    "@branchbook/config": "workspace:*",
     "@types/pg": "^8.16.0",
     "prisma": "^7.2.0",
     "typescript": "catalog:"

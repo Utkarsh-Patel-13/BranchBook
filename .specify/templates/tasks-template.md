@@ -49,8 +49,8 @@ description: "Task list template for feature implementation"
 **Purpose**: Project initialization and basic structure
 
 - [ ] T001 Create project structure per implementation plan
-- [ ] T002 Initialize [language] project with [framework] dependencies (for Nexus: TypeScript strict mode, React/TanStack Router/Fastify/tRPC/Prisma where applicable)
-- [ ] T003 [P] Configure linting and formatting tools (for Nexus: Biome/Ultracite via `bun x ultracite check` or `bun run check`)
+- [ ] T002 Initialize [language] project with [framework] dependencies (for BranchBook: TypeScript strict mode, React/TanStack Router/Fastify/tRPC/Prisma where applicable)
+- [ ] T003 [P] Configure linting and formatting tools (for BranchBook: Biome/Ultracite via `bun x ultracite check` or `bun run check`)
 
 ---
 

@@ -10,7 +10,7 @@ import type {
 	WorkspaceSortBy,
 	WorkspaceSortDirection,
 	WorkspaceUpdateInput,
-} from "@nexus/types";
+} from "@branchbook/types";
 import { z } from "zod";
 
 const WORKSPACE_NAME_MIN_LENGTH = 3;

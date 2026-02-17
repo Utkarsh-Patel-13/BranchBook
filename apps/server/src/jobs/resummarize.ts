@@ -2,9 +2,9 @@ import { google } from "@ai-sdk/google";
 import {
 	resetDraftAndUpdateSummaries,
 	upgradeChildrenContext,
-} from "@nexus/api/summary.service";
-import prisma from "@nexus/db";
-import { resummarizationOutputSchema } from "@nexus/validators";
+} from "@branchbook/api/summary.service";
+import prisma from "@branchbook/db";
+import { resummarizationOutputSchema } from "@branchbook/validators";
 import { generateObject } from "ai";
 
 /**

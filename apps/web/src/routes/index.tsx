@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { AtSignIcon, BookOpenIcon, Share2Icon } from "lucide-react";
+import { AtSignIcon, Share2Icon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
@@ -63,7 +63,7 @@ function HomeComponent() {
 								<div className="h-1.5 w-1.5 rounded-full bg-slate-200 dark:bg-slate-700" />
 							</div>
 							<div className="font-medium text-[8px] text-muted-foreground uppercase tracking-widest">
-								nexus_v1
+								BranchBook
 							</div>
 							<div className="w-4" />
 						</div>
@@ -125,9 +125,15 @@ function HomeComponent() {
 				<div className="mx-auto max-w-7xl px-6">
 					<div className="flex items-center justify-between gap-4">
 						<div className="flex items-center gap-1.5">
-							<BookOpenIcon className="size-4 text-primary" />
+							<img
+								alt="BranchBook"
+								className="size-4 rounded-md bg-foreground"
+								height={16}
+								src="/images/BranchBook.png"
+								width={16}
+							/>
 							<span className="font-semibold text-sm tracking-tight">
-								Nexus
+								BranchBook
 							</span>
 						</div>
 
@@ -163,7 +169,7 @@ function HomeComponent() {
 					</div>
 					<div className="pt-2 text-center">
 						<p className="text-[9px] text-muted-foreground">
-							© 2026 Nexus Inc.
+							© 2026 BranchBook Inc.
 						</p>
 					</div>
 				</div>

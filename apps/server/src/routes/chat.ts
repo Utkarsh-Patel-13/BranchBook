@@ -2,10 +2,10 @@ import { google } from "@ai-sdk/google";
 import {
 	appendToDraft,
 	checkThresholdAndQueueResummarization,
-} from "@nexus/api/summary.service";
-import { auth } from "@nexus/auth";
-import prisma from "@nexus/db";
-import { env } from "@nexus/env/server";
+} from "@branchbook/api/summary.service";
+import { auth } from "@branchbook/auth";
+import prisma from "@branchbook/db";
+import { env } from "@branchbook/env/server";
 import type { UIMessage } from "ai";
 import {
 	convertToModelMessages,
@@ -270,7 +270,7 @@ async function prepareChatRequest(
 		}
 	}
 	const baseSystem =
-		"You are a helpful assistant in Nexus, a knowledge workspace app. Be concise and accurate.";
+		"You are a helpful assistant in branchbook, a knowledge workspace app. Be concise and accurate.";
 	const systemPrompt = node.inheritedContext
 		? `${node.inheritedContext}\n\n---\n\n${baseSystem}`
 		: baseSystem;

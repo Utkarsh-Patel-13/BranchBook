@@ -1,4 +1,4 @@
-import type { WorkspaceListInput } from "@nexus/types";
+import type { WorkspaceListInput } from "@branchbook/types";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import {
 	EllipsisVerticalIcon,

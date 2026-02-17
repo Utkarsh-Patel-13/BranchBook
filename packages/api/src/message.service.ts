@@ -1,10 +1,10 @@
-import prisma from "@nexus/db";
+import prisma from "@branchbook/db";
 import type {
 	CreateMessageInput,
 	MessageListInput,
 	MessageListOutput,
 	MessageType,
-} from "@nexus/types";
+} from "@branchbook/types";
 import { TRPCError } from "@trpc/server";
 
 const verifyNodeOwnership = async (

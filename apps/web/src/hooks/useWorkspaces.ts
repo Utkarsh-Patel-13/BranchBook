@@ -1,4 +1,4 @@
-import type { WorkspaceId, WorkspaceListInput } from "@nexus/types";
+import type { WorkspaceId, WorkspaceListInput } from "@branchbook/types";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { create } from "zustand";
 

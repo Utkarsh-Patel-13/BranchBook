@@ -1,4 +1,4 @@
-import type { NodeTree } from "@nexus/types";
+import type { NodeTree } from "@branchbook/types";
 
 /**
  * Builds the URL path from root to a specific node

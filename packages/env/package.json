@@ -1,5 +1,5 @@
 {
-  "name": "@nexus/env",
+  "name": "@branchbook/env",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -14,7 +14,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@nexus/config": "workspace:*",
+    "@branchbook/config": "workspace:*",
     "@types/bun": "catalog:",
     "typescript": "catalog:"
   }

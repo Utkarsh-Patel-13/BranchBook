@@ -1,19 +1,9 @@
-// Better-T-Stack
-//
-// Website: https://www.better-t-stack.dev/
-// Stack Builder: https://www.better-t-stack.dev/new
-// Analytics: https://www.better-t-stack.dev/analytics
-// Showcase: https://www.better-t-stack.dev/showcase
-// Sponsor: https://github.com/sponsors/AmanVarshney01
-//
-// Add new addons with: bun create better-t-stack add
-// This file is safe to delete
 
 {
   "$schema": "https://r2.better-t-stack.dev/schema.json",
   "version": "3.19.5",
   "createdAt": "2026-02-09T07:43:52.983Z",
-  "reproducibleCommand": "bun create better-t-stack@latest nexus --frontend tanstack-router native-uniwind --backend fastify --runtime bun --database postgres --orm prisma --api trpc --auth better-auth --payments none --addons biome husky skills tauri turborepo ultracite --examples none --db-setup docker --web-deploy none --server-deploy none --git --package-manager bun --install",
+  "reproducibleCommand": "bun create better-t-stack@latest branchbook --frontend tanstack-router native-uniwind --backend fastify --runtime bun --database postgres --orm prisma --api trpc --auth better-auth --payments none --addons biome husky skills tauri turborepo ultracite --examples none --db-setup docker --web-deploy none --server-deploy none --git --package-manager bun --install",
   "database": "postgres",
   "orm": "prisma",
   "backend": "fastify",

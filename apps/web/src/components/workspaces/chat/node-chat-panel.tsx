@@ -1,4 +1,4 @@
-import type { NodeTree } from "@nexus/types";
+import type { NodeTree } from "@branchbook/types";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { useListMessages } from "@/hooks/use-messages";
 import { useNodeById } from "@/hooks/use-nodes";

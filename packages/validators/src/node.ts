@@ -105,8 +105,8 @@ export const branchFromMessageSchema = z.object({
 });
 
 export const getBranchesForNodeOutputSchema = z.record(
-	z.string().cuid(),
-	z.array(z.object({ id: z.string().cuid(), title: z.string() }))
+	z.string(),
+	z.array(z.object({ id: z.string(), title: z.string() }))
 );
 
 export const getContextForPanelInputSchema = z.object({

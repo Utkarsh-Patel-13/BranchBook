@@ -11,7 +11,7 @@ import {
 	nodeOutputSchema,
 	nodeTreeOutputSchema,
 	updateNodeInputSchema,
-} from "@nexus/validators";
+} from "@branchbook/validators";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { buildContextPanelData } from "./context-engine.service";

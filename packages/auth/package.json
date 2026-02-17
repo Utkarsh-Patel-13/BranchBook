@@ -1,5 +1,5 @@
 {
-  "name": "@nexus/auth",
+  "name": "@branchbook/auth",
   "type": "module",
   "exports": {
     ".": {
@@ -12,14 +12,14 @@
   "scripts": {},
   "dependencies": {
     "@better-auth/expo": "catalog:",
-    "@nexus/db": "workspace:*",
-    "@nexus/env": "workspace:*",
+    "@branchbook/db": "workspace:*",
+    "@branchbook/env": "workspace:*",
     "better-auth": "catalog:",
     "dotenv": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@nexus/config": "workspace:*",
+    "@branchbook/config": "workspace:*",
     "typescript": "catalog:"
   }
 }

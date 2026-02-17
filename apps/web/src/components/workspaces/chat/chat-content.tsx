@@ -1,6 +1,6 @@
 import { useChat } from "@ai-sdk/react";
-import { env } from "@nexus/env/web";
-import type { MessageType, NodeTree } from "@nexus/types";
+import { env } from "@branchbook/env/web";
+import type { MessageType, NodeTree } from "@branchbook/types";
 import { isTRPCClientError } from "@trpc/client";
 import type { UIMessage } from "ai";
 import { DefaultChatTransport } from "ai";

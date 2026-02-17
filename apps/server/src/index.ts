@@ -1,7 +1,7 @@
+import { createContext } from "@branchbook/api/context";
+import { type AppRouter, appRouter } from "@branchbook/api/routers/index";
+import { auth } from "@branchbook/auth";
 import fastifyCors from "@fastify/cors";
-import { createContext } from "@nexus/api/context";
-import { type AppRouter, appRouter } from "@nexus/api/routers/index";
-import { auth } from "@nexus/auth";
 import {
 	type FastifyTRPCPluginOptions,
 	fastifyTRPCPlugin,

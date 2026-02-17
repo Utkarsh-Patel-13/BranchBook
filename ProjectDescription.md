@@ -1,10 +1,10 @@
-# Nexus - Intelligent Learning & Knowledge Workspace
+# BranchBook - Intelligent Learning & Knowledge Workspace
 
 ## Product Vision
 
-Nexus is a workspace where note-taking and AI conversation exist as equals, enabling non-linear exploration and organic knowledge structuring. It's designed for anyone who learns, explores, or develops ideas through conversation and documentation - from students mastering complex subjects to developers architecting systems to researchers connecting concepts.
+BranchBook is a workspace where note-taking and AI conversation exist as equals, enabling non-linear exploration and organic knowledge structuring. It's designed for anyone who learns, explores, or develops ideas through conversation and documentation - from students mastering complex subjects to developers architecting systems to researchers connecting concepts.
 
-The core insight: learning and ideation aren't linear. They branch, diverge, reconnect. Traditional note apps force hierarchy upfront. Chat interfaces lose structure entirely. Nexus lets knowledge trees grow naturally as you explore, with AI and manual note-taking working side by side.
+The core insight: learning and ideation aren't linear. They branch, diverge, reconnect. Traditional note apps force hierarchy upfront. Chat interfaces lose structure entirely. BranchBook lets knowledge trees grow naturally as you explore, with AI and manual note-taking working side by side.
 
 ## The Problem Space
 
@@ -29,7 +29,7 @@ The core insight: learning and ideation aren't linear. They branch, diverge, rec
 
 **The Manual Workaround**: Copy-paste from chat to notes. This is tedious, breaks flow, and most people just don't do it. The tools don't talk to each other.
 
-### How Nexus Solves This
+### How BranchBook Solves This
 
 **Unified Workspace**
 - Notes and AI conversation live side-by-side in every node

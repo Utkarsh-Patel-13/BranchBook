@@ -1,4 +1,4 @@
-import type { NodeTree } from "@nexus/types";
+import type { NodeTree } from "@branchbook/types";
 import type { UIMessage } from "ai";
 import { isReasoningUIPart, isTextUIPart } from "ai";
 import {

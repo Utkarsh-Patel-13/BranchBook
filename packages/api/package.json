@@ -1,5 +1,5 @@
 {
-  "name": "@nexus/api",
+  "name": "@branchbook/api",
   "type": "module",
   "exports": {
     ".": {
@@ -11,12 +11,12 @@
   },
   "scripts": {},
   "dependencies": {
-    "@nexus/auth": "workspace:*",
-    "@nexus/config": "workspace:*",
-    "@nexus/db": "workspace:*",
-    "@nexus/env": "workspace:*",
-    "@nexus/validators": "workspace:*",
-    "@nexus/types": "workspace:*",
+    "@branchbook/auth": "workspace:*",
+    "@branchbook/config": "workspace:*",
+    "@branchbook/db": "workspace:*",
+    "@branchbook/env": "workspace:*",
+    "@branchbook/validators": "workspace:*",
+    "@branchbook/types": "workspace:*",
     "@trpc/client": "catalog:",
     "@trpc/server": "catalog:",
     "better-auth": "catalog:",

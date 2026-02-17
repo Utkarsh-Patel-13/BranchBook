@@ -11,7 +11,6 @@ import { queryClient, trpc } from "@/utils/trpc";
 
 export default function Home() {
 	const healthCheck = useQuery(trpc.healthCheck.queryOptions());
-	const privateData = useQuery(trpc.privateData.queryOptions());
 	const isConnected = healthCheck?.data === "OK";
 	const isLoading = healthCheck?.isLoading;
 	const { data: session } = authClient.useSession();
@@ -24,7 +23,7 @@ export default function Home() {
 		<Container className="p-6">
 			<View className="mb-6 py-4">
 				<Text className="mb-2 font-bold text-4xl text-foreground">
-					BETTER T STACK
+					BranchBook
 				</Text>
 			</View>
 
@@ -83,13 +82,6 @@ export default function Home() {
 						)}
 					</View>
 				</Card>
-			</Card>
-
-			<Card className="mt-6 p-4" variant="secondary">
-				<Card.Title className="mb-3">Private Data</Card.Title>
-				{privateData && (
-					<Card.Description>{privateData.data?.message}</Card.Description>
-				)}
 			</Card>
 
 			{!session?.user && (

@@ -1,5 +1,5 @@
-import prisma from "@nexus/db";
-import type { AncestorContextEntry, ContextPanelData } from "@nexus/types";
+import prisma from "@branchbook/db";
+import type { AncestorContextEntry, ContextPanelData } from "@branchbook/types";
 
 const RAW_MESSAGE_COUNT = 3;
 

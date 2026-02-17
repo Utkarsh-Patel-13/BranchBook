@@ -1,10 +1,10 @@
-import prisma from "@nexus/db";
+import prisma from "@branchbook/db";
 import type {
 	GetByNodeIdInput,
 	NoteOutput,
 	RemoveNoteInput,
 	UpsertNoteInput,
-} from "@nexus/validators";
+} from "@branchbook/validators";
 import { TRPCError } from "@trpc/server";
 
 const verifyNodeAccess = async (

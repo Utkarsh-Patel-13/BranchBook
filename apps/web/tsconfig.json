@@ -13,7 +13,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@nexus/types": ["../../packages/types/src/index.ts"]
+      "@branchbook/types": ["../../packages/types/src/index.ts"]
     }
   }
 }

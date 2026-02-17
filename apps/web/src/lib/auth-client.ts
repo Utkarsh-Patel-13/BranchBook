@@ -1,4 +1,4 @@
-import { env } from "@nexus/env/web";
+import { env } from "@branchbook/env/web";
 import { createAuthClient } from "better-auth/react";
 
 export const authClient = createAuthClient({

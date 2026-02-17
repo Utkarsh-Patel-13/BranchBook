@@ -21,13 +21,13 @@ Sync Impact Report
   - None
 -->
 
-# Nexus Constitution
+# BranchBook Constitution
 
 ## Core Principles
 
 ### Monorepo Architecture & App Boundaries
 
-Nexus MUST remain a single Turborepo monorepo with clearly defined applications and shared packages.
+BranchBook MUST remain a single Turborepo monorepo with clearly defined applications and shared packages.
 The primary apps are `apps/web` (web), `apps/native` (mobile/Expo), `apps/server` (API), and optional
 desktop targets under `apps/web` (Tauri). Shared domain logic, API contracts, auth, and database
 schemas MUST live in `packages/*` and be consumed by apps via package boundaries rather than direct
@@ -37,7 +37,7 @@ area, and MUST not create circular dependencies in the workspace graph.
 
 ### Package manager and runtime
 
-Nexus MUST use `bun` for all commands, be it package management, runtine, execution.
+BranchBook MUST use `bun` for all commands, be it package management, runtine, execution.
 
 ### Type-Safe Platform & API Contracts
 
@@ -51,7 +51,7 @@ types MUST be backwards compatible or treated as breaking changes with explicit 
 
 ### Design System, Layout & Responsiveness
 
-TailwindCSS and shadcn/ui components form the canonical design system for all Nexus UIs. New UI
+TailwindCSS and shadcn/ui components form the canonical design system for all BranchBook UIs. New UI
 components MUST be built using Tailwind utility classes and shadcn primitives unless a justified
 exception is documented in the feature spec. Layouts MUST be mobile-first and responsive, with
 meaningful breakpoints that ensure all primary workflows are usable on small screens before being
@@ -63,7 +63,7 @@ surfaces where applicable.
 
 ### State Management & Data Fetching
 
-React Query (TanStack Query) is the single source of truth for server state in Nexus applications.
+React Query (TanStack Query) is the single source of truth for server state in BranchBook applications.
 All data fetched from the API MUST flow through typed tRPC procedures wrapped by React Query hooks,
 with cache keys, stale times, and invalidation strategies defined near the contract. Zustand is the
 standard for local and UI/client state that needs to be shared across components; it MUST NOT be
@@ -88,7 +88,7 @@ time, improve its test coverage; new features MUST NOT introduce uncovered criti
 
 ## Architecture & Technology Constraints
 
-Nexus is built as a modern TypeScript monorepo that combines React, TanStack Router, Fastify,
+BranchBook is built as a modern TypeScript monorepo that combines React, TanStack Router, Fastify,
 tRPC, Prisma, Turborepo, Bun, Expo, Tauri, and supporting tooling such as Biome and Husky. New
 features MUST integrate with this stack rather than introducing parallel frameworks without strong,
 documented justification and approval. Web, native, and desktop apps share business logic through
@@ -104,7 +104,7 @@ gates and captured in the relevant specs and plans.
 
 ## Development Workflow, Testing & Quality Gates
 
-All work in Nexus flows through feature branches with clear plans and specifications under
+All work in BranchBook flows through feature branches with clear plans and specifications under
 `/specs/[###-feature-name]/`. Implementation plans MUST include a "Constitution Check" section that
 explicitly confirms compliance with the core principles: monorepo boundaries, strict TypeScript,
 design system usage, state management patterns, canvas performance budgets where applicable, and
@@ -129,7 +129,7 @@ MUST be documented in the feature plan with a clear expiry or follow-up task.
 
 ## Governance
 
-This constitution defines the non-negotiable engineering principles for Nexus and supersedes
+This constitution defines the non-negotiable engineering principles for BranchBook and supersedes
 individual preferences or ad-hoc practices. All contributors—internal and external—are expected to
 understand and follow these rules when designing, implementing, and reviewing changes.
 

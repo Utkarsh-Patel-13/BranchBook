@@ -1,4 +1,4 @@
-import prisma from "@nexus/db";
+import prisma from "@branchbook/db";
 import type {
 	Workspace,
 	WorkspaceCreateInput,
@@ -9,7 +9,7 @@ import type {
 	WorkspaceListOutput,
 	WorkspaceRestoreInput,
 	WorkspaceUpdateInput,
-} from "@nexus/types";
+} from "@branchbook/types";
 import type { FastifyBaseLogger } from "fastify";
 import {
 	logWorkspaceCreated,

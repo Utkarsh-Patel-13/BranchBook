@@ -25,11 +25,12 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 	head: () => ({
 		meta: [
 			{
-				title: "nexus",
+				title: "BranchBook",
 			},
 			{
 				name: "description",
-				content: "nexus is a web application",
+				content:
+					"BranchBook is a workspace where note-taking and AI conversation exist as equals, enabling non-linear exploration and organic knowledge structuring. It's designed for anyone who learns, explores, or develops ideas through conversation and documentation - from students mastering complex subjects to developers architecting systems to researchers connecting concepts.",
 			},
 		],
 		links: [

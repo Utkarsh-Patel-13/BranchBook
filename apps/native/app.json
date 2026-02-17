@@ -1,13 +1,13 @@
 {
   "expo": {
-    "scheme": "nexus",
+    "scheme": "branchbook",
     "userInterfaceStyle": "automatic",
     "orientation": "default",
     "web": {
       "bundler": "metro"
     },
-    "name": "nexus",
-    "slug": "nexus",
+    "name": "branchbook",
+    "slug": "branchbook",
     "plugins": ["expo-font"],
     "experiments": {
       "typedRoutes": true,

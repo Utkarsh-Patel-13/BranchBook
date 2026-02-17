@@ -1,4 +1,4 @@
-import type { WorkspaceId } from "@nexus/types";
+import type { WorkspaceId } from "@branchbook/types";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { WorkspaceEmptyView } from "@/components/workspaces/workspace-empty-view";
 import { WorkspaceSplitLayout } from "@/components/workspaces/workspace-split-layout";

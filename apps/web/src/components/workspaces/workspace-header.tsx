@@ -1,4 +1,4 @@
-import type { NodeTree } from "@nexus/types";
+import type { NodeTree } from "@branchbook/types";
 import { useRouter } from "@tanstack/react-router";
 import {
 	ChevronLeftIcon,

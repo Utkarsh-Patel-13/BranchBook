@@ -16,8 +16,8 @@
     "@expo/metro-runtime": "~6.1.2",
     "@expo/vector-icons": "^15.0.3",
     "@gorhom/bottom-sheet": "^5",
-    "@nexus/api": "workspace:*",
-    "@nexus/env": "workspace:*",
+    "@branchbook/api": "workspace:*",
+    "@branchbook/env": "workspace:*",
     "@react-navigation/drawer": "^7.3.9",
     "@react-navigation/elements": "^2.8.1",
     "@tanstack/react-query": "catalog:",
@@ -54,7 +54,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@nexus/config": "workspace:*",
+    "@branchbook/config": "workspace:*",
     "@types/node": "^24.10.0",
     "@types/react": "~19.1.0",
     "typescript": "catalog:"

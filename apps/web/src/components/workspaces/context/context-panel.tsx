@@ -1,4 +1,4 @@
-import type { GetContextForPanelOutput } from "@nexus/validators";
+import type { GetContextForPanelOutput } from "@branchbook/validators";
 import {
 	AlertCircleIcon,
 	ChevronDownIcon,

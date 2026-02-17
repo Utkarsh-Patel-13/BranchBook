@@ -1,7 +1,6 @@
-import type { NodeTree } from "@nexus/types";
+import type { NodeTree } from "@branchbook/types";
 import { Link } from "@tanstack/react-router";
 import {
-	BookOpenIcon,
 	ChevronRightIcon,
 	MinusIcon,
 	MoreHorizontalIcon,
@@ -265,9 +264,15 @@ export function WorkspaceSidebar({
 						className="flex items-center gap-2 px-2 py-2 transition-opacity hover:opacity-80"
 						to="/workspaces"
 					>
-						<BookOpenIcon className="size-5 text-primary" />
+						<img
+							alt="BranchBook"
+							className="size-5 rounded-md bg-foreground"
+							height={24}
+							src="/images/BranchBook.png"
+							width={24}
+						/>
 						<span className="font-semibold text-base tracking-tight">
-							Nexus
+							BranchBook
 						</span>
 					</Link>
 					<div className="flex items-center gap-2 border-t px-2 py-2">

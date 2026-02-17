@@ -1,4 +1,4 @@
-import type { NodeTree } from "@nexus/types";
+import type { NodeTree } from "@branchbook/types";
 import { isTRPCClientError } from "@trpc/client";
 import { toast } from "sonner";
 import { formatTRPCErrorMessage } from "@/utils/trpc";

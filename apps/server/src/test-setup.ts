@@ -1,7 +1,7 @@
 import { vi } from "vitest";
 
-// Mock @nexus/env/server before any imports that use it
-vi.mock("@nexus/env/server", () => {
+// Mock @branchbook/env/server before any imports that use it
+vi.mock("@branchbook/env/server", () => {
 	return {
 		env: {
 			DATABASE_URL: "file:./dev.db",

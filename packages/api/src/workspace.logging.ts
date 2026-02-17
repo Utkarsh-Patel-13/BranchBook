@@ -1,4 +1,4 @@
-import type { WorkspaceId } from "@nexus/types";
+import type { WorkspaceId } from "@branchbook/types";
 import type { FastifyBaseLogger } from "fastify";
 
 interface WorkspaceLogContext {
