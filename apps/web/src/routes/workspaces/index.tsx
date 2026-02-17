@@ -61,6 +61,7 @@ import {
 	useWorkspaceStore,
 } from "@/hooks/useWorkspaces";
 import { authClient } from "@/lib/auth-client";
+import { formatTRPCErrorMessage } from "@/utils/trpc";
 
 const SORT_BY_LABELS: Record<
 	NonNullable<WorkspaceListInput["sortBy"]>,
@@ -78,34 +79,6 @@ const SORT_DIRECTION_LABELS: Record<
 	desc: "Newest first",
 	asc: "Oldest first",
 };
-
-function formatValidationErrorMessage(
-	raw: string | undefined,
-	fallback: string
-): string {
-	if (raw == null || raw === "") {
-		return fallback;
-	}
-	try {
-		const parsed = JSON.parse(raw) as unknown;
-		if (
-			Array.isArray(parsed) &&
-			parsed.length > 0 &&
-			typeof parsed[0] === "object" &&
-			parsed[0] !== null &&
-			"message" in parsed[0] &&
-			typeof (parsed[0] as { message: unknown }).message === "string"
-		) {
-			const messages = (parsed as { message: string }[])
-				.map((item) => item.message)
-				.filter(Boolean);
-			return messages.length > 0 ? messages.join(" ") : fallback;
-		}
-	} catch {
-		// not JSON or wrong shape
-	}
-	return raw ?? fallback;
-}
 
 function formatRelativeTime(value: Date | string | number): string {
 	const date = value instanceof Date ? value : new Date(value);
@@ -220,7 +193,7 @@ function WorkspacesListRouteComponent() {
 					},
 					onError: (error) => {
 						toast.error(
-							formatValidationErrorMessage(
+							formatTRPCErrorMessage(
 								error.message,
 								"Failed to update workspace"
 							)
@@ -248,7 +221,7 @@ function WorkspacesListRouteComponent() {
 					},
 					onError: (error) => {
 						toast.error(
-							formatValidationErrorMessage(
+							formatTRPCErrorMessage(
 								error.message,
 								"Failed to create workspace"
 							)
@@ -546,10 +519,7 @@ function WorkspaceCard({
 				},
 				onError: (error) => {
 					toast.error(
-						formatValidationErrorMessage(
-							error.message,
-							"Failed to delete workspace"
-						)
+						formatTRPCErrorMessage(error.message, "Failed to delete workspace")
 					);
 				},
 			}

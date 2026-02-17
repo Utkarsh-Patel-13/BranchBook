@@ -1,5 +1,7 @@
+import { isTRPCClientError } from "@trpc/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { formatTRPCErrorMessage } from "@/utils/trpc";
 import {
 	useBranchFromMessage,
 	useCreateNode,
@@ -156,7 +158,12 @@ export function CreateNodeDialog({
 			setTitleError(null);
 			onOpenChange(false);
 		} catch (err) {
-			toast.error(err instanceof Error ? err.message : "Failed to save node");
+			toast.error(
+				formatTRPCErrorMessage(
+					isTRPCClientError(err) ? err.message : undefined,
+					"Failed to save node"
+				)
+			);
 		}
 	};
 

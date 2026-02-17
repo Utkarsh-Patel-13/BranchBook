@@ -43,3 +43,31 @@ export const trpc = createTRPCOptionsProxy<AppRouter>({
 	client: trpcClient,
 	queryClient,
 });
+
+export function formatTRPCErrorMessage(
+	raw: string | undefined,
+	fallback: string
+): string {
+	if (raw == null || raw === "") {
+		return fallback;
+	}
+	try {
+		const parsed = JSON.parse(raw) as unknown;
+		if (
+			Array.isArray(parsed) &&
+			parsed.length > 0 &&
+			typeof parsed[0] === "object" &&
+			parsed[0] !== null &&
+			"message" in parsed[0] &&
+			typeof (parsed[0] as { message: unknown }).message === "string"
+		) {
+			const messages = (parsed as { message: string }[])
+				.map((item) => item.message)
+				.filter(Boolean);
+			return messages.length > 0 ? messages.join(" ") : fallback;
+		}
+	} catch {
+		// not JSON or wrong shape
+	}
+	return raw ?? fallback;
+}
