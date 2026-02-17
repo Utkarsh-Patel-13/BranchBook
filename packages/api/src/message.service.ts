@@ -2,6 +2,7 @@ import prisma from "@nexus/db";
 import type {
 	CreateMessageInput,
 	MessageListInput,
+	MessageListOutput,
 	MessageType,
 } from "@nexus/types";
 import { TRPCError } from "@trpc/server";
@@ -44,14 +45,21 @@ export const createMessage = async (
 export const listMessages = async (
 	db: typeof prisma,
 	input: MessageListInput & { userId: string }
-): Promise<MessageType[]> => {
+): Promise<MessageListOutput> => {
 	await verifyNodeOwnership(input.nodeId, input.userId);
+
+	const limit = input.limit ?? 50;
 
 	const messages = await db.message.findMany({
 		where: { nodeId: input.nodeId },
 		orderBy: { createdAt: "asc" },
+		take: limit,
+		...(input.cursor ? { skip: 1, cursor: { id: input.cursor } } : {}),
 	});
 
 	// biome-ignore lint/suspicious/noExplicitAny: Prisma Json type requires cast
-	return messages as any;
+	const items = messages as any as MessageType[];
+	const nextCursor = items.length === limit ? (items.at(-1)?.id ?? null) : null;
+
+	return { items, nextCursor };
 };

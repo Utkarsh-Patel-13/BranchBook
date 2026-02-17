@@ -1,7 +1,7 @@
 import { useChat } from "@ai-sdk/react";
 import { env } from "@nexus/env/web";
 import type { MessageType, NodeTree } from "@nexus/types";
-import { useMutation } from "@tanstack/react-query";
+import { isTRPCClientError } from "@trpc/client";
 import type { UIMessage } from "ai";
 import { DefaultChatTransport } from "ai";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -16,7 +16,7 @@ import { Shimmer } from "@/components/ai-elements/shimmer";
 import { useBranchesForNode } from "@/hooks/use-nodes";
 import { useNote, useUpsertNote } from "@/hooks/use-note";
 import { cn } from "@/lib/utils";
-import { trpc } from "@/utils/trpc";
+import { formatTRPCErrorMessage } from "@/utils/trpc";
 import { ChatHeader } from "./chat-header";
 import { ChatMessage } from "./chat-message";
 import {
@@ -75,9 +75,6 @@ export function ChatContent({
 		[]
 	);
 
-	const { mutateAsync: createMessage } = useMutation(
-		trpc.message.create.mutationOptions()
-	);
 	const { data: note } = useNote(nodeId);
 	const { mutate: upsertNote } = useUpsertNote(nodeId);
 	const [summarizing, setSummarizing] = useState(false);
@@ -111,7 +108,10 @@ export function ChatContent({
 			);
 		} catch (err) {
 			toast.error(
-				err instanceof Error ? err.message : "Failed to summarize chat to note"
+				formatTRPCErrorMessage(
+					isTRPCClientError(err) ? err.message : undefined,
+					"Failed to summarize chat to note"
+				)
 			);
 		} finally {
 			setSummarizing(false);
@@ -157,12 +157,19 @@ export function ChatContent({
 			new DefaultChatTransport({
 				api: `${env.VITE_SERVER_URL}/api/chat`,
 				credentials: "include",
-				body: () => ({ nodeId, options: chatOptionsRef.current }),
+				prepareSendMessagesRequest: ({ messages, id }) => ({
+					body: {
+						message: messages.at(-1),
+						id: id ?? nodeId,
+						options: chatOptionsRef.current,
+					},
+				}),
 			}),
 		[nodeId]
 	);
 
 	const { messages, status, sendMessage, error } = useChat({
+		id: nodeId,
 		messages: initialMessages,
 		transport,
 	});
@@ -170,11 +177,10 @@ export function ChatContent({
 	const isStreaming = status === "streaming" || status === "submitted";
 
 	const handleSubmit = useCallback(
-		async (text: string) => {
-			await createMessage({ nodeId, content: text });
+		(text: string) => {
 			sendMessage({ text });
 		},
-		[createMessage, nodeId, sendMessage]
+		[sendMessage]
 	);
 
 	const showEmptyState = messages.length === 0 && !isStreaming;

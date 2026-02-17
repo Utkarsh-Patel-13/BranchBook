@@ -25,6 +25,30 @@ export function buildNodePath(
 }
 
 /**
+ * Single-pass DFS that returns the full NodeTree objects along the path to the target node
+ */
+export function buildBreadcrumbPath(
+	tree: NodeTree[],
+	targetNodeId: string,
+	currentPath: NodeTree[] = []
+): NodeTree[] | null {
+	for (const node of tree) {
+		const newPath = [...currentPath, node];
+
+		if (node.id === targetNodeId) {
+			return newPath;
+		}
+
+		const childPath = buildBreadcrumbPath(node.children, targetNodeId, newPath);
+		if (childPath) {
+			return childPath;
+		}
+	}
+
+	return null;
+}
+
+/**
  * Resolves a node from URL path segments
  */
 export function getNodeFromPath(
@@ -68,34 +92,4 @@ export function findNodeById(
 	}
 
 	return null;
-}
-
-/**
- * Navigates to a specific node by building its full path and updating the URL
- * Note: This function is kept for future use but currently not utilized
- * Navigation is handled directly in component handlers
- */
-export function navigateToNode(
-	router: { navigate: (options: { to: string }) => void },
-	workspaceId: string,
-	nodeId: string,
-	tree: NodeTree[]
-): void {
-	const path = buildNodePath(tree, nodeId);
-
-	if (!path) {
-		return;
-	}
-
-	// Build the URL path: /workspaces/<workspace_id>/<node_path>
-	const urlPath = `/workspaces/${workspaceId}/${path.join("/")}`;
-
-	router.navigate({ to: urlPath as never });
-}
-
-/**
- * Gets the root node ID from a tree
- */
-export function getRootNodeId(tree: NodeTree[]): string | null {
-	return tree.length > 0 ? tree[0].id : null;
 }

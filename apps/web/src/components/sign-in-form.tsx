@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import z from "zod";
 
 import { authClient } from "@/lib/auth-client";
-
+import { formatTRPCErrorMessage } from "@/utils/trpc";
 import Loader from "./loader";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -37,7 +37,9 @@ export default function SignInForm({
 						toast.success("Sign in successful");
 					},
 					onError: (error) => {
-						toast.error(error.error.message || error.error.statusText);
+						toast.error(
+							formatTRPCErrorMessage(error.error.message, "Failed to sign in")
+						);
 					},
 				}
 			);

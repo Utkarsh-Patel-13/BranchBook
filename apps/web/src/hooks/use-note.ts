@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { queryClient, trpc } from "../utils/trpc";
+import { formatTRPCErrorMessage, queryClient, trpc } from "../utils/trpc";
 
 interface NoteCacheValue {
 	id: string;
@@ -60,7 +60,7 @@ export const useUpsertNote = (nodeId: string) =>
 			updateNoteCache(nodeId, data);
 		},
 		onError: (err) => {
-			toast.error(`Failed to save note: ${err.message}`, {
+			toast.error(formatTRPCErrorMessage(err.message, "Failed to save note"), {
 				description: "Your unsaved changes are still in the editor. Try again.",
 			});
 		},

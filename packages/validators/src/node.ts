@@ -91,7 +91,7 @@ export const nodeTreeOutputSchema: z.ZodType<NodeTreeShape> = z.lazy(() =>
 // Context Engine schemas
 export const branchFromMessageSchema = z.object({
 	nodeId: z.string().cuid(),
-	messageId: z.string().cuid(),
+	messageId: z.string().length(16),
 	title: z
 		.string()
 		.trim()

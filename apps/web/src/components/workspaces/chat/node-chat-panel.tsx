@@ -11,7 +11,8 @@ interface NodeChatPanelProps {
 
 export function NodeChatPanel({ nodeId, tree }: NodeChatPanelProps) {
 	const { data: node } = useNodeById(nodeId);
-	const { data: dbMessages, isLoading } = useListMessages(nodeId);
+	const { data: messageListData, isLoading } = useListMessages(nodeId);
+	const dbMessages = messageListData?.items;
 
 	if (isLoading || !dbMessages || !node) {
 		return (

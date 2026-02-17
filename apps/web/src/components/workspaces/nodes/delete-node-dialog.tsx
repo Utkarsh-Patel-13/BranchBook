@@ -1,5 +1,7 @@
 import type { NodeTree } from "@nexus/types";
+import { isTRPCClientError } from "@trpc/client";
 import { toast } from "sonner";
+import { formatTRPCErrorMessage } from "@/utils/trpc";
 import { useDeleteNode } from "../../../hooks/use-nodes";
 import {
 	AlertDialog,
@@ -49,7 +51,10 @@ export function DeleteNodeDialog({
 			onDeleted?.();
 		} catch (error) {
 			toast.error(
-				error instanceof Error ? error.message : "Failed to delete node"
+				formatTRPCErrorMessage(
+					isTRPCClientError(error) ? error.message : undefined,
+					"Failed to delete node"
+				)
 			);
 		}
 	};

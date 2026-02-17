@@ -1,5 +1,8 @@
 import { create } from "zustand";
-import type { DesktopView } from "@/lib/workspace-layout-storage";
+import type {
+	DesktopView,
+	PersistedWorkspaceLayout,
+} from "@/lib/workspace-layout-storage";
 import { getLayout, setLayout } from "@/lib/workspace-layout-storage";
 
 interface WorkspaceLayoutState {
@@ -19,6 +22,24 @@ interface WorkspaceLayoutState {
 	setEditMode: (enabled: boolean) => void;
 	setContextModalOpen: (open: boolean) => void;
 	setMobileView: (view: "chat" | "notes") => void;
+}
+
+let panelSizesDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+function toPersistedLayout(
+	state: Pick<
+		WorkspaceLayoutState,
+		"selectedNodeId" | "sidebarOpen" | "panelSizes" | "desktopView" | "editMode"
+	>
+): PersistedWorkspaceLayout {
+	return {
+		version: 1,
+		selectedNodeId: state.selectedNodeId,
+		sidebarOpen: state.sidebarOpen,
+		panelSizes: state.panelSizes,
+		desktopView: state.desktopView,
+		editMode: state.editMode,
+	};
 }
 
 export const useWorkspaceLayoutStore = create<WorkspaceLayoutState>(
@@ -48,7 +69,7 @@ export const useWorkspaceLayoutStore = create<WorkspaceLayoutState>(
 			const { workspaceId } = get();
 			set({ selectedNodeId: nodeId });
 			if (workspaceId) {
-				setLayout(workspaceId, { selectedNodeId: nodeId });
+				setLayout(workspaceId, toPersistedLayout(get()));
 			}
 		},
 
@@ -56,7 +77,7 @@ export const useWorkspaceLayoutStore = create<WorkspaceLayoutState>(
 			const { workspaceId } = get();
 			set({ sidebarOpen: open });
 			if (workspaceId) {
-				setLayout(workspaceId, { sidebarOpen: open });
+				setLayout(workspaceId, toPersistedLayout(get()));
 			}
 		},
 
@@ -64,7 +85,13 @@ export const useWorkspaceLayoutStore = create<WorkspaceLayoutState>(
 			const { workspaceId } = get();
 			set({ panelSizes: sizes });
 			if (workspaceId) {
-				setLayout(workspaceId, { panelSizes: sizes });
+				if (panelSizesDebounceTimer !== null) {
+					clearTimeout(panelSizesDebounceTimer);
+				}
+				panelSizesDebounceTimer = setTimeout(() => {
+					panelSizesDebounceTimer = null;
+					setLayout(workspaceId, toPersistedLayout(get()));
+				}, 300);
 			}
 		},
 
@@ -72,7 +99,7 @@ export const useWorkspaceLayoutStore = create<WorkspaceLayoutState>(
 			const { workspaceId } = get();
 			set({ desktopView: view });
 			if (workspaceId) {
-				setLayout(workspaceId, { desktopView: view });
+				setLayout(workspaceId, toPersistedLayout(get()));
 			}
 		},
 
@@ -80,7 +107,7 @@ export const useWorkspaceLayoutStore = create<WorkspaceLayoutState>(
 			const { workspaceId } = get();
 			set({ editMode: enabled });
 			if (workspaceId) {
-				setLayout(workspaceId, { editMode: enabled });
+				setLayout(workspaceId, toPersistedLayout(get()));
 			}
 		},
 

@@ -117,7 +117,7 @@ function WorkspacesTrashRouteComponent() {
 
 	const listQuery = useDeletedWorkspaceListQuery(sort);
 
-	const workspaces = listQuery.data ?? [];
+	const workspaces = listQuery.data?.items ?? [];
 	const filtered = useMemo(() => {
 		if (!deferredSearchQuery.trim()) {
 			return workspaces;
@@ -272,7 +272,7 @@ function EmptyState() {
 
 type DeletedWorkspaceItem = NonNullable<
 	ReturnType<typeof useDeletedWorkspaceListQuery>["data"]
->[number];
+>["items"][number];
 
 function DeletedWorkspaceCard({
 	workspace,
