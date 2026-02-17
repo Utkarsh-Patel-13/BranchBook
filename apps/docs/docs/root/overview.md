@@ -11,8 +11,7 @@ The root `package.json` and config files govern the entire monorepo.
 - `apps/*` — Applications (web, server, native, docs)
 - `packages/*` — Shared packages
 
-## Tooling
+## Modules
 
-- **Turbo** — Task orchestration
-- **Ultracite** — Linting & formatting (Biome)
-- **Husky** — Git hooks
+- [Turbo](/docs/root/turbo) — Task orchestration
+- [Tooling](/docs/root/tooling) — Linting, formatting, Git hooks
