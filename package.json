@@ -29,6 +29,7 @@
     "dev:native": "turbo -F native dev",
     "dev:web": "turbo -F web dev",
     "dev:server": "turbo -F server dev",
+    "dev:docs": "turbo -F @branchbook/docs start",
     "db:push": "turbo -F @branchbook/db db:push",
     "db:studio": "turbo -F @branchbook/db db:studio",
     "db:generate": "turbo -F @branchbook/db db:generate",
