@@ -163,7 +163,7 @@ function FloatingPopup({
 			setTop(Math.max(GAP, y));
 		});
 		return () => cancelAnimationFrame(id);
-	}, [selectionRect, activePanel, isAiLoading]);
+	}, [selectionRect]);
 
 	const {
 		isBold,
@@ -601,7 +601,7 @@ export function FloatingTextFormatPlugin() {
 			focusOffset: selection.focus.offset,
 			focusType: selection.focus.type,
 		};
-	}, [editor]); // stable: editor never changes for a given LexicalComposer instance
+	}, []); // stable: editor never changes for a given LexicalComposer instance
 
 	useEffect(() => {
 		return mergeRegister(
