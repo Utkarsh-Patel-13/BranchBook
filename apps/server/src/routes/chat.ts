@@ -64,6 +64,16 @@ const summarizeBodySchema = z.object({
 	nodeId: z.string().min(1),
 });
 
+const inlineEditBodySchema = z.object({
+	selectedHtml: z.string().min(1).max(25_000),
+	instruction: z.string().max(500).optional(),
+});
+
+const INLINE_EDIT_SYSTEM = `You are editing a note fragment. Output ONLY a raw HTML fragment.
+Use ONLY these tags: <p>, <h1>, <h2>, <h3>, <blockquote>, <ul>, <ol>, <li>, <a href="...">, <code>, <pre>, <strong>, <em>, <u>, <s>, <span>.
+Do NOT use: <html>, <body>, <head>, <meta>, or any document wrappers.
+Preserve the original formatting where it makes sense. Output just the fragment with no extra explanation.`;
+
 const LEXICAL_HTML_INSTRUCTIONS = `Generate study notes from the discussion. Output ONLY a raw HTML fragment.
 Use ONLY these tags: <p>, <h1>, <h2>, <h3>, <blockquote>, <ul>, <ol>, <li>, <a href="...">, <code>, <pre>, <strong>, <em>, <u>, <s>, <span>.
 Do NOT use: <html>, <body>, <head>, <meta>, or any other tags.
@@ -349,6 +359,50 @@ export const registerChatRoute = (fastify: FastifyInstance): void => {
 		} catch (err) {
 			fastify.log.error({ err }, "Chat summarize failed");
 			return reply.status(500).send({ error: "Summarization failed" });
+		}
+	});
+
+	fastify.post("/api/chat/inline-edit", async (request, reply) => {
+		const session = await auth.api.getSession({
+			headers: new Headers(
+				Object.entries(request.headers).flatMap(([k, v]) => {
+					if (Array.isArray(v)) {
+						return v.map((val): [string, string] => [k, val]);
+					}
+					return v ? [[k, v] as [string, string]] : [];
+				})
+			),
+		});
+
+		if (!session?.user?.id) {
+			return reply.status(401).send({ error: "Unauthorized" });
+		}
+
+		const parsed = inlineEditBodySchema.safeParse(request.body);
+		if (!parsed.success) {
+			return reply.status(400).send({ error: "Invalid request body" });
+		}
+
+		const { selectedHtml, instruction } = parsed.data;
+
+		const prompt = instruction
+			? `Rewrite the following text according to this instruction: "${instruction}"\n\nText to rewrite:\n${selectedHtml}`
+			: `Rephrase the following text:\n\n${selectedHtml}`;
+
+		try {
+			const { text } = await generateText({
+				model: google("gemini-2.5-flash-lite-preview-09-2025"),
+				system: INLINE_EDIT_SYSTEM,
+				prompt,
+			});
+
+			const html = stripDocumentWrapper(text);
+			reply.raw.setHeader("Access-Control-Allow-Origin", env.CORS_ORIGIN);
+			reply.raw.setHeader("Access-Control-Allow-Credentials", "true");
+			return reply.send({ html });
+		} catch (err) {
+			fastify.log.error({ err }, "Inline edit failed");
+			return reply.status(500).send({ error: "Inline edit failed" });
 		}
 	});
 
