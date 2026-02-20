@@ -24,13 +24,32 @@ const baseCorsConfig = {
 		cb(new Error("Not allowed"), false);
 	},
 	methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-	allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+	allowedHeaders: [
+		"Content-Type",
+		"Authorization",
+		"X-Requested-With",
+		"User-Agent",
+	],
 	credentials: true,
 	maxAge: 86_400,
 };
 
+const isDev = process.env.NODE_ENV !== "production";
+
 const fastify = Fastify({
-	logger: true,
+	logger: isDev
+		? {
+				transport: {
+					target: "pino-pretty",
+					options: {
+						colorize: true,
+						translateTime: "HH:MM:ss",
+						ignore: "pid,hostname",
+						messageFormat: "{msg} {reqId}",
+					},
+				},
+			}
+		: true,
 });
 
 fastify.register(fastifyCors, baseCorsConfig);

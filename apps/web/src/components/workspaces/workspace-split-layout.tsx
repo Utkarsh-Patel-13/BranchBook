@@ -137,7 +137,7 @@ export function WorkspaceSplitLayout({
 							{desktopView === "both" && (
 								<div
 									aria-hidden
-									className="relative z-10 hidden w-1 cursor-col-resize bg-border hover:bg-primary/40 active:bg-primary/60 lg:block"
+									className="group relative z-10 hidden w-1 cursor-col-resize bg-border hover:bg-primary/40 active:bg-primary/60 lg:flex lg:items-center lg:justify-center"
 									onMouseDown={handleResizeMouseDown}
 								/>
 							)}

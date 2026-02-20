@@ -63,9 +63,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
-	DropdownMenuGroup,
 	DropdownMenuItem,
-	DropdownMenuLabel,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -386,6 +384,31 @@ export function NoteToolbar() {
 	const [linkMenuOpen, setLinkMenuOpen] = useState(false);
 	const [isInTable, setIsInTable] = useState(false);
 	const linkInputRef = useRef<HTMLInputElement>(null);
+	const linkPanelRef = useRef<HTMLDivElement>(null);
+
+	// Focus input when link panel opens
+	useEffect(() => {
+		if (linkMenuOpen) {
+			setTimeout(() => linkInputRef.current?.focus(), 0);
+		}
+	}, [linkMenuOpen]);
+
+	// Close link panel on outside click
+	useEffect(() => {
+		if (!linkMenuOpen) {
+			return;
+		}
+		const handler = (e: MouseEvent) => {
+			if (
+				linkPanelRef.current &&
+				!linkPanelRef.current.contains(e.target as Node)
+			) {
+				setLinkMenuOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handler);
+		return () => document.removeEventListener("mousedown", handler);
+	}, [linkMenuOpen]);
 
 	useEffect(() => {
 		return mergeRegister(
@@ -568,74 +591,64 @@ export function NoteToolbar() {
 			<Separator />
 
 			{/* Link */}
-			<DropdownMenu onOpenChange={setLinkMenuOpen} open={linkMenuOpen}>
-				<DropdownMenuTrigger
-					aria-label="Insert or edit link"
-					aria-pressed={isLink}
-					className={`flex h-7 min-w-7 items-center justify-center rounded px-1.5 text-xs transition-colors disabled:pointer-events-none disabled:opacity-40 ${
-						isLink
-							? "bg-accent text-accent-foreground"
-							: "text-muted-foreground hover:bg-muted hover:text-foreground"
-					}`}
-					onMouseDown={(e) => e.preventDefault()}
+			<div className="relative" ref={linkPanelRef}>
+				<ToolbarButton
+					active={isLink || linkMenuOpen}
+					label="Insert or edit link"
+					onClick={() => setLinkMenuOpen((prev) => !prev)}
 				>
 					<LinkIcon className="size-3.5" />
-				</DropdownMenuTrigger>
-				<DropdownMenuContent className="min-w-64 p-2">
-					<DropdownMenuGroup>
-						<DropdownMenuLabel>Link URL</DropdownMenuLabel>
-						<div className="flex flex-col gap-2 px-1.5 py-1">
-							<Input
-								onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-									setLinkUrl(e.target.value)
+				</ToolbarButton>
+				{linkMenuOpen && (
+					<div className="absolute top-full left-0 z-50 mt-1 flex min-w-64 flex-col gap-2 rounded-lg border bg-popover p-2 shadow-lg">
+						<span className="font-medium text-muted-foreground text-xs">
+							Link URL
+						</span>
+						<Input
+							onChange={(e) => setLinkUrl(e.target.value)}
+							onKeyDown={(e) => {
+								if (e.key === "Enter") {
+									e.preventDefault();
+									if (linkUrl.trim()) {
+										editor.dispatchCommand(TOGGLE_LINK_COMMAND, linkUrl.trim());
+										setLinkMenuOpen(false);
+									}
 								}
-								onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
-									if (e.key === "Enter") {
-										e.preventDefault();
-										if (linkUrl.trim()) {
-											editor.dispatchCommand(
-												TOGGLE_LINK_COMMAND,
-												linkUrl.trim()
-											);
-											setLinkMenuOpen(false);
-										}
+								if (e.key === "Escape") {
+									setLinkMenuOpen(false);
+								}
+							}}
+							placeholder="https://..."
+							ref={linkInputRef}
+							value={linkUrl}
+						/>
+						<div className="flex gap-1">
+							<button
+								className="flex flex-1 items-center justify-center rounded-md border px-2 py-1.5 font-medium text-xs transition-colors hover:bg-muted"
+								onClick={() => {
+									if (linkUrl.trim()) {
+										editor.dispatchCommand(TOGGLE_LINK_COMMAND, linkUrl.trim());
+										setLinkMenuOpen(false);
 									}
 								}}
-								placeholder="https://..."
-								ref={linkInputRef}
-								value={linkUrl}
-							/>
-							<div className="flex gap-1">
-								<button
-									className="flex flex-1 items-center justify-center rounded-md border border-input bg-background px-2 py-1.5 font-medium text-xs transition-colors hover:bg-muted"
-									onClick={() => {
-										if (linkUrl.trim()) {
-											editor.dispatchCommand(
-												TOGGLE_LINK_COMMAND,
-												linkUrl.trim()
-											);
-											setLinkMenuOpen(false);
-										}
-									}}
-									type="button"
-								>
-									Apply
-								</button>
-								<button
-									className="flex flex-1 items-center justify-center rounded-md border border-input bg-background px-2 py-1.5 font-medium text-xs transition-colors hover:bg-muted data-[variant=destructive]:text-destructive"
-									onClick={() => {
-										editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
-										setLinkMenuOpen(false);
-									}}
-									type="button"
-								>
-									Remove link
-								</button>
-							</div>
+								type="button"
+							>
+								Apply
+							</button>
+							<button
+								className="flex flex-1 items-center justify-center rounded-md border px-2 py-1.5 font-medium text-xs transition-colors hover:bg-muted"
+								onClick={() => {
+									editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
+									setLinkMenuOpen(false);
+								}}
+								type="button"
+							>
+								Remove link
+							</button>
 						</div>
-					</DropdownMenuGroup>
-				</DropdownMenuContent>
-			</DropdownMenu>
+					</div>
+				)}
+			</div>
 			<Separator />
 
 			{/* Font family & size */}

@@ -213,7 +213,7 @@ function ExternalContentSyncPlugin({
 			// (e.g. from our own autosave refetch). Avoids replacing content and losing cursor.
 			if (isEditing) {
 				let editorHtml = "";
-				editor.getEditorState().read(() => {
+				editor.read(() => {
 					editorHtml = $generateHtmlFromNodes(editor, null);
 				});
 				hashString(editorHtml).then((editorHash) => {
