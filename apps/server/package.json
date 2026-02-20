@@ -16,6 +16,9 @@
     "@fastify/rate-limit": "^10.3.0",
     "@hono/trpc-server": "^0.4.0",
     "@branchbook/api": "workspace:*",
+    "@branchbook/config": "workspace:*",
+    "@branchbook/queue": "workspace:*",
+    "bullmq": "^5.0.0",
     "@branchbook/auth": "workspace:*",
     "@branchbook/db": "workspace:*",
     "@branchbook/env": "workspace:*",
@@ -29,7 +32,6 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@branchbook/config": "workspace:*",
     "@types/bun": "catalog:",
     "@types/node": "^25.2.2",
     "@vitest/coverage-v8": "4.0.18",

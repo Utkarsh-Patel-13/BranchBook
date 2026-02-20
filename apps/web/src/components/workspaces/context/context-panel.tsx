@@ -19,18 +19,29 @@ const SUMMARY_TYPE_LABELS: Record<
 	GetContextForPanelOutput["ancestry"][number]["summaryTypeUsed"],
 	string
 > = {
-	detailed: "detailed",
+	promptReady: "full",
 	highLevel: "high-level",
 	draft: "draft",
+	raw: "raw",
+	none: "none",
 };
 
 const SUMMARY_TYPE_VARIANTS: Record<
 	GetContextForPanelOutput["ancestry"][number]["summaryTypeUsed"],
 	"default" | "secondary" | "outline"
 > = {
-	detailed: "default",
+	promptReady: "default",
 	highLevel: "secondary",
 	draft: "outline",
+	raw: "outline",
+	none: "outline",
+};
+
+const QUALITY_DOT_COLORS: Record<string, string> = {
+	FRESH: "bg-green-500",
+	PARTIAL: "bg-yellow-500",
+	STALE: "bg-orange-500",
+	MINIMAL: "bg-muted-foreground",
 };
 
 interface ContextPanelProps {
@@ -47,7 +58,7 @@ export function ContextPanel({ data }: ContextPanelProps) {
 				<span className="flex-1 font-medium text-muted-foreground">
 					Inherited context
 				</span>
-				{data.assembledFromDraft && (
+				{data.assembledFromFallback && (
 					<Badge className="h-4 text-[10px]" variant="outline">
 						from draft
 					</Badge>
@@ -61,7 +72,7 @@ export function ContextPanel({ data }: ContextPanelProps) {
 
 			<CollapsibleContent className="border-b bg-muted/20">
 				<div className="space-y-3 px-4 py-3">
-					{data.assembledFromDraft && (
+					{data.assembledFromFallback && (
 						<div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-amber-800 text-xs dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-300">
 							<AlertCircleIcon className="mt-0.5 size-3 shrink-0" />
 							<span>
@@ -76,27 +87,51 @@ export function ContextPanel({ data }: ContextPanelProps) {
 							<p className="mb-1.5 font-medium text-[11px] text-muted-foreground uppercase tracking-wide">
 								Ancestry
 							</p>
-							<ol className="space-y-1">
+							<ol className="space-y-1.5">
 								{data.ancestry.map((entry, i) => (
-									<li
-										className="flex items-center gap-2 text-xs"
-										key={entry.nodeId}
-									>
-										<span
-											className={cn(
-												"font-mono text-[10px] text-muted-foreground",
-												i === 0 && "font-semibold text-foreground"
+									<li className="space-y-0.5" key={entry.nodeId}>
+										<div className="flex items-center gap-2 text-xs">
+											<span
+												className={cn(
+													"font-mono text-[10px] text-muted-foreground",
+													i === 0 && "font-semibold text-foreground"
+												)}
+											>
+												{i === 0 ? "parent" : `↑ ${i}`}
+											</span>
+											<span className="flex-1 truncate">
+												{entry.shortTitle ?? entry.nodeTitle}
+											</span>
+											{entry.qualitySignal && (
+												<span
+													aria-label={`Quality: ${entry.qualitySignal}`}
+													className={cn(
+														"size-2 shrink-0 rounded-full",
+														QUALITY_DOT_COLORS[entry.qualitySignal]
+													)}
+													role="img"
+												/>
 											)}
-										>
-											{i === 0 ? "parent" : `↑ ${i}`}
-										</span>
-										<span className="flex-1 truncate">{entry.title}</span>
-										<Badge
-											className="h-4 text-[10px]"
-											variant={SUMMARY_TYPE_VARIANTS[entry.summaryTypeUsed]}
-										>
-											{SUMMARY_TYPE_LABELS[entry.summaryTypeUsed]}
-										</Badge>
+											<Badge
+												className="h-4 text-[10px]"
+												variant={SUMMARY_TYPE_VARIANTS[entry.summaryTypeUsed]}
+											>
+												{SUMMARY_TYPE_LABELS[entry.summaryTypeUsed]}
+											</Badge>
+										</div>
+										{entry.keyTopics.length > 0 && (
+											<div className="flex flex-wrap gap-1 pl-6">
+												{entry.keyTopics.slice(0, 3).map((topic) => (
+													<Badge
+														className="h-3.5 px-1 text-[9px]"
+														key={topic}
+														variant="outline"
+													>
+														{topic}
+													</Badge>
+												))}
+											</div>
+										)}
 									</li>
 								))}
 							</ol>

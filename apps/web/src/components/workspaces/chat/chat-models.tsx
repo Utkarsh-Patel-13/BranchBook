@@ -22,13 +22,13 @@ export const CHAT_MODELS: ChatModelItem[] = [
 	},
 	{
 		label: "Gemini 2.5 Flash Lite",
-		value: "gemini-2.5-flash-lite-preview-09-2025",
+		value: "gemini-2.5-flash-lite",
 		supportsWeb: true,
 		supportsThinking: true,
 	},
 	{
 		label: "Gemini 2.5 Flash",
-		value: "gemini-2.5-flash-preview-09-2025",
+		value: "gemini-2.5-flash",
 		supportsWeb: true,
 		supportsThinking: true,
 	},
@@ -47,8 +47,8 @@ export const CHAT_MODELS: ChatModelItem[] = [
 ];
 
 const MODE_TO_MODEL: Record<string, string> = {
-	Fast: "gemini-2.5-flash-lite-preview-09-2025",
-	Deep: "gemini-2.5-flash-preview-09-2025",
+	Fast: "gemini-2.5-flash-lite",
+	Deep: "gemini-2.5-flash",
 	Precise: "gemini-3-flash-preview",
 };
 
@@ -59,9 +59,7 @@ export const CHAT_MODES = [
 ] as const;
 
 export const DEFAULT_CHAT_MODEL =
-	CHAT_MODELS.find(
-		(m) => m.value === "gemini-2.5-flash-lite-preview-09-2025"
-	) ?? CHAT_MODELS[0];
+	CHAT_MODELS.find((m) => m.value === "gemini-2.5-flash") ?? CHAT_MODELS[0];
 
 export function getModeLabel(modelValue: string): string {
 	const mode = CHAT_MODES.find((m) => m.value === modelValue);

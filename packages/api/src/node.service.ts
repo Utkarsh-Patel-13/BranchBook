@@ -1,5 +1,8 @@
 import prisma from "@branchbook/db";
+import type { AssembleInheritedContextJobData } from "@branchbook/queue";
+import { contextEngineQueue } from "@branchbook/queue";
 import type {
+	ContextStatus,
 	CreateNodeInput,
 	DeleteNodeInput,
 	GetNodeByIdInput,
@@ -12,7 +15,7 @@ import type {
 } from "@branchbook/types";
 import type { BranchFromMessageInput } from "@branchbook/validators";
 import { TRPCError } from "@trpc/server";
-import { assembleContextPayload } from "./context-engine.service";
+import { getArtifact } from "./artifact.service";
 
 const toNode = (record: {
 	id: string;
@@ -108,7 +111,6 @@ export const createNode = async (
 		});
 	}
 
-	let inheritedContext: string | null = null;
 	let branchPointMessageId: string | null = null;
 
 	if (input.parentId) {
@@ -127,8 +129,6 @@ export const createNode = async (
 			});
 		}
 
-		// Branch from parent: same context logic as branch-from-message, with branch point = parent (latest message)
-		inheritedContext = await assembleContextPayload(input.parentId, null);
 		const latestMessage = await prisma.message.findFirst({
 			where: { nodeId: input.parentId },
 			orderBy: { createdAt: "desc" },
@@ -142,10 +142,20 @@ export const createNode = async (
 			workspaceId: input.workspaceId,
 			parentId: input.parentId ?? null,
 			title: input.title,
-			...(inheritedContext !== null && { inheritedContext }),
 			...(branchPointMessageId !== null && { branchPointMessageId }),
 		},
 	});
+
+	// Enqueue context assembly asynchronously when creating a child node
+	if (input.parentId) {
+		const jobData: AssembleInheritedContextJobData = {
+			childNodeId: node.id,
+			parentNodeId: input.parentId,
+			branchPointMessageId,
+			workspaceId: input.workspaceId,
+		};
+		await contextEngineQueue.add("assemble-inherited-context", jobData);
+	}
 
 	return toNode(node);
 };
@@ -364,7 +374,7 @@ export const deleteNodeCascade = async (
 export const createBranchFromMessage = async (
 	userId: string,
 	input: BranchFromMessageInput
-): Promise<Node> => {
+): Promise<Node & { contextStatus: ContextStatus }> => {
 	const parentNode = await prisma.node.findUnique({
 		where: { id: input.nodeId },
 		include: { workspace: { select: { ownerId: true } } },
@@ -399,17 +409,12 @@ export const createBranchFromMessage = async (
 	const rawTitle = input.title ?? `Branch of ${parentNode.title}`;
 	const safeTitle = rawTitle.slice(0, 100);
 
-	const inheritedContext = await assembleContextPayload(
-		input.nodeId,
-		input.messageId
-	);
-
+	// Create child node without inheritedContext — set asynchronously by job
 	const childNode = await prisma.node.create({
 		data: {
 			workspaceId: parentNode.workspaceId,
 			parentId: input.nodeId,
 			title: safeTitle,
-			inheritedContext,
 			branchPointMessageId: input.messageId,
 		},
 	});
@@ -419,7 +424,21 @@ export const createBranchFromMessage = async (
 		data: { branchPoint: true },
 	});
 
-	return toNode(childNode);
+	// Determine contextStatus based on parent artifact quality
+	const parentArtifact = await getArtifact(input.nodeId);
+	const contextStatus: ContextStatus =
+		parentArtifact?.qualitySignal === "FRESH" ? "ready" : "assembling";
+
+	// Enqueue context assembly job
+	const jobData: AssembleInheritedContextJobData = {
+		childNodeId: childNode.id,
+		parentNodeId: input.nodeId,
+		branchPointMessageId: input.messageId,
+		workspaceId: parentNode.workspaceId,
+	};
+	await contextEngineQueue.add("assemble-inherited-context", jobData);
+
+	return { ...toNode(childNode), contextStatus };
 };
 
 export const getBranchesForNode = async (

@@ -119,8 +119,9 @@ const NodeRow = memo(function NodeRow({
 			)}
 			<Button
 				className={cn(
-					"min-w-0 flex-1 cursor-pointer justify-start rounded-none border-0 px-1 text-left transition-colors",
-					!isSelected && "hover:bg-sidebar-accent/50"
+					"flex h-auto min-w-0 flex-1 cursor-pointer items-center justify-start gap-1.5 truncate rounded-none border-0 px-1 py-0.5 text-left text-sm transition-colors",
+					!isSelected && "hover:bg-sidebar-accent/50",
+					isSelected && "font-semibold"
 				)}
 				onClick={() => {
 					if (selectedNodeId !== node.id) {
@@ -130,9 +131,7 @@ const NodeRow = memo(function NodeRow({
 				size="sm"
 				variant="ghost"
 			>
-				<span className={cn("flex-1 truncate", isSelected && "font-semibold")}>
-					{node.title}
-				</span>
+				{node.title}
 			</Button>
 
 			<DropdownMenu>

@@ -9,6 +9,7 @@ import {
 import Fastify from "fastify";
 import { registerWorkspaceFeatures } from "./features/workspaces";
 import { registerChatRoute } from "./routes/chat";
+import { startContextEngineWorker } from "./workers/context-engine.worker";
 
 const baseCorsConfig = {
 	// origin: env.CORS_ORIGIN,
@@ -51,6 +52,21 @@ const fastify = Fastify({
 			}
 		: true,
 });
+
+// Start the context-engine background worker
+const contextWorker = startContextEngineWorker();
+contextWorker
+	.waitUntilReady()
+	.then(() => {
+		fastify.log.info("[INFO] context-engine worker started (concurrency: 5)");
+	})
+	.catch((err: unknown) => {
+		fastify.log.error(
+			{ err },
+			"Failed to start context-engine worker: Redis connection failed"
+		);
+		process.exit(1);
+	});
 
 fastify.register(fastifyCors, baseCorsConfig);
 
