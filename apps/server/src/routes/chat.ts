@@ -353,7 +353,10 @@ export const registerChatRoute = (fastify: FastifyInstance): void => {
 			});
 
 			const html = stripDocumentWrapper(text);
-			reply.raw.setHeader("Access-Control-Allow-Origin", env.CORS_ORIGIN);
+			reply.raw.setHeader(
+				"Access-Control-Allow-Origin",
+				request.headers.origin ?? env.CORS_ORIGIN
+			);
 			reply.raw.setHeader("Access-Control-Allow-Credentials", "true");
 			return reply.send({ html });
 		} catch (err) {
@@ -397,7 +400,10 @@ export const registerChatRoute = (fastify: FastifyInstance): void => {
 			});
 
 			const html = stripDocumentWrapper(text);
-			reply.raw.setHeader("Access-Control-Allow-Origin", env.CORS_ORIGIN);
+			reply.raw.setHeader(
+				"Access-Control-Allow-Origin",
+				request.headers.origin ?? env.CORS_ORIGIN
+			);
 			reply.raw.setHeader("Access-Control-Allow-Credentials", "true");
 			return reply.send({ html });
 		} catch (err) {
@@ -487,7 +493,11 @@ export const registerChatRoute = (fastify: FastifyInstance): void => {
 
 		result.consumeStream();
 
-		reply.raw.setHeader("Access-Control-Allow-Origin", env.CORS_ORIGIN);
+		reply.hijack();
+		reply.raw.setHeader(
+			"Access-Control-Allow-Origin",
+			request.headers.origin ?? env.CORS_ORIGIN
+		);
 		reply.raw.setHeader("Access-Control-Allow-Credentials", "true");
 		result.pipeUIMessageStreamToResponse(reply.raw, {
 			originalMessages: validatedMessages,
