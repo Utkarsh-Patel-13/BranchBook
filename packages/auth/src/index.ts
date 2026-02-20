@@ -12,6 +12,7 @@ export const auth = betterAuth({
 	trustedOrigins: [
 		env.CORS_ORIGIN,
 		"mybettertapp://",
+		"tauri://localhost",
 		...(env.NODE_ENV === "development"
 			? [
 					"exp://",
@@ -26,8 +27,8 @@ export const auth = betterAuth({
 	},
 	advanced: {
 		defaultCookieAttributes: {
-			sameSite: "none",
-			secure: true,
+			sameSite: env.NODE_ENV === "development" ? "lax" : "none",
+			secure: env.NODE_ENV !== "development",
 			httpOnly: true,
 		},
 	},
