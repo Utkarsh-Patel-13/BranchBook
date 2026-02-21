@@ -2,28 +2,28 @@ import { z } from "zod";
 
 // Input schemas
 export const getByNodeIdInputSchema = z.object({
-	nodeId: z.string().cuid(),
+	nodeId: z.uuidv7(),
 });
 
 const NOTE_CONTENT_MAX_LENGTH = 25_000;
 
 export const upsertNoteInputSchema = z.object({
-	nodeId: z.string().cuid(),
+	nodeId: z.uuidv7(),
 	content: z.string().max(NOTE_CONTENT_MAX_LENGTH),
 });
 
 export const removeNoteInputSchema = z.object({
-	nodeId: z.string().cuid(),
+	nodeId: z.uuidv7(),
 });
 
 export const exportNoteInputSchema = z.object({
-	nodeId: z.string().cuid(),
+	nodeId: z.uuidv7(),
 });
 
 // Output schema
 export const noteOutputSchema = z.object({
-	id: z.string().cuid(),
-	nodeId: z.string().cuid(),
+	id: z.uuidv7(),
+	nodeId: z.uuidv7(),
 	content: z.string(),
 	createdAt: z.coerce.date(),
 	updatedAt: z.coerce.date(),

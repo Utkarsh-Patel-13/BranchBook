@@ -6,13 +6,13 @@ import { env } from "@branchbook/env/server";
 import type { UIMessage } from "ai";
 import {
 	convertToModelMessages,
-	createIdGenerator,
 	generateText,
 	streamText,
 	TypeValidationError,
 	validateUIMessages,
 } from "ai";
 import type { FastifyInstance } from "fastify";
+import { uuidv7 } from "uuidv7";
 import { z } from "zod";
 
 const CHAT_MODEL_IDS = [
@@ -47,7 +47,7 @@ const incomingUserMessagePartSchema = z.object({
 });
 
 const chatBodySchema = z.object({
-	id: z.string().min(1),
+	id: z.uuidv7(),
 	message: z.object({
 		role: z.literal("user"),
 		parts: z
@@ -58,7 +58,7 @@ const chatBodySchema = z.object({
 });
 
 const summarizeBodySchema = z.object({
-	nodeId: z.string().min(1),
+	nodeId: z.uuidv7(),
 });
 
 const inlineEditBodySchema = z.object({
@@ -220,7 +220,6 @@ async function prepareChatRequest(
 ): Promise<{
 	validatedMessages: UIMessage[];
 	previousCount: number;
-	generateMessageId: ReturnType<typeof createIdGenerator>;
 	modelId: string;
 	systemPrompt: string;
 	useWebSearch: boolean;
@@ -233,10 +232,10 @@ async function prepareChatRequest(
 	if (!userText) {
 		throw new Error("Message text is required");
 	}
-	const generateMessageId = createIdGenerator({ size: 16 });
+
 	const previousMessages = await loadChat(nodeId);
 	const newUserMessage: UIMessage = {
-		id: generateMessageId(),
+		id: uuidv7(),
 		role: "user",
 		parts: [{ type: "text", text: userText, state: "done" }],
 	};
@@ -262,7 +261,6 @@ async function prepareChatRequest(
 	return {
 		validatedMessages,
 		previousCount: previousMessages.length,
-		generateMessageId,
 		modelId,
 		systemPrompt,
 		useWebSearch,
@@ -437,7 +435,6 @@ export const registerChatRoute = (fastify: FastifyInstance): void => {
 		const {
 			validatedMessages,
 			previousCount,
-			generateMessageId,
 			modelId,
 			systemPrompt,
 			useWebSearch,
@@ -476,7 +473,7 @@ export const registerChatRoute = (fastify: FastifyInstance): void => {
 		reply.raw.setHeader("Access-Control-Allow-Credentials", "true");
 		result.pipeUIMessageStreamToResponse(reply.raw, {
 			originalMessages: validatedMessages,
-			generateMessageId,
+			generateMessageId: () => uuidv7(),
 			sendSources: true,
 			sendReasoning: true,
 			onFinish: async ({ messages: finishedMessages, isAborted }) => {
