@@ -10,7 +10,7 @@ datasource db {
 }
 
 model Workspace {
-  id          String    @id @default(cuid())
+  id          String    @id @default(uuid(7))
   ownerId     String
   owner       User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   name        String    @db.VarChar(100)
@@ -26,7 +26,7 @@ model Workspace {
 }
 
 model Node {
-  id          String    @id @default(cuid())
+  id          String    @id @default(uuid(7))
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   parentId    String?
@@ -59,7 +59,7 @@ model Node {
 }
 
 model Note {
-  id        String    @id @default(cuid())
+  id        String    @id @default(uuid(7))
   nodeId    String    @unique
   node      Node      @relation(fields: [nodeId], references: [id], onDelete: Cascade)
   content   String    @db.Text
@@ -78,7 +78,7 @@ enum MessageRole {
 }
 
 model Message {
-  id        String      @id @default(cuid())
+  id        String      @id @default(uuid(7))
   nodeId    String
   node      Node        @relation(fields: [nodeId], references: [id], onDelete: Cascade)
   role      MessageRole
@@ -107,7 +107,7 @@ enum ContextQualitySignal {
 }
 
 model ContextArtifact {
-  id     String @id @default(cuid())
+  id     String @id @default(uuid(7))
   nodeId String @unique
   node   Node   @relation(fields: [nodeId], references: [id], onDelete: Cascade)
 

@@ -6,7 +6,7 @@ export const NODE_TITLE_MAX_LENGTH = 100;
 
 // Input validators
 export const createNodeInputSchema = z.object({
-	workspaceId: z.string().cuid(),
+	workspaceId: z.uuidv7(),
 	title: z
 		.string()
 		.trim()
@@ -16,12 +16,12 @@ export const createNodeInputSchema = z.object({
 		.max(NODE_TITLE_MAX_LENGTH, {
 			message: `Title must be at most ${NODE_TITLE_MAX_LENGTH} characters`,
 		}),
-	parentId: z.string().cuid().optional().nullable(),
+	parentId: z.uuidv7().optional().nullable(),
 });
 
 export const updateNodeInputSchema = z
 	.object({
-		nodeId: z.string().cuid(),
+		nodeId: z.uuidv7(),
 		title: z
 			.string()
 			.trim()
@@ -38,26 +38,26 @@ export const updateNodeInputSchema = z
 	});
 
 export const deleteNodeInputSchema = z.object({
-	nodeId: z.string().cuid(),
+	nodeId: z.uuidv7(),
 });
 
 export const listNodesInputSchema = z.object({
-	workspaceId: z.string().cuid(),
+	workspaceId: z.uuidv7(),
 });
 
 export const getNodeByIdInputSchema = z.object({
-	nodeId: z.string().cuid(),
+	nodeId: z.uuidv7(),
 });
 
 export const getTreeInputSchema = z.object({
-	workspaceId: z.string().cuid(),
+	workspaceId: z.uuidv7(),
 });
 
 // Output validators
 export const nodeOutputSchema = z.object({
-	id: z.string().cuid(),
-	workspaceId: z.string().cuid(),
-	parentId: z.string().cuid().nullable(),
+	id: z.uuidv7(),
+	workspaceId: z.uuidv7(),
+	parentId: z.uuidv7().nullable(),
 	title: z.string(),
 	createdAt: z.coerce.date(),
 	updatedAt: z.coerce.date(),
@@ -77,9 +77,9 @@ export interface NodeTreeShape {
 
 export const nodeTreeOutputSchema: z.ZodType<NodeTreeShape> = z.lazy(() =>
 	z.object({
-		id: z.string().cuid(),
-		workspaceId: z.string().cuid(),
-		parentId: z.string().cuid().nullable(),
+		id: z.uuidv7(),
+		workspaceId: z.uuidv7(),
+		parentId: z.uuidv7().nullable(),
 		title: z.string(),
 		createdAt: z.coerce.date(),
 		updatedAt: z.coerce.date(),
@@ -90,8 +90,8 @@ export const nodeTreeOutputSchema: z.ZodType<NodeTreeShape> = z.lazy(() =>
 
 // Context Engine schemas
 export const branchFromMessageSchema = z.object({
-	nodeId: z.string().cuid(),
-	messageId: z.string().length(16),
+	nodeId: z.uuidv7(),
+	messageId: z.uuidv7(),
 	title: z
 		.string()
 		.trim()
@@ -110,7 +110,7 @@ export const getBranchesForNodeOutputSchema = z.record(
 );
 
 export const getContextForPanelInputSchema = z.object({
-	nodeId: z.string().cuid(),
+	nodeId: z.uuidv7(),
 });
 
 export const contextQualitySignalSchema = z.enum([

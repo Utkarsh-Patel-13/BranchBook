@@ -1,13 +1,13 @@
 import { z } from "zod";
 
 export const listMessagesSchema = z.object({
-	nodeId: z.string().min(1),
+	nodeId: z.uuidv7(),
 	cursor: z.string().optional(),
 	limit: z.number().int().min(1).max(50).optional().default(50),
 });
 
 export const createMessageSchema = z.object({
-	nodeId: z.string().min(1),
+	nodeId: z.uuidv7(),
 	content: z.string().min(1).max(4000),
 });
 
