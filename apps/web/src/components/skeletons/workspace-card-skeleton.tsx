@@ -1,6 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
-export function WorkspaceCardSkeleton() {
+function WorkspaceCardSkeleton() {
 	return (
 		<div
 			className="flex h-52 w-full flex-col justify-between rounded-xl border border-border bg-card p-4"

@@ -9,14 +9,6 @@ export const useNodeTree = (workspaceId: string) => {
 	});
 };
 
-export const useListNodes = (workspaceId: string) => {
-	return useQuery({
-		...trpc.node.list.queryOptions({
-			workspaceId,
-		}),
-	});
-};
-
 export const useNodeById = (nodeId: string) => {
 	return useQuery({
 		...trpc.node.getById.queryOptions({

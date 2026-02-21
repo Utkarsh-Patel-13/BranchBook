@@ -49,31 +49,6 @@ export function buildBreadcrumbPath(
 }
 
 /**
- * Resolves a node from URL path segments
- */
-export function getNodeFromPath(
-	tree: NodeTree[],
-	pathSegments: string[]
-): NodeTree | null {
-	if (pathSegments.length === 0) {
-		return null;
-	}
-
-	const [firstSegment, ...rest] = pathSegments;
-	const node = tree.find((n) => n.id === firstSegment);
-
-	if (!node) {
-		return null;
-	}
-
-	if (rest.length === 0) {
-		return node;
-	}
-
-	return getNodeFromPath(node.children, rest);
-}
-
-/**
  * Finds a node by ID anywhere in the tree
  */
 export function findNodeById(

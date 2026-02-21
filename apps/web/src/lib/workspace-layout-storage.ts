@@ -97,11 +97,3 @@ export function setLayout(
 		// localStorage may be unavailable (e.g. private browsing with storage disabled)
 	}
 }
-
-export function clearLayout(workspaceId: string): void {
-	try {
-		localStorage.removeItem(storageKey(workspaceId));
-	} catch {
-		// localStorage may be unavailable (e.g. private browsing with storage disabled)
-	}
-}

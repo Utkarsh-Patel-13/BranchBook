@@ -4,7 +4,6 @@ import {
 	type DOMConversion,
 	type DOMConversionMap,
 	type DOMConversionOutput,
-	type LexicalNode,
 	type NodeKey,
 	type SerializedTextNode,
 	TextNode,
@@ -66,14 +65,8 @@ export class ExtendedTextNode extends TextNode {
 	// no need to add exportJSON here, since we are not adding any new properties
 }
 
-export function $createExtendedTextNode(text = ""): ExtendedTextNode {
+function $createExtendedTextNode(text = ""): ExtendedTextNode {
 	return $applyNodeReplacement(new ExtendedTextNode(text));
-}
-
-export function $isExtendedTextNode(
-	node: LexicalNode | null | undefined
-): node is ExtendedTextNode {
-	return node instanceof ExtendedTextNode;
 }
 
 function patchStyleConversion(

@@ -1,4 +1,4 @@
-import type { WorkspaceId, WorkspaceListInput } from "@branchbook/types";
+import type { WorkspaceListInput } from "@branchbook/types";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { create } from "zustand";
 
@@ -29,14 +29,6 @@ export const useWorkspaceListQuery = (input?: WorkspaceListInput) =>
 
 export const useDeletedWorkspaceListQuery = (input?: WorkspaceListInput) =>
 	useQuery(trpc.workspace.listDeleted.queryOptions(input ?? {}));
-
-export const useWorkspaceByIdQuery = (workspaceId: WorkspaceId | null) =>
-	useQuery({
-		...trpc.workspace.getById.queryOptions({
-			workspaceId: workspaceId ?? "",
-		}),
-		enabled: workspaceId !== null,
-	});
 
 const invalidateWorkspaceList = () =>
 	queryClient.invalidateQueries({ queryKey: trpc.workspace.list.queryKey() });
