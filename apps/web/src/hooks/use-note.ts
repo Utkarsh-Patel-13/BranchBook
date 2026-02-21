@@ -65,3 +65,21 @@ export const useUpsertNote = (nodeId: string) =>
 			});
 		},
 	});
+
+export const useExportNotePdf = () =>
+	useMutation({
+		...trpc.note.exportPdf.mutationOptions(),
+		onSuccess: ({ pdf }) => {
+			const bytes = Uint8Array.from(atob(pdf), (c) => c.charCodeAt(0));
+			const blob = new Blob([bytes], { type: "application/pdf" });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = "note.pdf";
+			a.click();
+			URL.revokeObjectURL(url);
+		},
+		onError: (err) => {
+			toast.error(formatTRPCErrorMessage(err.message, "Failed to export note"));
+		},
+	});

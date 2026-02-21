@@ -16,6 +16,10 @@ export const removeNoteInputSchema = z.object({
 	nodeId: z.string().cuid(),
 });
 
+export const exportNoteInputSchema = z.object({
+	nodeId: z.string().cuid(),
+});
+
 // Output schema
 export const noteOutputSchema = z.object({
 	id: z.string().cuid(),
@@ -30,4 +34,5 @@ export const noteOutputSchema = z.object({
 export type GetByNodeIdInput = z.infer<typeof getByNodeIdInputSchema>;
 export type UpsertNoteInput = z.infer<typeof upsertNoteInputSchema>;
 export type RemoveNoteInput = z.infer<typeof removeNoteInputSchema>;
+export type ExportNoteInput = z.infer<typeof exportNoteInputSchema>;
 export type NoteOutput = z.infer<typeof noteOutputSchema>;

@@ -1,12 +1,18 @@
 import prisma from "@branchbook/db";
 import {
+	exportNoteInputSchema,
 	getByNodeIdInputSchema,
 	removeNoteInputSchema,
 	upsertNoteInputSchema,
 } from "@branchbook/validators";
 import { TRPCError } from "@trpc/server";
 import { protectedProcedure, router } from "../index";
-import { getNoteByNodeId, removeNote, upsertNote } from "../note.service";
+import {
+	exportNotePdf,
+	getNoteByNodeId,
+	removeNote,
+	upsertNote,
+} from "../note.service";
 
 export const noteRouter = router({
 	getByNodeId: protectedProcedure
@@ -43,5 +49,17 @@ export const noteRouter = router({
 				});
 			}
 			return removeNote(prisma, ctx.session.user.id, input);
+		}),
+
+	exportPdf: protectedProcedure
+		.input(exportNoteInputSchema)
+		.mutation(({ ctx, input }) => {
+			if (!ctx.session?.user?.id) {
+				throw new TRPCError({
+					code: "UNAUTHORIZED",
+					message: "Authentication required",
+				});
+			}
+			return exportNotePdf(prisma, ctx.session.user.id, input);
 		}),
 });

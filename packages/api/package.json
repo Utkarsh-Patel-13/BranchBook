@@ -12,16 +12,17 @@
   "scripts": {},
   "dependencies": {
     "@branchbook/auth": "workspace:*",
-    "@branchbook/queue": "workspace:*",
     "@branchbook/config": "workspace:*",
     "@branchbook/db": "workspace:*",
     "@branchbook/env": "workspace:*",
-    "@branchbook/validators": "workspace:*",
+    "@branchbook/queue": "workspace:*",
     "@branchbook/types": "workspace:*",
+    "@branchbook/validators": "workspace:*",
     "@trpc/client": "catalog:",
     "@trpc/server": "catalog:",
     "better-auth": "catalog:",
     "dotenv": "catalog:",
+    "puppeteer": "^24.37.5",
     "zod": "catalog:"
   },
   "devDependencies": {
