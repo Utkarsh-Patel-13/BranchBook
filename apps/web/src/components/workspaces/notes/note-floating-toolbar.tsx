@@ -34,7 +34,9 @@ import type { ReactNode, RefObject } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 const DEFAULT_HIGHLIGHT = "rgba(255, 212, 0, 0.45)";
 
@@ -76,21 +78,21 @@ function FloatButton({
 	disabled,
 }: ButtonProps) {
 	return (
-		<button
+		<Button
 			aria-label={label}
 			aria-pressed={active}
-			className={`flex h-7 w-7 items-center justify-center rounded text-xs transition-colors disabled:pointer-events-none disabled:opacity-40 ${
-				active
-					? "bg-accent text-accent-foreground"
-					: "text-popover-foreground hover:bg-muted"
-			}`}
+			className={cn(
+				"text-popover-foreground",
+				active && "bg-accent text-accent-foreground"
+			)}
 			disabled={disabled}
 			onClick={onClick}
 			onMouseDown={(e) => e.preventDefault()}
-			type="button"
+			size="icon-sm"
+			variant="ghost"
 		>
 			{children}
-		</button>
+		</Button>
 	);
 }
 
@@ -472,20 +474,24 @@ function FloatingPopup({
 								value={linkUrl}
 							/>
 							<div className="flex gap-1">
-								<button
-									className="flex flex-1 items-center justify-center rounded-md border px-2 py-1.5 font-medium text-xs transition-colors hover:bg-muted"
+								<Button
+									className="flex-1"
 									onClick={applyLink}
+									size="sm"
 									type="button"
+									variant="outline"
 								>
 									Apply
-								</button>
-								<button
-									className="flex flex-1 items-center justify-center rounded-md border px-2 py-1.5 font-medium text-xs transition-colors hover:bg-muted"
+								</Button>
+								<Button
+									className="flex-1"
 									onClick={removeLink}
+									size="sm"
 									type="button"
+									variant="outline"
 								>
 									Remove
-								</button>
+								</Button>
 							</div>
 						</div>
 					)}
@@ -511,14 +517,16 @@ function FloatingPopup({
 								ref={rewriteInputRef}
 								value={rewriteInstruction}
 							/>
-							<button
-								className="flex w-full items-center justify-center rounded-md border px-2 py-1.5 font-medium text-xs transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-40"
+							<Button
+								className="w-full"
 								disabled={!rewriteInstruction.trim()}
 								onClick={handleRewriteSubmit}
+								size="sm"
 								type="button"
+								variant="outline"
 							>
 								Rewrite
-							</button>
+							</Button>
 						</div>
 					)}
 				</>

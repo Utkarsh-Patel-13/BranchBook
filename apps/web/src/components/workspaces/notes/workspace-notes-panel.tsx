@@ -38,6 +38,7 @@ import {
 } from "lexical";
 import { AlertCircleIcon, DownloadIcon, NotebookIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { FloatingTextFormatPlugin } from "@/components/workspaces/notes/note-floating-toolbar";
@@ -378,13 +379,9 @@ function NotesErrorState({ onRetry }: { onRetry: () => void }) {
 					Something went wrong. Check your connection and try again.
 				</p>
 			</div>
-			<button
-				className="rounded-md border px-3 py-1.5 font-medium text-xs transition-colors hover:bg-muted"
-				onClick={onRetry}
-				type="button"
-			>
+			<Button onClick={onRetry} size="sm" type="button" variant="outline">
 				Retry
-			</button>
+			</Button>
 		</div>
 	);
 }
@@ -424,12 +421,14 @@ function NotesPanelHeader({
 				)}
 			</div>
 			<div className="flex items-center gap-2">
-				<button
+				<Button
 					aria-label="Export note as PDF"
-					className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+					className="text-muted-foreground"
 					disabled={!hasContent || exportMutation.isPending}
 					onClick={() => exportMutation.mutate({ nodeId })}
+					size="icon-sm"
 					type="button"
+					variant="ghost"
 				>
 					{exportMutation.isPending ? (
 						<svg
@@ -456,7 +455,7 @@ function NotesPanelHeader({
 					) : (
 						<DownloadIcon className="size-4" />
 					)}
-				</button>
+				</Button>
 				<Label className="text-xs" htmlFor="edit-mode-toggle">
 					View
 				</Label>

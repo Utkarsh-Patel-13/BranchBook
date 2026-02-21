@@ -60,6 +60,7 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -67,6 +68,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 type BlockType =
 	| "paragraph"
@@ -137,21 +139,21 @@ function ToolbarButton({
 	children,
 }: ToolbarButtonProps) {
 	return (
-		<button
+		<Button
 			aria-label={label}
 			aria-pressed={active}
-			className={`flex h-7 min-w-7 items-center justify-center rounded px-1.5 text-xs transition-colors disabled:pointer-events-none disabled:opacity-40 ${
-				active
-					? "bg-accent text-accent-foreground"
-					: "text-muted-foreground hover:bg-muted hover:text-foreground"
-			}`}
+			className={cn(
+				"min-w-7 px-1.5 text-muted-foreground text-xs",
+				active && "bg-accent text-accent-foreground"
+			)}
 			disabled={disabled}
 			onClick={onClick}
 			onMouseDown={(e) => e.preventDefault()}
-			type="button"
+			size="sm"
+			variant="ghost"
 		>
 			{children}
-		</button>
+		</Button>
 	);
 }
 
@@ -277,15 +279,16 @@ function FontSizeControl({
 
 	return (
 		<div className="flex items-center">
-			<button
+			<Button
 				aria-label="Decrease font size"
-				className="flex h-7 w-5 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+				className="w-5 text-muted-foreground"
 				onClick={onDecrement}
 				onMouseDown={(e) => e.preventDefault()}
-				type="button"
+				size="icon-sm"
+				variant="ghost"
 			>
 				<MinusIcon className="size-2.5" />
-			</button>
+			</Button>
 			<input
 				aria-label="Font size"
 				className="h-7 w-9 rounded bg-transparent text-center text-muted-foreground text-xs outline-none [appearance:textfield] hover:bg-muted focus:bg-muted [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
@@ -313,15 +316,16 @@ function FontSizeControl({
 					<option key={s} value={s} />
 				))}
 			</datalist>
-			<button
+			<Button
 				aria-label="Increase font size"
-				className="flex h-7 w-5 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+				className="w-5 text-muted-foreground"
 				onClick={onIncrement}
 				onMouseDown={(e) => e.preventDefault()}
-				type="button"
+				size="icon-sm"
+				variant="ghost"
 			>
 				<PlusIcon className="size-2.5" />
-			</button>
+			</Button>
 		</div>
 	);
 }
@@ -336,14 +340,15 @@ function HighlightPicker({ value, onChange }: HighlightPickerProps) {
 		<div className="flex items-center gap-0.5">
 			<HighlighterIcon className="mr-0.5 size-3 shrink-0 text-muted-foreground" />
 			{HIGHLIGHT_COLORS.map((c) => (
-				<button
+				<Button
 					aria-label={c.label}
 					aria-pressed={value === c.value}
-					className={`flex size-4 items-center justify-center rounded-sm border transition-transform hover:scale-110 ${
+					className={cn(
+						"size-4 rounded-sm border p-0 transition-transform hover:scale-110",
 						value === c.value
 							? "ring-1 ring-ring ring-offset-1"
 							: "border-border/50"
-					}`}
+					)}
 					key={c.value || "none"}
 					onClick={() => onChange(value === c.value ? "" : c.value)}
 					onMouseDown={(e) => e.preventDefault()}
@@ -352,14 +357,14 @@ function HighlightPicker({ value, onChange }: HighlightPickerProps) {
 							? { backgroundColor: c.value }
 							: { backgroundColor: "transparent" }
 					}
-					type="button"
+					variant="ghost"
 				>
 					{!c.value && (
 						<span className="text-[8px] text-muted-foreground leading-none">
 							✕
 						</span>
 					)}
-				</button>
+				</Button>
 			))}
 		</div>
 	);
@@ -623,28 +628,32 @@ export function NoteToolbar() {
 							value={linkUrl}
 						/>
 						<div className="flex gap-1">
-							<button
-								className="flex flex-1 items-center justify-center rounded-md border px-2 py-1.5 font-medium text-xs transition-colors hover:bg-muted"
+							<Button
+								className="flex-1"
 								onClick={() => {
 									if (linkUrl.trim()) {
 										editor.dispatchCommand(TOGGLE_LINK_COMMAND, linkUrl.trim());
 										setLinkMenuOpen(false);
 									}
 								}}
+								size="sm"
 								type="button"
+								variant="outline"
 							>
 								Apply
-							</button>
-							<button
-								className="flex flex-1 items-center justify-center rounded-md border px-2 py-1.5 font-medium text-xs transition-colors hover:bg-muted"
+							</Button>
+							<Button
+								className="flex-1"
 								onClick={() => {
 									editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
 									setLinkMenuOpen(false);
 								}}
+								size="sm"
 								type="button"
+								variant="outline"
 							>
 								Remove link
-							</button>
+							</Button>
 						</div>
 					</div>
 				)}
