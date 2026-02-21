@@ -177,7 +177,7 @@ export function WorkspaceSplitLayout({
 				</SidebarInset>
 			</SidebarProvider>
 
-			<ContextModal nodeId={currentNodeId} />
+			{currentNodeId && <ContextModal nodeId={currentNodeId} />}
 		</>
 	);
 }

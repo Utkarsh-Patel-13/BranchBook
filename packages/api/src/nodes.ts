@@ -1,4 +1,8 @@
+import type { RunFullSummarizationJobData } from "@branchbook/queue";
+import { contextEngineQueue } from "@branchbook/queue";
+import { ContextArtifactSchema } from "@branchbook/types";
 import {
+	branchFromMessageOutputSchema,
 	branchFromMessageSchema,
 	createNodeInputSchema,
 	deleteNodeInputSchema,
@@ -14,6 +18,7 @@ import {
 } from "@branchbook/validators";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { getArtifact } from "./artifact.service";
 import { buildContextPanelData } from "./context-engine.service";
 import { protectedProcedure, router } from "./index";
 import {
@@ -156,7 +161,7 @@ export const nodeRouter = router({
 
 	branchFromMessage: protectedProcedure
 		.input(branchFromMessageSchema)
-		.output(nodeOutputSchema)
+		.output(branchFromMessageOutputSchema)
 		.mutation(({ ctx, input }) => {
 			if (!ctx.session?.user?.id) {
 				throw new TRPCError({
@@ -203,5 +208,60 @@ export const nodeRouter = router({
 			}
 
 			return buildContextPanelData(input.nodeId);
+		}),
+
+	getArtifact: protectedProcedure
+		.input(getNodeByIdInputSchema)
+		.output(ContextArtifactSchema.nullable())
+		.query(async ({ ctx, input }) => {
+			if (!ctx.session?.user?.id) {
+				throw new TRPCError({
+					code: "UNAUTHORIZED",
+					message: "Authentication required.",
+				});
+			}
+
+			const node = await getNodeById(ctx.session.user.id, input);
+
+			if (!node) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Node not found.",
+				});
+			}
+
+			return getArtifact(input.nodeId);
+		}),
+
+	triggerResummarize: protectedProcedure
+		.input(getNodeByIdInputSchema)
+		.output(z.object({ jobId: z.string() }))
+		.mutation(async ({ ctx, input }) => {
+			if (!ctx.session?.user?.id) {
+				throw new TRPCError({
+					code: "UNAUTHORIZED",
+					message: "Authentication required.",
+				});
+			}
+
+			const node = await getNodeById(ctx.session.user.id, input);
+
+			if (!node) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Node not found.",
+				});
+			}
+
+			const jobData: RunFullSummarizationJobData = {
+				nodeId: input.nodeId,
+				workspaceId: node.workspaceId,
+			};
+			const job = await contextEngineQueue.add(
+				"run-full-summarization",
+				jobData
+			);
+
+			return { jobId: job.id ?? "" };
 		}),
 });

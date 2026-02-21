@@ -1,5 +1,5 @@
 {
-  "name": "@branchbook/types",
+  "name": "@branchbook/queue",
   "type": "module",
   "exports": {
     ".": {
@@ -10,7 +10,7 @@
     }
   },
   "dependencies": {
-    "zod": "catalog:"
+    "bullmq": "^5.0.0"
   },
   "devDependencies": {
     "@branchbook/config": "workspace:*",

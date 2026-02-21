@@ -18,6 +18,10 @@ export const env = createEnv({
 			.positive()
 			.default(5)
 			.optional(),
+		REDIS_HOST: z.string().default("localhost"),
+		REDIS_PORT: z.coerce.number().int().positive().default(6379),
+		CONTEXT_TOKEN_BUDGET: z.coerce.number().int().positive().default(2000),
+		CONTEXT_STALENESS_HOURS: z.coerce.number().int().positive().default(24),
 	},
 	runtimeEnv: process.env,
 	emptyStringAsUndefined: true,

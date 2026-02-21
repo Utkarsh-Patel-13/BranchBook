@@ -113,13 +113,25 @@ export const getContextForPanelInputSchema = z.object({
 	nodeId: z.string().cuid(),
 });
 
+export const contextQualitySignalSchema = z.enum([
+	"FRESH",
+	"PARTIAL",
+	"STALE",
+	"MINIMAL",
+]);
+
 export const ancestorContextEntrySchema = z.object({
 	nodeId: z.string(),
-	title: z.string(),
-	summaryTypeUsed: z.enum(["detailed", "highLevel", "draft"]),
+	nodeTitle: z.string(),
+	shortTitle: z.string().nullable(),
+	keyTopics: z.array(z.string()),
+	summaryTypeUsed: z.enum(["promptReady", "highLevel", "draft", "raw", "none"]),
+	qualitySignal: contextQualitySignalSchema.nullable(),
 });
 
 export const getContextForPanelOutputSchema = z.object({
+	hasInheritedContext: z.boolean(),
+	inheritedContextQuality: contextQualitySignalSchema,
 	ancestry: z.array(ancestorContextEntrySchema),
 	lastRawMessagesFromBranchPoint: z.array(
 		z.object({
@@ -127,10 +139,17 @@ export const getContextForPanelOutputSchema = z.object({
 			content: z.string(),
 		})
 	),
-	assembledFromDraft: z.boolean(),
+	assembledFromFallback: z.boolean(),
+});
+
+export const branchFromMessageOutputSchema = nodeOutputSchema.extend({
+	contextStatus: z.enum(["ready", "assembling", "fallback"]),
 });
 
 // Type exports
+export type BranchFromMessageOutput = z.infer<
+	typeof branchFromMessageOutputSchema
+>;
 export type CreateNodeInput = z.infer<typeof createNodeInputSchema>;
 export type UpdateNodeInput = z.infer<typeof updateNodeInputSchema>;
 export type DeleteNodeInput = z.infer<typeof deleteNodeInputSchema>;

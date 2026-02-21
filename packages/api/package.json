@@ -12,6 +12,7 @@
   "scripts": {},
   "dependencies": {
     "@branchbook/auth": "workspace:*",
+    "@branchbook/queue": "workspace:*",
     "@branchbook/config": "workspace:*",
     "@branchbook/db": "workspace:*",
     "@branchbook/env": "workspace:*",

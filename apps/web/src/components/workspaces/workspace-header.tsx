@@ -207,7 +207,7 @@ export function WorkspaceHeader({
 
 					{/* Context button */}
 					<Button
-						aria-label="Show context"
+						aria-label="View node context"
 						onClick={() => setContextModalOpen(true)}
 						size="sm"
 						variant="ghost"

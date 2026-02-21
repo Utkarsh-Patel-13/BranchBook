@@ -1,107 +1,121 @@
-import { SUMMARY_THRESHOLD } from "@branchbook/config";
+/**
+ * Summary service — queue-based triggering (004 rewrite).
+ *
+ * All AI calls happen inside the context-engine worker (apps/server/src/jobs/).
+ * This service only performs DB reads/writes and enqueues BullMQ jobs.
+ */
 import prisma from "@branchbook/db";
-import { assembleContextPayload } from "./context-engine.service";
+import type { SummarizeMessageJobData } from "@branchbook/queue";
+import { contextEngineQueue } from "@branchbook/queue";
 
 /**
- * Append a per-message summary to the node's summary draft
- * and increment the draft count atomically.
+ * Entry point from the chat route.
+ * Enqueues a `summarize-message` job for the just-saved assistant message.
+ * No AI calls happen here — all processing is async via the worker.
  */
-export const appendToDraft = async (
+export const appendToDraftAndEnqueue = async (
 	nodeId: string,
+	messageId: string,
+	workspaceId: string
+): Promise<void> => {
+	const jobData: SummarizeMessageJobData = { nodeId, messageId, workspaceId };
+	await contextEngineQueue.add("summarize-message", jobData);
+};
+
+/**
+ * Load an assistant message by ID for use in the summarize-message job.
+ */
+export const loadMessageForJob = (
+	messageId: string
+): Promise<{
+	id: string;
+	nodeId: string;
+	content: string | null;
+	role: string;
+} | null> => {
+	return prisma.message.findUnique({
+		where: { id: messageId },
+		select: { id: true, nodeId: true, content: true, role: true },
+	});
+};
+
+/**
+ * Persist the per-message summary on a Message record.
+ */
+export const updateMessageSummary = async (
+	messageId: string,
 	perMessageSummary: string
 ): Promise<void> => {
+	await prisma.message.update({
+		where: { id: messageId },
+		data: { perMessageSummary },
+	});
+};
+
+/**
+ * Append a per-message summary to the node's summary draft,
+ * increment `summaryDraftCount`, and return the updated count.
+ */
+export const appendToDraftAndGetCount = async (
+	nodeId: string,
+	summary: string
+): Promise<number> => {
 	const node = await prisma.node.findUnique({
 		where: { id: nodeId },
 		select: { summaryDraft: true },
 	});
 
 	if (!node) {
-		return;
+		return 0;
 	}
 
 	const newDraft = node.summaryDraft
-		? `${node.summaryDraft}\n\n${perMessageSummary}`
-		: perMessageSummary;
+		? `${node.summaryDraft}\n\n${summary}`
+		: summary;
 
-	await prisma.node.update({
+	const updated = await prisma.node.update({
 		where: { id: nodeId },
 		data: {
 			summaryDraft: newDraft,
 			summaryDraftCount: { increment: 1 },
 		},
-	});
-};
-
-/**
- * Check if the node's summary draft count has reached the threshold.
- * If so, call the provided enqueue function to trigger resummarization.
- *
- * @param nodeId - The node to check
- * @param enqueue - Callback invoked (fire-and-forget) if threshold is met
- */
-export const checkThresholdAndQueueResummarization = async (
-	nodeId: string,
-	enqueue: (nodeId: string) => void
-): Promise<void> => {
-	const node = await prisma.node.findUnique({
-		where: { id: nodeId },
 		select: { summaryDraftCount: true },
 	});
 
-	if (node && node.summaryDraftCount >= SUMMARY_THRESHOLD) {
-		enqueue(nodeId);
-	}
+	return updated.summaryDraftCount;
 };
 
 /**
- * After a node's summaries are updated (e.g. after resummarization), find all
- * direct children that have inherited context from this node and re-assemble
- * their context payload so the next chat interaction uses the fresher summaries.
- *
- * Runs fire-and-forget style — errors are non-fatal.
+ * Load the current summary draft and metadata for a node.
+ * Used by the run-full-summarization job handler.
  */
-export const upgradeChildrenContext = async (nodeId: string): Promise<void> => {
-	const children = await prisma.node.findMany({
-		where: {
-			parentId: nodeId,
-			deletedAt: null,
-			inheritedContext: { not: null },
-			branchPointMessageId: { not: null },
+export const loadDraftForNode = (
+	nodeId: string
+): Promise<{
+	id: string;
+	workspaceId: string;
+	summaryDraft: string | null;
+	summaryDraftCount: number;
+} | null> => {
+	return prisma.node.findUnique({
+		where: { id: nodeId },
+		select: {
+			id: true,
+			workspaceId: true,
+			summaryDraft: true,
+			summaryDraftCount: true,
 		},
-		select: { id: true, branchPointMessageId: true },
 	});
-
-	for (const child of children) {
-		if (!child.branchPointMessageId) {
-			continue;
-		}
-
-		const newContext = await assembleContextPayload(
-			nodeId,
-			child.branchPointMessageId
-		);
-
-		await prisma.node.update({
-			where: { id: child.id },
-			data: { inheritedContext: newContext },
-		});
-	}
 };
 
 /**
- * Replace the node's draft with final detailed and high-level summaries
- * and reset the draft count to zero.
+ * Reset the node's summary draft and draft count to zero.
+ * Called after a successful full summarization run.
  */
-export const resetDraftAndUpdateSummaries = async (
-	nodeId: string,
-	detailedSummary: string,
-	highLevelSummary: string
-): Promise<void> => {
+export const resetDraft = async (nodeId: string): Promise<void> => {
 	await prisma.node.update({
 		where: { id: nodeId },
 		data: {
-			detailedSummary,
-			highLevelSummary,
 			summaryDraft: null,
 			summaryDraftCount: 0,
 		},

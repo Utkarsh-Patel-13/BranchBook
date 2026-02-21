@@ -1,8 +1,5 @@
 import { google } from "@ai-sdk/google";
-import {
-	appendToDraft,
-	checkThresholdAndQueueResummarization,
-} from "@branchbook/api/summary.service";
+import { appendToDraftAndEnqueue } from "@branchbook/api/summary.service";
 import { auth } from "@branchbook/auth";
 import prisma from "@branchbook/db";
 import { env } from "@branchbook/env/server";
@@ -17,18 +14,18 @@ import {
 } from "ai";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { runResummarization } from "../jobs/resummarize";
 
 const CHAT_MODEL_IDS = [
 	"gemini-2.0-flash",
 	"gemini-2.5-pro",
-	"gemini-2.5-flash-lite-preview-09-2025",
-	"gemini-2.5-flash-preview-09-2025",
+	"gemini-2.5-flash-lite",
+	"gemini-2.5-flash",
 	"gemini-3-flash-preview",
 	"gemini-3-pro-preview",
+	"gemini-3.1-pro-preview",
 ] as const;
 
-const DEFAULT_CHAT_MODEL = "gemini-2.5-flash-lite-preview-09-2025";
+const DEFAULT_CHAT_MODEL = "gemini-2.5-flash-lite";
 
 const chatOptionsSchema = z
 	.object({
@@ -134,6 +131,7 @@ type UIMessagePart = UIMessage["parts"][number];
 
 async function persistNewMessages(
 	nodeId: string,
+	workspaceId: string,
 	previousCount: number,
 	finishedMessages: UIMessage[]
 ): Promise<void> {
@@ -193,26 +191,6 @@ async function persistNewMessages(
 				)
 			: null;
 
-	let perMessageSummary: string | null = null;
-	if (assistantText) {
-		try {
-			const { text: summary } = await generateText({
-				model: google("gemini-2.0-flash"),
-				prompt: `Summarize the following assistant response in 1-3 sentences, 
-							try to capture the topic and the gist of the message, 
-							if message is simple such as greetings or simple questions, just summarize the message as a whole. 
-							Keep it short and concise, do not include any other information such as the user's name or anything personal.
-							Avoid using any emojis or special characters. 
-							Do not include things like "the assistant" or "the user" or "the repsonse is about" in the summary.
-							Just capture the summary of the message as if writing in a notebook.
-							Capturing the key points for future context compression:\n\n${assistantText}`,
-			});
-			perMessageSummary = summary;
-		} catch {
-			// Non-critical
-		}
-	}
-
 	await prisma.message.create({
 		data: {
 			id: assistantMsg.id,
@@ -222,15 +200,12 @@ async function persistNewMessages(
 			reasoning: reasoningText ?? null,
 			// biome-ignore lint/suspicious/noExplicitAny: Prisma Json type requires cast
 			sources: sourcesData as any,
-			perMessageSummary,
 		},
 	});
 
-	if (perMessageSummary) {
-		await appendToDraft(nodeId, perMessageSummary);
-		await checkThresholdAndQueueResummarization(nodeId, (id) => {
-			runResummarization(id).catch(console.error);
-		});
+	// Enqueue per-message summarization job — no blocking AI call on the hot path
+	if (assistantText) {
+		await appendToDraftAndEnqueue(nodeId, assistantMsg.id, workspaceId);
 	}
 }
 
@@ -347,7 +322,7 @@ export const registerChatRoute = (fastify: FastifyInstance): void => {
 
 		try {
 			const { text } = await generateText({
-				model: google("gemini-2.5-flash-lite-preview-09-2025"),
+				model: google(DEFAULT_CHAT_MODEL),
 				system: LEXICAL_HTML_INSTRUCTIONS,
 				prompt: `Discussion:\n\n${conversationText}`,
 			});
@@ -394,7 +369,7 @@ export const registerChatRoute = (fastify: FastifyInstance): void => {
 
 		try {
 			const { text } = await generateText({
-				model: google("gemini-2.5-flash-lite-preview-09-2025"),
+				model: google(DEFAULT_CHAT_MODEL),
 				system: INLINE_EDIT_SYSTEM,
 				prompt,
 			});
@@ -506,7 +481,12 @@ export const registerChatRoute = (fastify: FastifyInstance): void => {
 			sendReasoning: true,
 			onFinish: async ({ messages: finishedMessages, isAborted }) => {
 				if (!isAborted) {
-					await persistNewMessages(nodeId, previousCount, finishedMessages);
+					await persistNewMessages(
+						nodeId,
+						node.workspaceId,
+						previousCount,
+						finishedMessages
+					);
 				}
 			},
 		});

@@ -66,10 +66,20 @@ export const useBranchFromMessage = (workspaceId: string) =>
 					})
 				);
 			}
+			queryClient.invalidateQueries(
+				trpc.node.getArtifact.queryOptions({ nodeId: newNode.id })
+			);
 		},
 	});
 
 export const useContextForPanel = (nodeId: string) =>
 	useQuery({
 		...trpc.node.getContextForPanel.queryOptions({ nodeId }),
+	});
+
+export const useNodeArtifact = (nodeId: string) =>
+	useQuery({
+		...trpc.node.getArtifact.queryOptions({ nodeId }),
+		staleTime: 30_000,
+		enabled: !!nodeId,
 	});

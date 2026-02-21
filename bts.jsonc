@@ -16,6 +16,6 @@
   "packageManager": "bun",
   "dbSetup": "docker",
   "api": "trpc",
-  "webDeploy": "none",
+   "webDeploy" : "none",
   "serverDeploy": "none",
 }
