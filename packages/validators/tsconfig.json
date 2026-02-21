@@ -6,8 +6,7 @@
     "sourceMap": true,
     "outDir": "dist",
     "composite": true,
-    "strictNullChecks": true,
-    "types": ["vitest"]
+    "strictNullChecks": true
   },
   "include": ["src"]
 }
