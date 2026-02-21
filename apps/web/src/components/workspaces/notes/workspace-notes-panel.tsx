@@ -36,13 +36,13 @@ import {
 	type LexicalNode,
 	TextNode,
 } from "lexical";
-import { AlertCircleIcon, NotebookIcon } from "lucide-react";
+import { AlertCircleIcon, DownloadIcon, NotebookIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { FloatingTextFormatPlugin } from "@/components/workspaces/notes/note-floating-toolbar";
 import { NoteToolbar } from "@/components/workspaces/notes/note-toolbar";
-import { useNote, useUpsertNote } from "@/hooks/use-note";
+import { useExportNotePdf, useNote, useUpsertNote } from "@/hooks/use-note";
 import { useWorkspaceLayoutStore } from "@/stores/workspace-layout-store";
 import { ExtendedTextNode } from "./styled-text-node";
 
@@ -393,26 +393,25 @@ interface NotesPanelHeaderProps {
 	isEditing: boolean;
 	isSaving: boolean;
 	justSaved: boolean;
+	nodeId: string;
+	hasContent: boolean;
 }
 
 function NotesPanelHeader({
 	isEditing,
 	isSaving,
 	justSaved,
+	nodeId,
+	hasContent,
 }: NotesPanelHeaderProps) {
 	const { editMode, setEditMode } = useWorkspaceLayoutStore();
+	const exportMutation = useExportNotePdf();
 
 	return (
 		<header className="flex min-h-12 shrink-0 items-center justify-between border-b px-4 py-2">
 			<div className="flex items-center gap-2">
 				<NotebookIcon className="size-3.5 shrink-0 text-primary" />
-				<span
-					className={
-						isEditing
-							? "font-medium text-primary text-sm"
-							: "font-medium text-primary text-sm"
-					}
-				>
+				<span className="font-medium text-primary text-sm">
 					{isEditing ? "Editing" : "Read Only"}
 				</span>
 				{isSaving && (
@@ -425,6 +424,39 @@ function NotesPanelHeader({
 				)}
 			</div>
 			<div className="flex items-center gap-2">
+				<button
+					aria-label="Export note as PDF"
+					className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+					disabled={!hasContent || exportMutation.isPending}
+					onClick={() => exportMutation.mutate({ nodeId })}
+					type="button"
+				>
+					{exportMutation.isPending ? (
+						<svg
+							aria-hidden="true"
+							className="size-4 animate-spin"
+							fill="none"
+							viewBox="0 0 24 24"
+							xmlns="http://www.w3.org/2000/svg"
+						>
+							<circle
+								className="opacity-25"
+								cx="12"
+								cy="12"
+								r="10"
+								stroke="currentColor"
+								strokeWidth="4"
+							/>
+							<path
+								className="opacity-75"
+								d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+								fill="currentColor"
+							/>
+						</svg>
+					) : (
+						<DownloadIcon className="size-4" />
+					)}
+				</button>
 				<Label className="text-xs" htmlFor="edit-mode-toggle">
 					View
 				</Label>
@@ -540,9 +572,11 @@ function NotesPanelContent({ nodeId, editMode }: NotesPanelContentProps) {
 		>
 			<div className="flex h-full flex-col overflow-hidden">
 				<NotesPanelHeader
+					hasContent={!!note?.content?.trim()}
 					isEditing={editMode}
 					isSaving={isSaving}
 					justSaved={justSaved}
+					nodeId={nodeId}
 				/>
 
 				{editMode && <NoteToolbar />}
