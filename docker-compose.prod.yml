@@ -1,0 +1,63 @@
+# Pull pre-built images from the GitHub Container Registry.
+# Images are published automatically when code is merged to main.
+#
+# Usage:
+#   1. Copy .env.example to .env and fill in the values
+#   2. docker compose -f docker-compose.prod.yml up -d
+#
+# To update to the latest images:
+#   docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: branchbook
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  server:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-your-github-username}/branchbook-server:latest
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-password}@postgres:5432/branchbook
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  web:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-your-github-username}/branchbook-web:latest
+    environment:
+      # Injected at container startup to replace the build-time placeholder
+      VITE_SERVER_URL: ${VITE_SERVER_URL:-http://localhost:3000}
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+
+volumes:
+  postgres_data:
+  redis_data:

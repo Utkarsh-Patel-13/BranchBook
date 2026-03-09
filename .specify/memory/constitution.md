@@ -6,7 +6,7 @@ Sync Impact Report
   - [PRINCIPLE_2_NAME] → Type-safe platform & API contracts
   - [PRINCIPLE_3_NAME] → Design system, layout & responsiveness
   - [PRINCIPLE_4_NAME] → State management & data fetching
-  - [PRINCIPLE_5_NAME] → Canvas, editor & quality tooling
+  - [PRINCIPLE_5_NAME] → Editor & quality tooling
 - Added sections:
   - Architecture & Technology Constraints
   - Development Workflow, Testing & Quality Gates
@@ -56,10 +56,9 @@ components MUST be built using Tailwind utility classes and shadcn primitives un
 exception is documented in the feature spec. Layouts MUST be mobile-first and responsive, with
 meaningful breakpoints that ensure all primary workflows are usable on small screens before being
 enhanced for larger viewports. Accessibility is non-negotiable: semantics, focus management, and
-color contrast MUST be considered for every new component. Rich text editors based on Lexical and
-diagram/canvas experiences based on React Flow MUST follow shared patterns for theming, selection,
-keyboard interaction, and serialization so that experiences remain consistent across web and native
-surfaces where applicable.
+color contrast MUST be considered for every new component. Rich text editors based on Lexical
+MUST follow shared patterns for theming, keyboard interaction, and serialization so that experiences
+remain consistent across web and native surfaces where applicable.
 
 ### State Management & Data Fetching
 
@@ -72,19 +71,16 @@ forbidden unless they are part of an isolated experiment and explicitly document
 flows MUST be modeled in small, focused stores with predictable update paths and tests for
 non-trivial behaviors.
 
-### Canvas, Editor & Quality Tooling
+### Editor & Quality Tooling
 
-Canvas- and editor-heavy experiences (React Flow diagrams, Lexical editors, and similar surfaces)
-MUST respect explicit performance and correctness budgets. Canvas flows MUST sustain at least 50
-nodes (and associated edges) at interactive frame rates (target 60 fps on a reasonable development
-machine) without jank during pan/zoom or selection; performance characteristics MUST be measured and
-documented in the feature spec for any new canvas experience. Expensive calculations MUST be
-memoized or moved off the critical render path, and React Flow/Lexical integrations MUST use shared
-abstractions rather than ad-hoc wiring. Automated tests are REQUIRED for complex editor and canvas
-behaviors (selection, undo/redo, persistence) and for all critical business logic. Biome/Ultracite
-is the single source of truth for formatting and linting; `bun x ultracite check` MUST pass for all
-changes, and the project-wide test suite MUST run cleanly. Each package MUST maintain and, over
-time, improve its test coverage; new features MUST NOT introduce uncovered critical paths.
+Editor-heavy experiences (Lexical editors and similar surfaces) MUST respect explicit performance
+and correctness budgets. Expensive calculations MUST be memoized or moved off the critical render
+path, and Lexical integrations MUST use shared abstractions rather than ad-hoc wiring. Automated
+tests are REQUIRED for complex editor behaviors (selection, undo/redo, persistence) and for all
+critical business logic. Biome/Ultracite is the single source of truth for formatting and linting;
+`bun x ultracite check` MUST pass for all changes, and the project-wide test suite MUST run cleanly.
+Each package MUST maintain and, over time, improve its test coverage; new features MUST NOT
+introduce uncovered critical paths.
 
 ## Architecture & Technology Constraints
 
@@ -107,8 +103,7 @@ gates and captured in the relevant specs and plans.
 All work in BranchBook flows through feature branches with clear plans and specifications under
 `/specs/[###-feature-name]/`. Implementation plans MUST include a "Constitution Check" section that
 explicitly confirms compliance with the core principles: monorepo boundaries, strict TypeScript,
-design system usage, state management patterns, canvas performance budgets where applicable, and
-quality tooling (Biome + tests).
+design system usage, state management patterns, and quality tooling (Biome + tests).
 
 Before merge into `main`, the following gates MUST pass:
 
@@ -117,9 +112,6 @@ Before merge into `main`, the following gates MUST pass:
   with no remaining autofixable errors.
 - Automated tests relevant to the change (unit, integration, and contract tests) MUST pass; new
   features MUST include tests for critical paths and regressions.
-- For features involving canvases/editors or complex visualizations, performance MUST be measured
-  against the canvas budget (50+ nodes at interactive frame rates) and recorded in the spec's
-  success criteria.
 - For API and data model changes, contract tests MUST validate tRPC procedures and Prisma models
   across server and clients.
 

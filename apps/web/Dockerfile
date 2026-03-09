@@ -1,0 +1,39 @@
+# ── Stage 1: install dependencies ────────────────────────────────────────────
+FROM oven/bun:1 AS deps
+WORKDIR /app
+
+COPY package.json bun.lock turbo.json ./
+COPY apps/web/package.json              ./apps/web/package.json
+COPY packages/api/package.json          ./packages/api/package.json
+COPY packages/auth/package.json         ./packages/auth/package.json
+COPY packages/config/package.json       ./packages/config/package.json
+COPY packages/db/package.json           ./packages/db/package.json
+COPY packages/env/package.json          ./packages/env/package.json
+COPY packages/queue/package.json        ./packages/queue/package.json
+COPY packages/types/package.json        ./packages/types/package.json
+COPY packages/validators/package.json   ./packages/validators/package.json
+
+RUN bun install --frozen-lockfile
+
+# ── Stage 2: build ────────────────────────────────────────────────────────────
+FROM deps AS builder
+WORKDIR /app
+
+# Default to the placeholder so pre-built CI images support runtime injection.
+# Pass a real URL via --build-arg to bake it in (e.g. local docker-compose).
+ARG VITE_SERVER_URL=__VITE_SERVER_URL__
+ENV VITE_SERVER_URL=$VITE_SERVER_URL
+
+COPY . .
+RUN cd apps/web && bun run build
+
+# ── Stage 3: production runtime ───────────────────────────────────────────────
+FROM nginx:stable-alpine AS runner
+
+COPY --from=builder /app/apps/web/dist /usr/share/nginx/html
+COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
+COPY apps/web/docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+EXPOSE 80
+ENTRYPOINT ["/docker-entrypoint.sh"]

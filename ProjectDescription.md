@@ -57,14 +57,13 @@ The core insight: learning and ideation aren't linear. They branch, diverge, rec
 
 **Persistent & Navigable**
 - Everything is saved and structured
-- Canvas view shows your knowledge map visually
 - Tree view provides hierarchical navigation
 - Search finds specific discussions instantly
 - Return weeks later and pick up where you left off
 
 ## Core Concept
 
-**Workspace**: A flexible canvas containing multiple independent explorations (e.g., "Operating Systems," "Cool Ideas," "Q1 Product Planning")
+**Workspace**: A container for multiple independent explorations (e.g., "Operating Systems," "Cool Ideas," "Q1 Product Planning")
 
 **Root Nodes**: Independent topic starting points within a workspace. Each root spawns its own exploration tree with no cross-contamination of context.
 
@@ -90,16 +89,14 @@ The core insight: learning and ideation aren't linear. They branch, diverge, rec
 
 1. **Non-linear exploration without context pollution** - Branch into subtopics without dragging irrelevant conversation history
 2. **Automatic knowledge capture** - Notes emerge from conversations; conversations enhance notes
-3. **Visual knowledge mapping** - See how your understanding branches and develops
-4. **Flexible organization** - Structure emerges from exploration rather than requiring upfront planning
-5. **Dual-mode workflow** - Equally useful for note-takers who want AI assistance and conversationalists who need structure
-6. **Persistent learning** - Nothing disappears; everything is navigable and reviewable
+3. **Flexible organization** - Structure emerges from exploration rather than requiring upfront planning
+4. **Dual-mode workflow** - Equally useful for note-takers who want AI assistance and conversationalists who need structure
+5. **Persistent learning** - Nothing disappears; everything is navigable and reviewable
 
 ## MVP Feature Scope
 
 ### Workspace & Structure
 - Create workspaces (name + optional description)
-- Canvas view for arranging and visualizing root nodes
 - Place multiple independent root nodes per workspace
 - Create child nodes (branches) from any existing node
 - Tree/outline view toggle for hierarchical navigation
@@ -134,11 +131,9 @@ The core insight: learning and ideation aren't linear. They branch, diverge, rec
 - AI generates suggested name for new branch
 
 ### Navigation & Organization
-- Click between nodes on canvas
-- Visual connection lines showing parent-child relationships
+- Navigate between nodes via tree/outline view
 - Breadcrumb trail (Root > Child > Grandchild)
 - Search across all nodes in workspace
-- Drag to reposition root nodes on canvas
 - Collapse/expand node trees in outline view
 
 ### Content Transformation
@@ -155,7 +150,6 @@ The core insight: learning and ideation aren't linear. They branch, diverge, rec
 - Quiz generation and derived content
 - Custom AI instructions per node
 - Version history and rollback
-- Advanced canvas features (grouping, colors, custom icons)
 - Node merging or collapsing branches back to parent
 - Multiple parent nodes (graph structure vs tree)
 - Template system for common note structures
@@ -173,14 +167,12 @@ The core insight: learning and ideation aren't linear. They branch, diverge, rec
 - Average nodes per workspace (indicates depth of exploration)
 - Percentage of nodes with both notes and chat content (validates dual interface)
 - Branch creation rate (manual vs AI-suggested acceptance)
-- Time spent in canvas view vs tree view
 - Return rate to existing nodes (indicates review/reference value)
 - User retention after first week (sticky enough to become habit)
 
 ## Technical Considerations for MVP
 
 - Context window management per node
-- Efficient canvas rendering for large trees
 - Real-time sync between note editor and chat context
 - Search indexing across conversation and note content
 - Smart context summarization for child node inheritance

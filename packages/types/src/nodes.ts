@@ -59,17 +59,3 @@ export interface GetNodeByIdInput {
 export interface GetTreeInput {
 	workspaceId: string;
 }
-
-// Canvas/viewport types for client-side state
-export interface Viewport {
-	x: number;
-	y: number;
-	zoom: number;
-}
-
-export interface CanvasState {
-	selectedNodeIds: string[];
-	viewport: Viewport;
-	collapsedNodeIds: Set<string>;
-	interactionMode: "select" | "pan";
-}

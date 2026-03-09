@@ -43,12 +43,9 @@
 - **State management**: Explain how React Query (for server state) and Zustand (for shared client
   state) will be used. Call out any state that might tempt ad-hoc solutions and how the plan avoids
   them.
-- **Canvas/editor performance (if applicable)**: For features involving React Flow, Lexical, or
-  other canvas/editor surfaces, record the expected node/edge counts and target frame rate. Note
-  how performance will be measured and tuned to meet the "50+ nodes at interactive fps" budget.
 - **Quality tooling & tests**: Confirm that Biome/Ultracite (`bun x ultracite check` or `bun run check`)
   and TypeScript checks will run clean. List the test types (unit, integration, contract, and, if
-  applicable, canvas/editor behavior tests) that will be added or updated as part of this feature.
+  applicable, editor behavior tests) that will be added or updated as part of this feature.
 
 ## Project Structure
 

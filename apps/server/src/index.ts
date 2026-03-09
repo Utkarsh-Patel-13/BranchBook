@@ -1,6 +1,7 @@
 import { createContext } from "@branchbook/api/context";
 import { type AppRouter, appRouter } from "@branchbook/api/routers/index";
 import { auth } from "@branchbook/auth";
+import { env } from "@branchbook/env/server";
 import fastifyCors from "@fastify/cors";
 import {
 	type FastifyTRPCPluginOptions,
@@ -11,29 +12,30 @@ import { registerWorkspaceFeatures } from "./features/workspaces";
 import { registerChatRoute } from "./routes/chat";
 import { startContextEngineWorker } from "./workers/context-engine.worker";
 
+const isDev = env.NODE_ENV !== "production";
+
 const baseCorsConfig = {
-	// origin: env.CORS_ORIGIN,
-	// biome-ignore lint/suspicious/noExplicitAny: we need to allow any origin
-	origin: (origin: any, cb: any) => {
-		if (!origin) {
-			cb(null, true);
-			return;
-		}
-		let hostname: string;
-		try {
-			hostname = new URL(origin).hostname;
-		} catch {
-			cb(new Error("Not allowed"), false);
-			return;
-		}
-		if (hostname === "localhost") {
-			//  Request from localhost will pass
-			cb(null, true);
-			return;
-		}
-		// Generate an error on other origins, disabling access
-		cb(new Error("Not allowed"), false);
-	},
+	origin: isDev
+		? // In development allow any localhost origin regardless of port
+			// biome-ignore lint/suspicious/noExplicitAny: fastify-cors callback typing
+			(origin: any, cb: any) => {
+				if (!origin) {
+					cb(null, true);
+					return;
+				}
+				let hostname: string;
+				try {
+					hostname = new URL(origin).hostname;
+				} catch {
+					cb(new Error("Not allowed"), false);
+					return;
+				}
+				cb(
+					hostname === "localhost" ? null : new Error("Not allowed"),
+					hostname === "localhost"
+				);
+			}
+		: env.CORS_ORIGIN,
 	methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 	allowedHeaders: [
 		"Content-Type",
@@ -44,8 +46,6 @@ const baseCorsConfig = {
 	credentials: true,
 	maxAge: 86_400,
 };
-
-const isDev = process.env.NODE_ENV !== "production";
 
 const fastify = Fastify({
 	logger: isDev
