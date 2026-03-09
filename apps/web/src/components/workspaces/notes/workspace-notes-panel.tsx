@@ -6,7 +6,7 @@ import { ListItemNode, ListNode } from "@lexical/list";
 import { TRANSFORMERS } from "@lexical/markdown";
 import { OverflowNode } from "@lexical/overflow";
 import { AutoLinkPlugin } from "@lexical/react/LexicalAutoLinkPlugin";
-import { CharacterLimitPlugin } from "@lexical/react/LexicalCharacterLimitPlugin";
+// import { CharacterLimitPlugin } from "@lexical/react/LexicalCharacterLimitPlugin";
 import { CheckListPlugin } from "@lexical/react/LexicalCheckListPlugin";
 import { ClickableLinkPlugin } from "@lexical/react/LexicalClickableLinkPlugin";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
@@ -122,8 +122,8 @@ function isEmptyParagraphContent(html: string): boolean {
 
 const DEBOUNCE_MS = 2000;
 const SAVED_FLASH_MS = 2000;
-const WORD_SPLIT_RE = /\s+/;
-const NOTE_CHAR_LIMIT = 25_000;
+// const WORD_SPLIT_RE = /\s+/;
+// const NOTE_CHAR_LIMIT = 25_000;
 
 const EDITOR_THEME = {
 	text: {
@@ -153,24 +153,24 @@ function EditabilityPlugin({ isEditing }: { isEditing: boolean }) {
 	return null;
 }
 
-function WordCountPlugin({
-	onCount,
-}: {
-	onCount: (words: number, chars: number) => void;
-}) {
-	const [editor] = useLexicalComposerContext();
-	useEffect(() => {
-		return editor.registerUpdateListener(({ editorState }) => {
-			editorState.read(() => {
-				const text = $getRoot().getTextContent();
-				const trimmed = text.trim();
-				const words = trimmed === "" ? 0 : trimmed.split(WORD_SPLIT_RE).length;
-				onCount(words, text.length);
-			});
-		});
-	}, [editor, onCount]);
-	return null;
-}
+// function WordCountPlugin({
+// 	onCount,
+// }: {
+// 	onCount: (words: number, chars: number) => void;
+// }) {
+// 	const [editor] = useLexicalComposerContext();
+// 	useEffect(() => {
+// 		return editor.registerUpdateListener(({ editorState }) => {
+// 			editorState.read(() => {
+// 				const text = $getRoot().getTextContent();
+// 				const trimmed = text.trim();
+// 				const words = trimmed === "" ? 0 : trimmed.split(WORD_SPLIT_RE).length;
+// 				onCount(words, text.length);
+// 			});
+// 		});
+// 	}, [editor, onCount]);
+// 	return null;
+// }
 
 async function hashString(str: string): Promise<string> {
 	const encoder = new TextEncoder();
@@ -501,11 +501,11 @@ function NotesPanelContent({ nodeId, editMode }: NotesPanelContentProps) {
 		};
 	}, []);
 
-	const [wordCount, setWordCount] = useState({ words: 0, chars: 0 });
-	const handleCount = useCallback(
-		(words: number, chars: number) => setWordCount({ words, chars }),
-		[]
-	);
+	// const [wordCount, setWordCount] = useState({ words: 0, chars: 0 });
+	// const handleCount = useCallback(
+	// 	(words: number, chars: number) => setWordCount({ words, chars }),
+	// 	[]
+	// );
 
 	const handleChange = useCallback(
 		(_editorState: EditorState, editor: LexicalEditor) => {
@@ -518,10 +518,10 @@ function NotesPanelContent({ nodeId, editMode }: NotesPanelContentProps) {
 			saveTimerRef.current = setTimeout(() => {
 				editor.read(() => {
 					const html = $generateHtmlFromNodes(editor, null);
-					if (html.length <= NOTE_CHAR_LIMIT) {
-						const content = isEmptyParagraphContent(html) ? "" : html;
-						upsert({ nodeId, content });
-					}
+					// if (html.length <= NOTE_CHAR_LIMIT) {
+					const content = isEmptyParagraphContent(html) ? "" : html;
+					upsert({ nodeId, content });
+					// }
 				});
 			}, DEBOUNCE_MS);
 		},
@@ -612,7 +612,7 @@ function NotesPanelContent({ nodeId, editMode }: NotesPanelContentProps) {
 					</div>
 				)}
 
-				{editMode && (
+				{/* {editMode && (
 					<div className="flex shrink-0 items-center justify-end border-t px-4 py-1">
 						<span className="text-muted-foreground text-xs tabular-nums">
 							{wordCount.words} {wordCount.words === 1 ? "word" : "words"} ·{" "}
@@ -620,11 +620,11 @@ function NotesPanelContent({ nodeId, editMode }: NotesPanelContentProps) {
 							{NOTE_CHAR_LIMIT.toLocaleString()} chars
 						</span>
 					</div>
-				)}
+				)} */}
 			</div>
 
 			<EditabilityPlugin isEditing={editMode} />
-			<CharacterLimitPlugin charset="UTF-16" maxLength={NOTE_CHAR_LIMIT} />
+			{/* <CharacterLimitPlugin charset="UTF-16" maxLength={NOTE_CHAR_LIMIT} /> */}
 			<TableNormalizationPlugin />
 			<TablePlugin />
 			<HistoryPlugin />
@@ -642,7 +642,7 @@ function NotesPanelContent({ nodeId, editMode }: NotesPanelContentProps) {
 				isEditing={editMode}
 			/>
 			{editMode && <FloatingTextFormatPlugin />}
-			{editMode && <WordCountPlugin onCount={handleCount} />}
+			{/* {editMode && <WordCountPlugin onCount={handleCount} />} */}
 		</LexicalComposer>
 	);
 }

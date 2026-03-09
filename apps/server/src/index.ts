@@ -15,7 +15,17 @@ const baseCorsConfig = {
 	// origin: env.CORS_ORIGIN,
 	// biome-ignore lint/suspicious/noExplicitAny: we need to allow any origin
 	origin: (origin: any, cb: any) => {
-		const hostname = new URL(origin).hostname;
+		if (!origin) {
+			cb(null, true);
+			return;
+		}
+		let hostname: string;
+		try {
+			hostname = new URL(origin).hostname;
+		} catch {
+			cb(new Error("Not allowed"), false);
+			return;
+		}
 		if (hostname === "localhost") {
 			//  Request from localhost will pass
 			cb(null, true);

@@ -27,7 +27,8 @@
       "!**/convex/_generated",
       "!**/apps/web/src/components/ui",
       "!**/apps/web/src/components/ai-elements",
-      "!**/specs"
+      "!**/specs",
+      "!**/testsprite_tests"
     ]
   },
   "formatter": {
