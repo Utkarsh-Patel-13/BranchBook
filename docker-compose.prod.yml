@@ -1,0 +1,71 @@
+# Self-hosting with pre-built images from the GitHub Container Registry.
+# Images are published automatically when code is merged to main.
+#
+# Quick start:
+#   curl -fsSL https://raw.githubusercontent.com/Utkarsh-Patel-13/BranchBook/main/docker-compose.prod.yml -o docker-compose.prod.yml
+#   curl -fsSL https://raw.githubusercontent.com/Utkarsh-Patel-13/BranchBook/main/.env.example -o .env
+#   # Edit .env — set BETTER_AUTH_SECRET and GOOGLE_GENERATIVE_AI_API_KEY at minimum
+#   docker compose -f docker-compose.prod.yml up -d
+#
+# To update to the latest images:
+#   docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: branchbook
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  server:
+    image: ghcr.io/utkarsh-patel-13/branchbook-server:latest
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-password}@postgres:5432/branchbook
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-change-me-to-a-random-string-of-32-plus-chars}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3001}
+      GOOGLE_GENERATIVE_AI_API_KEY: ${GOOGLE_GENERATIVE_AI_API_KEY:-}
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  web:
+    image: ghcr.io/utkarsh-patel-13/branchbook-web:latest
+    environment:
+      VITE_SERVER_URL: ${VITE_SERVER_URL:-http://localhost:3000}
+    ports:
+      - "3001:3001"
+    depends_on:
+      - server
+
+volumes:
+  postgres_data:
+  redis_data:

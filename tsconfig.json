@@ -1,0 +1,10 @@
+{
+  "extends": "@branchbook/config/tsconfig.base.json",
+  "compilerOptions": {
+    "strictNullChecks": true,
+    "baseUrl": ".",
+    "paths": {
+      "@branchbook/types": ["packages/types/src/index.ts"]
+    }
+  }
+}

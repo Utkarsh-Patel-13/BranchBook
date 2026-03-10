@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "scheme": "branchbook",
+    "userInterfaceStyle": "automatic",
+    "orientation": "default",
+    "web": {
+      "bundler": "metro"
+    },
+    "name": "branchbook",
+    "slug": "branchbook",
+    "plugins": ["expo-font"],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}

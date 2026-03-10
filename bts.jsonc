@@ -1,0 +1,21 @@
+
+{
+  "$schema": "https://r2.better-t-stack.dev/schema.json",
+  "version": "3.19.5",
+  "createdAt": "2026-02-09T07:43:52.983Z",
+  "reproducibleCommand": "bun create better-t-stack@latest branchbook --frontend tanstack-router native-uniwind --backend fastify --runtime bun --database postgres --orm prisma --api trpc --auth better-auth --payments none --addons biome husky skills tauri turborepo ultracite --examples none --db-setup docker --web-deploy none --server-deploy none --git --package-manager bun --install",
+  "database": "postgres",
+  "orm": "prisma",
+  "backend": "fastify",
+  "runtime": "bun",
+  "frontend": ["tanstack-router", "native-uniwind"],
+  "addons": ["biome", "husky", "skills", "tauri", "turborepo", "ultracite"],
+  "examples": [],
+  "auth": "better-auth",
+  "payments": "none",
+  "packageManager": "bun",
+  "dbSetup": "docker",
+  "api": "trpc",
+   "webDeploy" : "none",
+  "serverDeploy": "none",
+}

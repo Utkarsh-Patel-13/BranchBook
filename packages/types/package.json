@@ -1,0 +1,20 @@
+{
+  "name": "@branchbook/types",
+  "version": "0.0.1",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "dependencies": {
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@branchbook/config": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

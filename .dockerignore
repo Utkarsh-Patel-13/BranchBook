@@ -1,0 +1,13 @@
+.git
+.gitignore
+node_modules
+**/node_modules
+**/dist
+**/.turbo
+apps/native
+apps/docs
+testsprite_tests
+*.md
+.env
+.env.*
+!.env.example

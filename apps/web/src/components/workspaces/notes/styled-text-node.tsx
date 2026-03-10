@@ -1,0 +1,120 @@
+import {
+	$applyNodeReplacement,
+	$isTextNode,
+	type DOMConversion,
+	type DOMConversionMap,
+	type DOMConversionOutput,
+	type NodeKey,
+	type SerializedTextNode,
+	TextNode,
+} from "lexical";
+
+export class ExtendedTextNode extends TextNode {
+	// biome-ignore lint/complexity/noUselessConstructor: Added from documentation
+	constructor(text: string, key?: NodeKey) {
+		super(text, key);
+	}
+
+	static getType(): string {
+		return "extended-text";
+	}
+
+	static clone(node: ExtendedTextNode): ExtendedTextNode {
+		return new ExtendedTextNode(node.__text, node.__key);
+	}
+
+	static importDOM(): DOMConversionMap | null {
+		const importers = TextNode.importDOM();
+		return {
+			...importers,
+			code: () => ({
+				conversion: patchStyleConversion(importers?.code),
+				priority: 1,
+			}),
+			em: () => ({
+				conversion: patchStyleConversion(importers?.em),
+				priority: 1,
+			}),
+			span: () => ({
+				conversion: patchStyleConversion(importers?.span),
+				priority: 1,
+			}),
+			strong: () => ({
+				conversion: patchStyleConversion(importers?.strong),
+				priority: 1,
+			}),
+			sub: () => ({
+				conversion: patchStyleConversion(importers?.sub),
+				priority: 1,
+			}),
+			sup: () => ({
+				conversion: patchStyleConversion(importers?.sup),
+				priority: 1,
+			}),
+		};
+	}
+
+	static importJSON(serializedNode: SerializedTextNode): TextNode {
+		return $createExtendedTextNode().updateFromJSON(serializedNode);
+	}
+
+	isSimpleText() {
+		return this.__type === "extended-text" && this.__mode === 0;
+	}
+
+	// no need to add exportJSON here, since we are not adding any new properties
+}
+
+function $createExtendedTextNode(text = ""): ExtendedTextNode {
+	return $applyNodeReplacement(new ExtendedTextNode(text));
+}
+
+function patchStyleConversion(
+	originalDOMConverter?: (node: HTMLElement) => DOMConversion | null
+): (node: HTMLElement) => DOMConversionOutput | null {
+	return (node) => {
+		const original = originalDOMConverter?.(node);
+		if (!original) {
+			return null;
+		}
+		const originalOutput = original.conversion(node);
+
+		if (!originalOutput) {
+			return originalOutput;
+		}
+
+		const backgroundColor = node.style.backgroundColor;
+		const color = node.style.color;
+		const fontFamily = node.style.fontFamily;
+		const fontSize = node.style.fontSize;
+		const fontStyle = node.style.fontStyle;
+		const fontWeight = node.style.fontWeight;
+		const textDecoration = node.style.textDecoration;
+
+		return {
+			...originalOutput,
+			// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Added from documentation
+			forChild: (lexicalNode, parent) => {
+				const originalForChild = originalOutput?.forChild ?? ((x) => x);
+				const result = originalForChild(lexicalNode, parent);
+				if ($isTextNode(result)) {
+					const style = [
+						backgroundColor ? `background-color: ${backgroundColor}` : null,
+						color ? `color: ${color}` : null,
+						fontFamily ? `font-family: ${fontFamily}` : null,
+						fontSize ? `font-size: ${fontSize}` : null,
+						fontStyle ? `font-style: ${fontStyle}` : null,
+						fontWeight ? `font-weight: ${fontWeight}` : null,
+						textDecoration ? `text-decoration: ${textDecoration}` : null,
+					]
+						.filter((value) => value != null)
+						.join("; ");
+					if (style.length) {
+						return result.setStyle(style);
+					}
+				}
+				return result;
+			},
+		};
+	};
+}

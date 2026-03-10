@@ -1,0 +1,133 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../generated"
+  moduleFormat = "esm"
+  runtime      = "bun"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Workspace {
+  id          String    @id @default(uuid(7))
+  ownerId     String
+  owner       User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name        String    @db.VarChar(100)
+  description String?   @db.VarChar(500)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  nodes       Node[]
+
+  @@index([ownerId])
+  @@index([ownerId, deletedAt])
+  @@map("workspace")
+}
+
+model Node {
+  id          String    @id @default(uuid(7))
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parentId    String?
+  parent      Node?     @relation("NodeChildren", fields: [parentId], references: [id], onDelete: NoAction)
+  children    Node[]    @relation("NodeChildren")
+  title       String    @db.VarChar(100)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  messages    Message[]
+  note        Note?
+
+  // Context Engine — accumulation state
+  summaryDraft      String? @db.Text
+  summaryDraftCount Int     @default(0)
+
+  // Context Engine — child assembly state
+  inheritedContext        String?              @db.Text
+  inheritedContextQuality ContextQualitySignal @default(MINIMAL)
+  branchPointMessageId    String?
+
+  // Context Engine — output artifact (1:1)
+  artifact ContextArtifact?
+
+  @@index([workspaceId])
+  @@index([workspaceId, deletedAt])
+  @@index([parentId])
+  @@index([deletedAt])
+  @@map("node")
+}
+
+model Note {
+  id        String    @id @default(uuid(7))
+  nodeId    String    @unique
+  node      Node      @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  content   String    @db.Text
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([nodeId])
+  @@index([deletedAt])
+  @@map("note")
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+}
+
+model Message {
+  id        String      @id @default(uuid(7))
+  nodeId    String
+  node      Node        @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  role      MessageRole
+  content   String      @db.Text
+  reasoning String?     @db.Text
+  sources   Json?
+  createdAt DateTime    @default(now())
+
+  // Context Engine
+  perMessageSummary String? @db.Text
+  branchPoint       Boolean @default(false)
+
+  @@index([nodeId, createdAt])
+  @@map("message")
+}
+
+enum ContextQualitySignal {
+  /// Full summarization completed; no new messages since.
+  FRESH
+  /// Per-message summaries exist; full summarization not yet run.
+  PARTIAL
+  /// Full summarization ran but the artifact is older than the staleness window.
+  STALE
+  /// Fewer messages than the threshold; only raw messages available.
+  MINIMAL
+}
+
+model ContextArtifact {
+  id     String @id @default(uuid(7))
+  nodeId String @unique
+  node   Node   @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+
+  // Structured content
+  shortTitle       String   @db.VarChar(150)
+  narrativeSummary String   @db.Text
+  keyTopics        String[]
+  keyDecisions     String[]
+
+  // Pre-computed AI-injection strings
+  promptReadyString String @db.Text
+  highLevelSummary  String @db.Text
+
+  // Metadata
+  qualitySignal   ContextQualitySignal @default(MINIMAL)
+  artifactVersion Int                  @default(1)
+  lastProcessedAt DateTime             @default(now())
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  @@index([nodeId])
+  @@map("context_artifact")
+}
