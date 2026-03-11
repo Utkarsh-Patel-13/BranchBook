@@ -263,5 +263,552 @@
         "description": "Verify text \"Open Me Workspace\" is visible in the sidebar"
       }
     ]
+  },
+  {
+    "id": "T006",
+    "title": "Open workspace with no nodes shows empty state",
+    "description": "Verifies that opening the NoNodes workspace displays the 'No nodes yet' empty state.",
+    "category": "Node",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign In\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/workspaces\""
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Workspaces\" tab in the top navigation"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"NoNodes\" workspace card"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/workspaces/\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"No nodes yet\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Create first node\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "T007",
+    "title": "Create first node in empty workspace",
+    "description": "Verifies a user can create the first node in an empty workspace and see it appear in the sidebar.",
+    "category": "Node",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign In\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/workspaces\""
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Workspaces\" tab in the top navigation"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"NoNodes\" workspace card"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"No nodes yet\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Create first node\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Create Root Node\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Type \"My First Node\" into the Title field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Create\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"My First Node\" is visible in the sidebar"
+      }
+    ]
+  },
+  {
+    "id": "T008",
+    "title": "Open workspace with existing node shows it in sidebar",
+    "description": "Verifies that opening the HasNodes workspace shows the existing RootNode in the sidebar.",
+    "category": "Node",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign In\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/workspaces\""
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Workspaces\" tab in the top navigation"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"HasNodes\" workspace card"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/workspaces/\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"RootNode\" is visible in the sidebar"
+      }
+    ]
+  },
+  {
+    "id": "T009",
+    "title": "Click a node in sidebar navigates to node route",
+    "description": "Verifies that clicking a node in the sidebar changes the URL to the node's route.",
+    "category": "Node",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign In\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/workspaces\""
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Workspaces\" tab in the top navigation"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"HasNodes\" workspace card"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"RootNode\" is visible in the sidebar"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"RootNode\" in the sidebar"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL has changed and contains a node path segment after the workspace ID"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"RootNode\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "T010",
+    "title": "Chat panel shows empty state when no node selected",
+    "description": "Verifies that opening a workspace without selecting a node shows the 'No node selected' empty state in the chat panel.",
+    "category": "Chat",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign In\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"HasNodes\" workspace card"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/workspaces/\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"No node selected\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Select a node from the sidebar to start a conversation.\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "T011",
+    "title": "Selecting a node shows chat interface with input",
+    "description": "Verifies that clicking a node in the sidebar shows the chat area with an input and the 'Start a conversation' empty state.",
+    "category": "Chat",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign In\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"HasNodes\" workspace card"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"RootNode\" in the sidebar"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Start a conversation\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Ask anything about this topic\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the chat input with placeholder \"Ask me anything ...\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "T012",
+    "title": "Send a chat message and receive a response",
+    "description": "Verifies that typing a message and submitting it in the chat sends it and the assistant replies.",
+    "category": "Chat",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign In\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"HasNodes\" workspace card"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"RootNode\" in the sidebar"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the chat input with placeholder \"Ask me anything ...\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Hello, say hi back\" into the chat input"
+      },
+      {
+        "type": "action",
+        "description": "Press Enter or click the submit button to send the message"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Hello, say hi back\" is visible as a user message"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an assistant response message appears (wait up to 30 seconds for streaming to complete)"
+      }
+    ]
+  },
+  {
+    "id": "T013",
+    "title": "Notes panel shows empty state when no node selected",
+    "description": "Verifies that switching to the Notes view without a node selected shows 'No node selected' and the helper text.",
+    "category": "Notes",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign In\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"HasNodes\" workspace card"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/workspaces/\""
+      },
+      {
+        "type": "action",
+        "description": "Click the tab button with aria-label \"Show notes only\" in the workspace header to switch to Notes view"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"No node selected\" is visible in the notes panel"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Select a node to view its notes.\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "T014",
+    "title": "Selecting a node in notes view shows Read Only header",
+    "description": "Verifies that after switching to Notes view and clicking a node in the sidebar, the notes panel header appears showing 'Read Only' status.",
+    "category": "Notes",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign In\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"HasNodes\" workspace card"
+      },
+      {
+        "type": "action",
+        "description": "Click the tab button with aria-label \"Show notes only\" to switch to Notes view"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"RootNode\" in the sidebar to select the node"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Read Only\" is visible in the notes panel header"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the notes panel is visible (either \"No note yet\" or the editor content area is shown)"
+      }
+    ]
+  },
+  {
+    "id": "T015",
+    "title": "Toggle edit mode in notes panel shows Editing status",
+    "description": "Verifies that toggling the edit switch in the notes panel header changes the status from 'Read Only' to 'Editing' and shows the editor placeholder.",
+    "category": "Notes",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign In\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"HasNodes\" workspace card"
+      },
+      {
+        "type": "action",
+        "description": "Click the tab button with aria-label \"Show notes only\" to switch to Notes view"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"RootNode\" in the sidebar to select the node"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Read Only\" is visible in the notes panel header"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Edit\" label or the toggle switch (id=\"edit-mode-toggle\") to enable edit mode"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Editing\" is visible in the notes panel header (replacing \"Read Only\")"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the notes editor content area is visible and the \"No note yet\" empty state is gone"
+      }
+    ]
+  },
+  {
+    "id": "T016",
+    "title": "Type text into notes editor and verify it appears",
+    "description": "Verifies that after enabling edit mode, a user can click into the Lexical rich-text editor, type text, and see it rendered in the editor.",
+    "category": "Notes",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign In\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"HasNodes\" workspace card"
+      },
+      {
+        "type": "action",
+        "description": "Click the tab button with aria-label \"Show notes only\" to switch to Notes view"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"RootNode\" in the sidebar to select the node"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Edit\" label or the toggle switch (id=\"edit-mode-toggle\") to enable edit mode"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Editing\" is visible in the notes panel header"
+      },
+      {
+        "type": "action",
+        "description": "Click into the notes editor contenteditable area (the rich-text editor with placeholder \"Start writing…\")"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Hello from the notes editor\" into the editor"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Hello from the notes editor\" is visible in the notes editor area"
+      }
+    ]
   }
 ]
