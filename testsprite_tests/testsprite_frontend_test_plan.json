@@ -610,5 +610,205 @@
         "description": "Verify an assistant response message appears (wait up to 30 seconds for streaming to complete)"
       }
     ]
+  },
+  {
+    "id": "T013",
+    "title": "Notes panel shows empty state when no node selected",
+    "description": "Verifies that switching to the Notes view without a node selected shows 'No node selected' and the helper text.",
+    "category": "Notes",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign In\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"HasNodes\" workspace card"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/workspaces/\""
+      },
+      {
+        "type": "action",
+        "description": "Click the tab button with aria-label \"Show notes only\" in the workspace header to switch to Notes view"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"No node selected\" is visible in the notes panel"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Select a node to view its notes.\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "T014",
+    "title": "Selecting a node in notes view shows Read Only header",
+    "description": "Verifies that after switching to Notes view and clicking a node in the sidebar, the notes panel header appears showing 'Read Only' status.",
+    "category": "Notes",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign In\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"HasNodes\" workspace card"
+      },
+      {
+        "type": "action",
+        "description": "Click the tab button with aria-label \"Show notes only\" to switch to Notes view"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"RootNode\" in the sidebar to select the node"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Read Only\" is visible in the notes panel header"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the notes panel is visible (either \"No note yet\" or the editor content area is shown)"
+      }
+    ]
+  },
+  {
+    "id": "T015",
+    "title": "Toggle edit mode in notes panel shows Editing status",
+    "description": "Verifies that toggling the edit switch in the notes panel header changes the status from 'Read Only' to 'Editing' and shows the editor placeholder.",
+    "category": "Notes",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign In\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"HasNodes\" workspace card"
+      },
+      {
+        "type": "action",
+        "description": "Click the tab button with aria-label \"Show notes only\" to switch to Notes view"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"RootNode\" in the sidebar to select the node"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Read Only\" is visible in the notes panel header"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Edit\" label or the toggle switch (id=\"edit-mode-toggle\") to enable edit mode"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Editing\" is visible in the notes panel header (replacing \"Read Only\")"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the notes editor content area is visible and the \"No note yet\" empty state is gone"
+      }
+    ]
+  },
+  {
+    "id": "T016",
+    "title": "Type text into notes editor and verify it appears",
+    "description": "Verifies that after enabling edit mode, a user can click into the Lexical rich-text editor, type text, and see it rendered in the editor.",
+    "category": "Notes",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign In\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"HasNodes\" workspace card"
+      },
+      {
+        "type": "action",
+        "description": "Click the tab button with aria-label \"Show notes only\" to switch to Notes view"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"RootNode\" in the sidebar to select the node"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Edit\" label or the toggle switch (id=\"edit-mode-toggle\") to enable edit mode"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Editing\" is visible in the notes panel header"
+      },
+      {
+        "type": "action",
+        "description": "Click into the notes editor contenteditable area (the rich-text editor with placeholder \"Start writing…\")"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Hello from the notes editor\" into the editor"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Hello from the notes editor\" is visible in the notes editor area"
+      }
+    ]
   }
 ]
