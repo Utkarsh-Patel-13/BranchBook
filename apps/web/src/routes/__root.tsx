@@ -1,5 +1,5 @@
+import { env } from "@branchbook/env/web";
 import type { QueryClient } from "@tanstack/react-query";
-
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import {
 	createRootRouteWithContext,
@@ -11,6 +11,7 @@ import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import Header from "@/components/header";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { authClient } from "@/lib/auth-client";
 import type { trpc } from "@/utils/trpc";
 
 import "../index.css";
@@ -22,6 +23,21 @@ export interface RouterAppContext {
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
 	component: RootComponent,
+	beforeLoad: async () => {
+		if (env.VITE_TESTING !== "true") {
+			return;
+		}
+
+		const session = await authClient.getSession();
+		if (session.data) {
+			return;
+		}
+
+		await authClient.signIn.email({
+			email: "test@user.com",
+			password: "testpassword",
+		});
+	},
 	head: () => ({
 		meta: [
 			{

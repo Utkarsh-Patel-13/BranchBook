@@ -318,11 +318,11 @@ function DeletedWorkspaceCard({
 							e.stopPropagation();
 							setRestoreOpen(true);
 						}}
-						size="icon"
+						size="sm"
 						type="button"
-						variant="ghost"
 					>
 						<ArchiveRestoreIcon className="size-4" />
+						Restore
 					</Button>
 				</CardAction>
 			</CardHeader>

@@ -1,7 +1,6 @@
 import type { WorkspaceListInput } from "@branchbook/types";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import {
-	EllipsisVerticalIcon,
 	FolderIcon,
 	PencilIcon,
 	PlusIcon,
@@ -37,12 +36,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -537,44 +530,30 @@ function WorkspaceCard({
 				>
 					<CardTitle className="line-clamp-2">{workspace.name}</CardTitle>
 				</Link>
-				<CardAction>
-					<DropdownMenu>
-						<DropdownMenuTrigger
-							render={
-								<Button
-									aria-label="Workspace options"
-									size="icon"
-									type="button"
-									variant="ghost"
-								>
-									<EllipsisVerticalIcon className="size-4" />
-								</Button>
-							}
-						/>
-						<DropdownMenuContent align="end">
-							<DropdownMenuItem
-								onClick={(e) => {
-									e.preventDefault();
-									e.stopPropagation();
-									onEdit(workspace);
-								}}
-							>
-								<PencilIcon className="size-4" />
-								Edit
-							</DropdownMenuItem>
-							<DropdownMenuItem
-								onClick={(e) => {
-									e.preventDefault();
-									e.stopPropagation();
-									setDeleteOpen(true);
-								}}
-								variant="destructive"
-							>
-								<Trash2Icon className="size-4" />
-								Delete
-							</DropdownMenuItem>
-						</DropdownMenuContent>
-					</DropdownMenu>
+				<CardAction className="flex flex-row gap-2">
+					<Button
+						onClick={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							onEdit(workspace);
+						}}
+						size="sm"
+					>
+						<PencilIcon className="size-4" />
+						Edit
+					</Button>
+					<Button
+						onClick={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							setDeleteOpen(true);
+						}}
+						size="sm"
+						variant="destructive"
+					>
+						<Trash2Icon className="size-4" />
+						Delete
+					</Button>
 				</CardAction>
 			</CardHeader>
 			<Link

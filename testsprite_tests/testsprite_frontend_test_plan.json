@@ -1,0 +1,267 @@
+[
+  {
+    "id": "T001",
+    "title": "Workspace list page loads after login",
+    "description": "Verifies an authenticated user can log in and the Workspaces list page loads.",
+    "category": "Workspace",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign In\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/workspaces\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Workspaces\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Add New Workspace\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "T002",
+    "title": "Create a new workspace",
+    "description": "Verifies a user can open the create dialog, enter a title, and see the new workspace appear in the list.",
+    "category": "Workspace",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign In\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/workspaces\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Add New Workspace\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Add New Workspace\" dialog is visible"
+      },
+      {
+        "type": "action",
+        "description": "Type \"My Test Workspace\" into the Title field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Create\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"My Test Workspace\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "T003",
+    "title": "Create a workspace then edit its title",
+    "description": "Verifies a user can create a workspace and then successfully update its title via the Edit dialog.",
+    "category": "Workspace",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign In\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/workspaces\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Add New Workspace\" button"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Edit Me Workspace\" into the Title field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Create\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Edit Me Workspace\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Edit\" button on the \"Edit Me Workspace\" card"
+      },
+      {
+        "type": "action",
+        "description": "Clear the Title field and type \"Renamed Workspace\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Update\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Renamed Workspace\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "T004",
+    "title": "Create a workspace then delete it",
+    "description": "Verifies a user can create a workspace and then delete it, removing it from the list.",
+    "category": "Workspace",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign In\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/workspaces\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Add New Workspace\" button"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Delete Me Workspace\" into the Title field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Create\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Delete Me Workspace\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Delete\" button on the \"Delete Me Workspace\" card"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Delete workspace?\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Delete workspace\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Delete Me Workspace\" is not visible"
+      }
+    ]
+  },
+  {
+    "id": "T005",
+    "title": "Create a workspace then open it by clicking the card",
+    "description": "Verifies that clicking on a workspace card navigates to the workspace detail page.",
+    "category": "Workspace",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign In\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/workspaces\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Add New Workspace\" button"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Open Me Workspace\" into the Title field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Create\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Open Me Workspace\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Open Me Workspace\" card title"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/workspaces/\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Open Me Workspace\" is visible in the sidebar"
+      }
+    ]
+  }
+]
