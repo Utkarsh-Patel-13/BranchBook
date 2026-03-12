@@ -8,6 +8,9 @@ import { findNodeById } from "@/lib/workspace-navigation";
 
 export const Route = createFileRoute("/workspaces/$workspaceId/$")({
 	component: WorkspaceLayoutRoute,
+	validateSearch: (search: Record<string, unknown>) => ({
+		prefill: typeof search.prefill === "string" ? search.prefill : undefined,
+	}),
 	beforeLoad: async ({ location }) => {
 		const session = await authClient.getSession();
 		if (!session.data) {

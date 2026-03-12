@@ -3,6 +3,7 @@ import { nodeRouter } from "../nodes";
 import { workspaceRouter } from "../workspaces";
 import { messageRouter } from "./message";
 import { noteRouter } from "./note";
+import { suggestionRouter } from "./suggestion";
 
 export const appRouter = router({
 	healthCheck: publicProcedure.query(() => {
@@ -18,5 +19,6 @@ export const appRouter = router({
 	node: nodeRouter,
 	message: messageRouter,
 	note: noteRouter,
+	suggestion: suggestionRouter,
 });
 export type AppRouter = typeof appRouter;

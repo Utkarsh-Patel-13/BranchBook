@@ -9,12 +9,6 @@ export interface ChatModelItem {
 
 export const CHAT_MODELS: ChatModelItem[] = [
 	{
-		label: "Gemini 2.0 Flash",
-		value: "gemini-2.0-flash",
-		supportsWeb: true,
-		supportsThinking: true,
-	},
-	{
 		label: "Gemini 2.5 Pro",
 		value: "gemini-2.5-pro",
 		supportsWeb: true,
@@ -35,12 +29,6 @@ export const CHAT_MODELS: ChatModelItem[] = [
 	{
 		label: "Gemini 3 Flash",
 		value: "gemini-3-flash-preview",
-		supportsWeb: true,
-		supportsThinking: true,
-	},
-	{
-		label: "Gemini 3 Preview",
-		value: "gemini-3-pro-preview",
 		supportsWeb: true,
 		supportsThinking: true,
 	},

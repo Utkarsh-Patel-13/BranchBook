@@ -2,4 +2,5 @@
 export * from "./context";
 export * from "./messages";
 export * from "./nodes";
+export * from "./suggestions";
 export * from "./workspaces";
