@@ -2,10 +2,7 @@
 
 # BranchBook
 
-**A workspace where conversations become knowledge.**
-
-Non-linear AI-assisted note-taking where ideas branch naturally —
-combining the fluidity of chat with the permanence of structured documentation.
+**Turn AI conversations into structured knowledge — naturally.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -15,28 +12,57 @@ combining the fluidity of chat with the permanence of structured documentation.
 
 ---
 
-## What is BranchBook?
+## The Problem
 
-Most note apps force you to organise before you understand. Most AI chat interfaces lose everything the moment you close the tab. BranchBook sits between both: a workspace where notes and AI conversation are equals, exploration branches naturally into subtopics, and every thread becomes structured knowledge you can return to.
+AI chat is great for exploring ideas — but it's terrible at keeping them. Every conversation is flat, linear, and forgotten the moment you close the tab. You end up re-explaining context, losing threads, and never actually building on what you've learned.
 
-**The core idea:**
+Note apps have the opposite problem: they force you to organize before you even understand what you're thinking.
 
-- Every node is both a chat thread and a note document
-- When a conversation drifts into a subtopic, branch it — a child node inherits just enough parent context, no more
-- Notes and AI outputs live side by side and flow between each other without copy-pasting
-- Navigate your knowledge tree and pick up any thread at any time
+## What BranchBook Does
+
+BranchBook is a **thinking environment** that combines AI chat with a living note editor inside a structured workspace.
+
+You chat to explore. When the conversation drifts into a subtopic deep enough to deserve its own space, BranchBook suggests branching it off — a child node that inherits just enough context from the parent, and no more. The main thread stays clean. The deeper idea gets room to breathe.
+
+As you go, you can distill any conversation into a structured note with one click. Over time, you're not left with a pile of forgotten chats — you have an organized, navigable map of everything you've thought through.
+
+> **In short:** BranchBook is where ideas stop getting lost.
+
+---
+
+## Demo
+
+https://github.com/Utkarsh-Patel-13/BranchBook/raw/main/demo.mp4
+
+> *Demo video coming soon.*
+
+---
+
+## Table of Contents
+
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Getting Started](#getting-started)
+- [Running with Docker](#running-with-docker)
+- [Environment Variables](#environment-variables)
+- [Available Scripts](#available-scripts)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
 ## Features
 
-- **Dual interface** — Every node has a rich-text note editor and an AI chat panel, side by side
-- **Natural branching** — Create child nodes manually or let AI suggest when a subtopic emerges
-- **Context isolation** — Each branch carries only the context it needs; unrelated discussions don't contaminate each other
-- **Automatic knowledge capture** — Promote AI responses directly into notes; summarise an entire chat thread with one click
-- **Context Engine** — Background worker (BullMQ + Redis) that incrementally summarises conversations and assembles inheritable context for child nodes
-- **Persistent workspaces** — Everything is saved; navigate back days later and pick up exactly where you left off
-- **Authentication** — Email/password and OAuth via Better Auth
+| | Feature | What it means |
+|---|---|---|
+| 🌿 | **Branching conversations** | Split any chat thread into a child node. The branch inherits summarized context from the parent — no re-explaining, no noise. |
+| 📝 | **Chat + Notes, side by side** | Every node has a rich-text note editor paired with an AI chat panel. They're equals, not an afterthought. |
+| ✨ | **AI suggestions** | After a few turns, BranchBook surfaces follow-up questions and branch suggestions — when they're useful, invisible when they're not. |
+| 🧠 | **Context Engine** | A background worker incrementally summarizes conversations and assembles inheritable context for child nodes, so the AI always knows where it is without being burdened by full history. |
+| 📄 | **One-click summaries** | Promote an entire AI conversation into a structured note. No copy-pasting. |
+| 📤 | **Note export** | Export notes to PDF directly from the editor. |
+| 🔒 | **Persistent workspaces** | Everything is saved. Come back days later and pick up any thread exactly where you left off. |
+| 🔐 | **Authentication** | Email/password and OAuth via Better Auth. |
 
 ---
 
@@ -59,27 +85,6 @@ Most note apps force you to organise before you understand. Most AI chat interfa
 
 ---
 
-## Repository Structure
-
-```
-branchbook/
-├── apps/
-│   ├── server/        # Fastify API server
-│   └── web/           # React web app (Vite)
-├── packages/
-│   ├── api/           # tRPC routers and services
-│   ├── auth/          # Better Auth configuration
-│   ├── config/        # Shared constants and base tsconfig
-│   ├── db/            # Prisma schema, migrations, client
-│   ├── env/           # Environment variable validation (t3-env + Zod)
-│   ├── queue/         # BullMQ job types
-│   ├── types/         # Shared TypeScript types
-│   └── validators/    # Shared Zod validators
-└── docker-compose.yml
-```
-
----
-
 ## Getting Started
 
 ### Prerequisites
@@ -87,10 +92,6 @@ branchbook/
 - [Bun](https://bun.sh/) ≥ 1.3 — `curl -fsSL https://bun.sh/install | bash`
 - [Docker](https://docs.docker.com/get-docker/) — for running PostgreSQL and Redis
 - A [Google Generative AI](https://ai.google.dev/) API key
-
----
-
-## Running Manually
 
 ### 1. Clone and install dependencies
 
@@ -119,8 +120,6 @@ echo "VITE_SERVER_URL=http://localhost:3000" > apps/web/.env
 ```sh
 bun db:start
 ```
-
-This starts a Postgres container on port `5432` and a Redis container on port `6379` using the compose file in `packages/db`.
 
 ### 4. Run database migrations
 
@@ -181,7 +180,7 @@ curl -fsSL https://raw.githubusercontent.com/Utkarsh-Patel-13/BranchBook/main/.e
 # 2. Set the required secrets in .env
 #    BETTER_AUTH_SECRET  — random string, min 32 chars (e.g. openssl rand -hex 32)
 #    GOOGLE_GENERATIVE_AI_API_KEY — from https://ai.google.dev/
-nano .env   # or use your editor of choice
+nano .env
 
 # 3. Start everything
 docker compose -f docker-compose.prod.yml up -d
