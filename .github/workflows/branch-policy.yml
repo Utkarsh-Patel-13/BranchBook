@@ -8,7 +8,7 @@ jobs:
     steps:
       - name: Block non-dev merges into main
         run: |
-          if [[ "${{ github.base_ref }}" == "main" && "${{ github.head_ref }}" != "dev" ]]; then
-            echo "Only dev can merge into main"
+          if [[ "${{ github.base_ref }}" == "main" && "${{ github.head_ref }}" != "development" ]]; then
+            echo "Only development can merge into main"
             exit 1
           fi
