@@ -810,5 +810,408 @@
         "description": "Verify text \"Hello from the notes editor\" is visible in the notes editor area"
       }
     ]
+  },
+  {
+    "id": "T017",
+    "title": "Suggestion chips appear after 3 chat exchanges",
+    "description": "Verifies that after creating a workspace and node from scratch and completing at least 3 full assistant exchanges, follow-up suggestion chips appear below the last message.",
+    "category": "Chat",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign In\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/workspaces\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Add New Workspace\" button"
+      },
+      {
+        "type": "action",
+        "description": "Type \"SuggestTest Workspace\" into the Title field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Create\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"SuggestTest Workspace\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"SuggestTest Workspace\" card title to open it"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/workspaces/\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Create first node\" button to open the create node dialog"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Create Root Node\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Python Overview\" into the Title field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Create\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Python Overview\" is visible in the sidebar"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Python Overview\" in the sidebar to select the node"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the chat input with placeholder \"Ask me anything ...\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Type \"What is Python?\" into the chat input and press Enter to send"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user message \"What is Python?\" is visible in the chat"
+      },
+      {
+        "type": "assertion",
+        "description": "Wait for the first assistant response to fully appear (wait up to 45 seconds for streaming to complete and status to return to idle)"
+      },
+      {
+        "type": "action",
+        "description": "Wait 3 seconds for the UI to settle before sending the next message"
+      },
+      {
+        "type": "action",
+        "description": "Type \"What are Python's main use cases?\" into the chat input and press Enter to send"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user message \"What are Python's main use cases?\" is visible in the chat"
+      },
+      {
+        "type": "assertion",
+        "description": "Wait for the second assistant response to fully appear (wait up to 45 seconds for streaming to complete)"
+      },
+      {
+        "type": "action",
+        "description": "Wait 3 seconds for the UI to settle before sending the next message"
+      },
+      {
+        "type": "action",
+        "description": "Type \"How does Python compare to JavaScript?\" into the chat input and press Enter to send"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user message \"How does Python compare to JavaScript?\" is visible in the chat"
+      },
+      {
+        "type": "assertion",
+        "description": "Wait for the third assistant response to fully appear (wait up to 45 seconds for streaming to complete)"
+      },
+      {
+        "type": "action",
+        "description": "Wait 3 seconds for suggestion generation to complete"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify suggestion chips are visible below the last assistant message (look for clickable pill-shaped buttons or a branch suggestion card with a git branch icon)"
+      }
+    ]
+  },
+  {
+    "id": "T018",
+    "title": "Dismiss button hides suggestion chips",
+    "description": "Verifies that after creating a workspace and node from scratch and getting suggestions, clicking the X dismiss button hides the suggestions.",
+    "category": "Chat",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign In\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/workspaces\" and the text \"Workspaces\" is visible on the page (wait up to 10 seconds for the page to fully load)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the \"Add New Workspace\" button is visible and interactable"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Add New Workspace\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the workspace creation dialog is open and a Title input field is visible"
+      },
+      {
+        "type": "action",
+        "description": "Type \"DismissTest Workspace\" into the Title input field"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the Title field contains \"DismissTest Workspace\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Create\" button in the dialog and wait up to 5 seconds for the dialog to close"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"DismissTest Workspace\" is visible in the workspaces list"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"DismissTest Workspace\" card title to open it"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/workspaces/\" and the workspace view has loaded"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the \"Create first node\" button is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Create first node\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the node creation dialog is open with a Title input field visible"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Python Overview\" into the Title field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Create\" button in the dialog"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Python Overview\" is visible in the sidebar"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Python Overview\" in the sidebar to select the node"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the chat input with placeholder \"Ask me anything ...\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Type \"What is Python?\" into the chat input and press Enter to send"
+      },
+      {
+        "type": "assertion",
+        "description": "Wait for the first assistant response to fully appear and streaming to stop (wait up to 45 seconds)"
+      },
+      {
+        "type": "action",
+        "description": "Wait 3 seconds for the UI to settle"
+      },
+      {
+        "type": "action",
+        "description": "Type \"What are Python's main use cases?\" into the chat input and press Enter to send"
+      },
+      {
+        "type": "assertion",
+        "description": "Wait for the second assistant response to fully appear and streaming to stop (wait up to 45 seconds)"
+      },
+      {
+        "type": "action",
+        "description": "Wait 3 seconds for the UI to settle"
+      },
+      {
+        "type": "action",
+        "description": "Type \"How does Python compare to JavaScript?\" into the chat input and press Enter to send"
+      },
+      {
+        "type": "assertion",
+        "description": "Wait for the third assistant response to fully appear and streaming to stop (wait up to 45 seconds)"
+      },
+      {
+        "type": "action",
+        "description": "Wait 5 seconds for suggestion generation to complete"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify suggestion chips are visible below the last assistant message (pill-shaped buttons or a branch card with a git branch icon)"
+      },
+      {
+        "type": "action",
+        "description": "Click the dismiss button with aria-label \"Dismiss suggestions\" (the X icon button in the top-right corner of the suggestion area)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the suggestion chips and branch suggestion card are no longer visible"
+      }
+    ]
+  },
+  {
+    "id": "T019",
+    "title": "Clicking a follow-up suggestion chip sends it as a message",
+    "description": "Verifies that after creating a workspace and node from scratch and getting suggestions, clicking a follow-up chip sends it as a new chat message.",
+    "category": "Chat",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign In\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/workspaces\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Add New Workspace\" button"
+      },
+      {
+        "type": "action",
+        "description": "Type \"ChipTest Workspace\" into the Title field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Create\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"ChipTest Workspace\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"ChipTest Workspace\" card title to open it"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Create first node\" button"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Python Overview\" into the Title field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Create\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Python Overview\" is visible in the sidebar"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Python Overview\" in the sidebar to select the node"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the chat input with placeholder \"Ask me anything ...\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Type \"What is Python?\" into the chat input and press Enter to send"
+      },
+      {
+        "type": "assertion",
+        "description": "Wait for the first assistant response to fully appear (wait up to 45 seconds)"
+      },
+      {
+        "type": "action",
+        "description": "Wait 3 seconds for the UI to settle"
+      },
+      {
+        "type": "action",
+        "description": "Type \"What are Python's main use cases?\" into the chat input and press Enter to send"
+      },
+      {
+        "type": "assertion",
+        "description": "Wait for the second assistant response to fully appear (wait up to 45 seconds)"
+      },
+      {
+        "type": "action",
+        "description": "Wait 3 seconds for the UI to settle"
+      },
+      {
+        "type": "action",
+        "description": "Type \"How does Python compare to JavaScript?\" into the chat input and press Enter to send"
+      },
+      {
+        "type": "assertion",
+        "description": "Wait for the third assistant response to fully appear (wait up to 45 seconds)"
+      },
+      {
+        "type": "action",
+        "description": "Wait 3 seconds for suggestion generation to complete"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify suggestion chips are visible below the last assistant message"
+      },
+      {
+        "type": "action",
+        "description": "Click the first visible follow-up suggestion chip (a pill-shaped button in the suggestion area)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the text from the clicked chip appears as a new user message in the chat"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the suggestion chips are no longer visible after the chip was clicked"
+      }
+    ]
   }
 ]

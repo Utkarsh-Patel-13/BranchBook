@@ -12,6 +12,7 @@
   },
   "scripts": {},
   "dependencies": {
+    "@ai-sdk/google": "^3.0.43",
     "@branchbook/auth": "workspace:*",
     "@branchbook/config": "workspace:*",
     "@branchbook/db": "workspace:*",
@@ -21,6 +22,7 @@
     "@branchbook/validators": "workspace:*",
     "@trpc/client": "catalog:",
     "@trpc/server": "catalog:",
+    "ai": "^6.0.116",
     "better-auth": "catalog:",
     "dotenv": "catalog:",
     "puppeteer": "^24.37.5",

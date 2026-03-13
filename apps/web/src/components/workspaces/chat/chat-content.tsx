@@ -1,6 +1,11 @@
 import { useChat } from "@ai-sdk/react";
 import { env } from "@branchbook/env/web";
-import type { MessageType, NodeTree } from "@branchbook/types";
+import type {
+	BranchSuggestion,
+	MessageType,
+	NodeTree,
+} from "@branchbook/types";
+import { useRouter, useSearch } from "@tanstack/react-router";
 import { isTRPCClientError } from "@trpc/client";
 import type { UIMessage } from "ai";
 import { DefaultChatTransport } from "ai";
@@ -12,10 +17,16 @@ import {
 	ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
 import { Message, MessageContent } from "@/components/ai-elements/message";
+import {
+	PromptInputProvider,
+	usePromptInputController,
+} from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
-import { useBranchesForNode } from "@/hooks/use-nodes";
+import { useChatSuggestions } from "@/hooks/use-chat-suggestions";
+import { useBranchesForNode, useBranchFromMessage } from "@/hooks/use-nodes";
 import { useNote, useUpsertNote } from "@/hooks/use-note";
 import { cn } from "@/lib/utils";
+import { buildNodePath } from "@/lib/workspace-navigation";
 import { formatTRPCErrorMessage } from "@/utils/trpc";
 import { ChatHeader } from "./chat-header";
 import { ChatMessage } from "./chat-message";
@@ -25,6 +36,7 @@ import {
 	DEFAULT_CHAT_MODEL,
 } from "./chat-models";
 import { ChatPromptArea } from "./chat-prompt-area";
+import { ChatSuggestions } from "./chat-suggestions";
 
 export interface ChatContentProps {
 	nodeId: string;
@@ -33,13 +45,41 @@ export interface ChatContentProps {
 	tree: NodeTree[];
 }
 
-export function ChatContent({
+export function ChatContent(props: ChatContentProps) {
+	return (
+		<PromptInputProvider>
+			<ChatContentInner {...props} />
+		</PromptInputProvider>
+	);
+}
+
+function ChatContentInner({
 	nodeId,
 	dbMessages,
 	workspaceId,
 	tree,
 }: ChatContentProps) {
 	const { data: branchesByMessageId = {} } = useBranchesForNode(nodeId);
+	const router = useRouter();
+	const search = useSearch({ strict: false });
+	const prefill = (search as { prefill?: string }).prefill;
+	const {
+		textInput: { setInput, value: inputValue },
+	} = usePromptInputController();
+
+	// T014: populate input on mount if prefill search param is set, then clear the URL param
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect — prefill is one-time from URL
+	useEffect(() => {
+		if (!prefill) {
+			return;
+		}
+		setInput(prefill);
+		router.navigate({
+			to: router.state.location.pathname as never,
+			search: {} as never,
+			replace: true,
+		});
+	}, []);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional snapshot — useChat initialises state once at mount
 	const initialMessages = useMemo<UIMessage[]>(
@@ -176,11 +216,60 @@ export function ChatContent({
 
 	const isStreaming = status === "streaming" || status === "submitted";
 
+	const { suggestions, isGenerating, dismiss, clear } = useChatSuggestions({
+		nodeId,
+		messages,
+		status,
+	});
+
+	const branchMutation = useBranchFromMessage(workspaceId);
+
 	const handleSubmit = useCallback(
 		(text: string) => {
 			sendMessage({ text });
 		},
 		[sendMessage]
+	);
+
+	const handleFollowUp = useCallback(
+		(text: string) => {
+			sendMessage({ text });
+			clear();
+		},
+		[sendMessage, clear]
+	);
+
+	// T015: create a child node from the last AI message, then navigate to it with prefill
+	const handleBranchSuggestion = useCallback(
+		(branch: BranchSuggestion) => {
+			const lastAiMessage = messages.findLast((m) => m.role === "assistant");
+			if (!lastAiMessage) {
+				return;
+			}
+			branchMutation.mutate(
+				{ nodeId, messageId: lastAiMessage.id, title: branch.label },
+				{
+					onSuccess: (newNode) => {
+						clear();
+						const currentPath = buildNodePath(tree, nodeId) ?? [nodeId];
+						const urlPath = `/workspaces/${workspaceId}/${[...currentPath, newNode.id].join("/")}`;
+						router.navigate({
+							to: urlPath as never,
+							search: { prefill: branch.contextSeed } as never,
+						});
+					},
+				}
+			);
+		},
+		[branchMutation, messages, nodeId, tree, workspaceId, router, clear]
+	);
+
+	// T016: seed the current chat input without creating a new node
+	const handleContinueHere = useCallback(
+		(text: string) => {
+			setInput(text);
+		},
+		[setInput]
 	);
 
 	const showEmptyState = messages.length === 0 && !isStreaming;
@@ -230,6 +319,16 @@ export function ChatContent({
 										</Shimmer>
 									</MessageContent>
 								</Message>
+							)}
+							{!inputValue && (
+								<ChatSuggestions
+									isLoading={isGenerating}
+									onBranch={handleBranchSuggestion}
+									onContinueHere={handleContinueHere}
+									onDismiss={dismiss}
+									onFollowUp={handleFollowUp}
+									suggestions={suggestions}
+								/>
 							)}
 						</>
 					)}
