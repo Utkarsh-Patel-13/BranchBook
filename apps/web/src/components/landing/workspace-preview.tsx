@@ -193,13 +193,12 @@ const WorkspacePreview = () => {
 										/>
 									</svg>
 									<span className="font-display">
-										Deeper dive:{" "}
 										<span className="font-medium text-foreground">
 											Superconducting vs trapped ion
 										</span>
 									</span>
 									<span className="ml-auto cursor-pointer font-display font-medium">
-										Branch & Explore →
+										Branch →
 									</span>
 								</div>
 							</div>
