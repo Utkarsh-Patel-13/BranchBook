@@ -263,13 +263,53 @@ export function WorkspaceSidebar({
 						className="flex items-center gap-2 px-2 py-2 transition-opacity hover:opacity-80"
 						to="/workspaces"
 					>
-						<img
-							alt="BranchBook"
-							className="size-5 rounded-md bg-foreground"
-							height={24}
-							src="/images/BranchBook.png"
-							width={24}
-						/>
+						<svg
+							aria-labelledby="branchbook-logo-title"
+							fill="none"
+							height="20"
+							role="img"
+							viewBox="0 0 20 20"
+							width="20"
+						>
+							<title id="branchbook-logo-title">BranchBook Logo</title>
+							<circle
+								cx="10"
+								cy="4"
+								r="2.5"
+								stroke="currentColor"
+								strokeWidth="1.5"
+							/>
+							<circle
+								cx="5"
+								cy="16"
+								r="2.5"
+								stroke="currentColor"
+								strokeWidth="1.5"
+							/>
+							<circle
+								cx="15"
+								cy="16"
+								r="2.5"
+								stroke="currentColor"
+								strokeWidth="1.5"
+							/>
+							<line
+								stroke="currentColor"
+								strokeWidth="1.5"
+								x1="10"
+								x2="5"
+								y1="6.5"
+								y2="13.5"
+							/>
+							<line
+								stroke="currentColor"
+								strokeWidth="1.5"
+								x1="10"
+								x2="15"
+								y1="6.5"
+								y2="13.5"
+							/>
+						</svg>
 						<span className="font-semibold text-base tracking-tight">
 							BranchBook
 						</span>

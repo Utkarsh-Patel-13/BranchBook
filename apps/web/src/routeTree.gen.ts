@@ -9,6 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WorkspacesIndexRouteImport } from './routes/workspaces/index'
@@ -16,6 +18,16 @@ import { Route as WorkspacesTrashRouteImport } from './routes/workspaces/trash'
 import { Route as WorkspacesWorkspaceIdIndexRouteImport } from './routes/workspaces/$workspaceId/index'
 import { Route as WorkspacesWorkspaceIdSplatRouteImport } from './routes/workspaces/$workspaceId/$'
 
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -52,6 +64,8 @@ const WorkspacesWorkspaceIdSplatRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/workspaces/trash': typeof WorkspacesTrashRoute
   '/workspaces/': typeof WorkspacesIndexRoute
   '/workspaces/$workspaceId/$': typeof WorkspacesWorkspaceIdSplatRoute
@@ -60,6 +74,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/workspaces/trash': typeof WorkspacesTrashRoute
   '/workspaces': typeof WorkspacesIndexRoute
   '/workspaces/$workspaceId/$': typeof WorkspacesWorkspaceIdSplatRoute
@@ -69,6 +85,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/workspaces/trash': typeof WorkspacesTrashRoute
   '/workspaces/': typeof WorkspacesIndexRoute
   '/workspaces/$workspaceId/$': typeof WorkspacesWorkspaceIdSplatRoute
@@ -79,6 +97,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/privacy'
+    | '/terms'
     | '/workspaces/trash'
     | '/workspaces/'
     | '/workspaces/$workspaceId/$'
@@ -87,6 +107,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/privacy'
+    | '/terms'
     | '/workspaces/trash'
     | '/workspaces'
     | '/workspaces/$workspaceId/$'
@@ -95,6 +117,8 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/login'
+    | '/privacy'
+    | '/terms'
     | '/workspaces/trash'
     | '/workspaces/'
     | '/workspaces/$workspaceId/$'
@@ -104,6 +128,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
+  PrivacyRoute: typeof PrivacyRoute
+  TermsRoute: typeof TermsRoute
   WorkspacesTrashRoute: typeof WorkspacesTrashRoute
   WorkspacesIndexRoute: typeof WorkspacesIndexRoute
   WorkspacesWorkspaceIdSplatRoute: typeof WorkspacesWorkspaceIdSplatRoute
@@ -112,6 +138,20 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -160,6 +200,8 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
+  PrivacyRoute: PrivacyRoute,
+  TermsRoute: TermsRoute,
   WorkspacesTrashRoute: WorkspacesTrashRoute,
   WorkspacesIndexRoute: WorkspacesIndexRoute,
   WorkspacesWorkspaceIdSplatRoute: WorkspacesWorkspaceIdSplatRoute,
