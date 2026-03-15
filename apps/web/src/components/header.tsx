@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@tanstack/react-router";
+import { Folder, GithubIcon } from "lucide-react";
 import {
 	NavigationMenu,
 	NavigationMenuContent,
@@ -10,7 +11,6 @@ import {
 	NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
 import { authClient } from "@/lib/auth-client";
-
 import { ModeToggle } from "./mode-toggle";
 import UserMenu from "./user-menu";
 
@@ -20,6 +20,7 @@ interface MenuItem {
 	description?: string;
 	icon?: React.ReactNode;
 	items?: MenuItem[];
+	external?: boolean;
 }
 
 export default function Header() {
@@ -30,22 +31,75 @@ export default function Header() {
 				{
 					title: "Workspaces",
 					url: "/workspaces",
+					icon: <Folder className="size-3.5" />,
+				},
+				{
+					title: "GitHub",
+					url: "https://github.com/Utkarsh-Patel-13/BranchBook",
+					external: true,
+					icon: <GithubIcon className="size-3.5" />,
 				},
 			]
-		: [];
+		: [
+				{
+					title: "GitHub",
+					url: "https://github.com/Utkarsh-Patel-13/BranchBook",
+					external: true,
+				},
+			];
 
 	const logo = (
 		<Link
 			className="flex items-center gap-1.5 transition-opacity hover:opacity-80"
 			to="/"
 		>
-			<img
-				alt="BranchBook"
-				className="size-5 rounded-md bg-foreground"
-				height={24}
-				src="/images/BranchBook.png"
-				width={24}
-			/>
+			<svg
+				aria-labelledby="branchbook-logo-title"
+				fill="none"
+				height="20"
+				role="img"
+				viewBox="0 0 20 20"
+				width="20"
+			>
+				<title id="branchbook-logo-title">BranchBook Logo</title>
+				<circle
+					cx="10"
+					cy="4"
+					r="2.5"
+					stroke="currentColor"
+					strokeWidth="1.5"
+				/>
+				<circle
+					cx="5"
+					cy="16"
+					r="2.5"
+					stroke="currentColor"
+					strokeWidth="1.5"
+				/>
+				<circle
+					cx="15"
+					cy="16"
+					r="2.5"
+					stroke="currentColor"
+					strokeWidth="1.5"
+				/>
+				<line
+					stroke="currentColor"
+					strokeWidth="1.5"
+					x1="10"
+					x2="5"
+					y1="6.5"
+					y2="13.5"
+				/>
+				<line
+					stroke="currentColor"
+					strokeWidth="1.5"
+					x1="10"
+					x2="15"
+					y1="6.5"
+					y2="13.5"
+				/>
+			</svg>
 			<span className="font-semibold text-base tracking-tight">BranchBook</span>
 		</Link>
 	);
@@ -95,8 +149,11 @@ const renderMenuItem = (item: MenuItem) => {
 					<Link
 						activeProps={{ className: "bg-muted text-primary" }}
 						className="group inline-flex h-9 w-max items-center justify-center rounded-md px-3.5 py-1.5 font-medium text-xs transition-colors hover:bg-muted hover:text-accent-foreground sm:text-sm"
+						rel={item.external ? "noreferrer noopener" : undefined}
+						target={item.external ? "_blank" : undefined}
 						to={item.url}
 					>
+						{item.icon && <div className="text-foreground">{item.icon}</div>}
 						{item.title}
 					</Link>
 				}

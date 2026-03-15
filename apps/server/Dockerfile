@@ -49,5 +49,11 @@ COPY --from=builder /app/packages/db/prisma.config.ts ./packages/db/prisma.confi
 COPY apps/server/docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
+RUN groupadd --gid 1001 app && \
+    useradd --uid 1001 --gid app --shell /bin/false --no-create-home app && \
+    mkdir -p /app/packages/db/prisma/generated && chown -R app:app /app
+
+USER app
+
 EXPOSE 3000
 ENTRYPOINT ["/docker-entrypoint.sh"]

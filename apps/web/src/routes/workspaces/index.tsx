@@ -73,36 +73,6 @@ const SORT_DIRECTION_LABELS: Record<
 	asc: "Oldest first",
 };
 
-function formatRelativeTime(value: Date | string | number): string {
-	const date = value instanceof Date ? value : new Date(value);
-	const now = new Date();
-	const diffMs = now.getTime() - date.getTime();
-	const diffMins = Math.floor(diffMs / 60_000);
-	const diffHours = Math.floor(diffMs / 3_600_000);
-	const diffDays = Math.floor(diffMs / 86_400_000);
-
-	if (diffMins < 1) {
-		return "Just now";
-	}
-	if (diffMins < 60) {
-		return `${diffMins} min ago`;
-	}
-	if (diffHours < 24) {
-		return diffHours === 1 ? "1 hour ago" : `${diffHours} hours ago`;
-	}
-	if (diffDays === 1) {
-		return "Yesterday";
-	}
-	if (diffDays < 7) {
-		return `${diffDays} days ago`;
-	}
-	return new Intl.DateTimeFormat(undefined, {
-		month: "short",
-		day: "numeric",
-		year: "numeric",
-	}).format(date);
-}
-
 export const Route = createFileRoute("/workspaces/")({
 	component: WorkspacesListRouteComponent,
 	beforeLoad: async ({ location }) => {
@@ -530,6 +500,17 @@ function WorkspaceCard({
 				>
 					<CardTitle className="line-clamp-2">{workspace.name}</CardTitle>
 				</Link>
+			</CardHeader>
+			<Link
+				className="flex-1 rounded-md"
+				params={{ workspaceId: workspace.id }}
+				to="/workspaces/$workspaceId"
+			>
+				<CardContent className="line-clamp-2 min-h-0 flex-1 text-muted-foreground">
+					{workspace.description ?? "No description."}
+				</CardContent>
+			</Link>
+			<CardFooter className="flex justify-end gap-2">
 				<CardAction className="flex flex-row gap-2">
 					<Button
 						onClick={(e) => {
@@ -555,19 +536,6 @@ function WorkspaceCard({
 						Delete
 					</Button>
 				</CardAction>
-			</CardHeader>
-			<Link
-				className="flex-1 rounded-md"
-				params={{ workspaceId: workspace.id }}
-				to="/workspaces/$workspaceId"
-			>
-				<CardContent className="line-clamp-2 min-h-0 flex-1 text-muted-foreground">
-					{workspace.description ?? "No description."}
-				</CardContent>
-			</Link>
-			<CardFooter className="justify-between text-muted-foreground text-xs">
-				<span>Updated</span>
-				<span>{formatRelativeTime(workspace.updatedAt)}</span>
 			</CardFooter>
 			<AlertDialog onOpenChange={setDeleteOpen} open={deleteOpen}>
 				<AlertDialogContent onClick={(e) => e.stopPropagation()}>

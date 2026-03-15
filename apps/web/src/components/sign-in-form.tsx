@@ -10,11 +10,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 
-export default function SignInForm({
-	onSwitchToSignUp,
-}: {
-	onSwitchToSignUp: () => void;
-}) {
+export default function SignInForm() {
 	const navigate = useNavigate();
 	const search = useSearch({ from: "/login" }) as { redirect?: string };
 	const { isPending } = authClient.useSession();
@@ -126,16 +122,6 @@ export default function SignInForm({
 					)}
 				</form.Subscribe>
 			</form>
-
-			<div className="mt-4 text-center">
-				<Button
-					className="text-indigo-600 hover:text-indigo-800"
-					onClick={onSwitchToSignUp}
-					variant="link"
-				>
-					Need an account? Sign Up
-				</Button>
-			</div>
 		</div>
 	);
 }

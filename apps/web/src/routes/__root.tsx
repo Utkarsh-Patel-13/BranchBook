@@ -73,8 +73,9 @@ function RootComponent() {
 			<HeadContent />
 			<ThemeProvider
 				attribute="class"
-				defaultTheme="dark"
+				defaultTheme="light"
 				disableTransitionOnChange
+				enableSystem={false}
 				storageKey="vite-ui-theme"
 			>
 				<div
