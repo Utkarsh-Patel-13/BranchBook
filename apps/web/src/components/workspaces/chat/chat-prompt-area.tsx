@@ -1,5 +1,5 @@
 import type { useChat } from "@ai-sdk/react";
-import { CheckIcon, GlobeIcon, LightbulbIcon, PlusIcon } from "lucide-react";
+import { CheckIcon, GlobeIcon, PlusIcon } from "lucide-react";
 import {
 	PromptInput,
 	PromptInputButton,
@@ -15,25 +15,18 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { ChatModelItem } from "./chat-models";
 
 export function ChatPromptArea({
 	handleSubmit,
 	isStreaming,
-	selectedModel,
-	setThinking,
 	setWebSearch,
 	status,
-	thinking,
 	webSearch,
 }: {
 	handleSubmit: (text: string) => void;
 	isStreaming: boolean;
-	selectedModel: ChatModelItem;
-	setThinking: (fn: (v: boolean) => boolean) => void;
 	setWebSearch: (fn: (v: boolean) => boolean) => void;
 	status: ReturnType<typeof useChat>["status"];
-	thinking: boolean;
 	webSearch: boolean;
 }) {
 	return (
@@ -53,19 +46,6 @@ export function ChatPromptArea({
 				/>
 				<PromptInputFooter className="px-2 pb-1.5">
 					<PromptInputTools className="flex-1 flex-wrap gap-1.5">
-						{thinking && (
-							<Button
-								aria-label="Remove Thinking"
-								className="gap-1.5 rounded-full"
-								onClick={() => setThinking(() => false)}
-								size="xs"
-								type="button"
-								variant="outline"
-							>
-								<LightbulbIcon className="size-3.5" />
-								Think
-							</Button>
-						)}
 						{webSearch && (
 							<Button
 								aria-label="Remove Web search"
@@ -79,47 +59,31 @@ export function ChatPromptArea({
 								Web search
 							</Button>
 						)}
-						{(selectedModel.supportsThinking || selectedModel.supportsWeb) && (
-							<DropdownMenu>
-								<DropdownMenuTrigger
-									render={
-										<PromptInputButton
-											aria-label="Add mode"
-											size="icon-sm"
-											variant="ghost"
-										>
-											<PlusIcon className="size-4" />
-										</PromptInputButton>
-									}
-								/>
-								<DropdownMenuContent align="start" className="min-w-48">
-									{selectedModel.supportsThinking && (
-										<DropdownMenuItem
-											onClick={() => setThinking((v) => !v)}
-											onSelect={(e) => e.preventDefault()}
-										>
-											<LightbulbIcon className="size-4" />
-											Thinking
-											{thinking && (
-												<CheckIcon className="ml-auto size-4 text-primary" />
-											)}
-										</DropdownMenuItem>
+						<DropdownMenu>
+							<DropdownMenuTrigger
+								render={
+									<PromptInputButton
+										aria-label="Add option"
+										size="icon-sm"
+										variant="ghost"
+									>
+										<PlusIcon className="size-4" />
+									</PromptInputButton>
+								}
+							/>
+							<DropdownMenuContent align="start" className="min-w-48">
+								<DropdownMenuItem
+									onClick={() => setWebSearch((v) => !v)}
+									onSelect={(e) => e.preventDefault()}
+								>
+									<GlobeIcon className="size-4" />
+									Web search
+									{webSearch && (
+										<CheckIcon className="ml-auto size-4 text-primary" />
 									)}
-									{selectedModel.supportsWeb && (
-										<DropdownMenuItem
-											onClick={() => setWebSearch((v) => !v)}
-											onSelect={(e) => e.preventDefault()}
-										>
-											<GlobeIcon className="size-4" />
-											Web search
-											{webSearch && (
-												<CheckIcon className="ml-auto size-4 text-primary" />
-											)}
-										</DropdownMenuItem>
-									)}
-								</DropdownMenuContent>
-							</DropdownMenu>
-						)}
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
 					</PromptInputTools>
 					<PromptInputSubmit
 						className="transition-transform hover:scale-105 active:scale-95"
