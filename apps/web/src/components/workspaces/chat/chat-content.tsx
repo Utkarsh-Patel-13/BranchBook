@@ -31,9 +31,9 @@ import { formatTRPCErrorMessage } from "@/utils/trpc";
 import { ChatHeader } from "./chat-header";
 import { ChatMessage } from "./chat-message";
 import {
-	CHAT_MODELS,
-	type ChatModelItem,
-	DEFAULT_CHAT_MODEL,
+	CHAT_PRESETS,
+	type ChatPreset,
+	DEFAULT_CHAT_PRESET,
 } from "./chat-models";
 import { ChatPromptArea } from "./chat-prompt-area";
 import { ChatSuggestions } from "./chat-suggestions";
@@ -158,37 +158,22 @@ function ChatContentInner({
 		}
 	}, [nodeId, note?.content, upsertNote]);
 
-	const [selectedModel, setSelectedModel] =
-		useState<ChatModelItem>(DEFAULT_CHAT_MODEL);
-	const [thinking, setThinking] = useState(false);
+	const [selectedPreset, setSelectedPreset] =
+		useState<ChatPreset>(DEFAULT_CHAT_PRESET);
 	const [webSearch, setWebSearch] = useState(false);
 	const chatOptionsRef = useRef({
-		model: DEFAULT_CHAT_MODEL.value,
-		thinking: false,
+		preset: DEFAULT_CHAT_PRESET.id,
 		webSearch: false,
 	});
 	chatOptionsRef.current = {
-		model: selectedModel.value,
-		thinking,
+		preset: selectedPreset.id,
 		webSearch,
 	};
 
-	useEffect(() => {
-		if (!selectedModel.supportsThinking) {
-			setThinking(false);
-		}
-		if (!selectedModel.supportsWeb) {
-			setWebSearch(false);
-		}
-	}, [selectedModel]);
-
-	const handleModelChange = useCallback((value: string | null) => {
-		if (!value) {
-			return;
-		}
-		const model = CHAT_MODELS.find((m) => m.value === value);
-		if (model) {
-			setSelectedModel(model);
+	const handlePresetChange = useCallback((id: string) => {
+		const found = CHAT_PRESETS.find((p) => p.id === id);
+		if (found) {
+			setSelectedPreset(found);
 		}
 	}, []);
 
@@ -277,11 +262,11 @@ function ChatContentInner({
 	return (
 		<div className="flex min-h-0 flex-1 flex-col">
 			<ChatHeader
-				handleModelChange={handleModelChange}
+				handlePresetChange={handlePresetChange}
 				handleSummarizeToNote={handleSummarizeToNote}
 				isStreaming={isStreaming}
 				messagesLength={messages.length}
-				selectedModel={selectedModel}
+				selectedPreset={selectedPreset}
 				summarized={summarized}
 				summarizing={summarizing}
 			/>
@@ -315,7 +300,7 @@ function ChatContentInner({
 								<Message from="assistant">
 									<MessageContent>
 										<Shimmer as="span" className="text-sm">
-											{webSearch ? "Searching the web…" : "Thinking…"}
+											{webSearch ? "Searching the web…" : "Working on it…"}
 										</Shimmer>
 									</MessageContent>
 								</Message>
@@ -345,11 +330,8 @@ function ChatContentInner({
 			<ChatPromptArea
 				handleSubmit={handleSubmit}
 				isStreaming={isStreaming}
-				selectedModel={selectedModel}
-				setThinking={setThinking}
 				setWebSearch={setWebSearch}
 				status={status}
-				thinking={thinking}
 				webSearch={webSearch}
 			/>
 		</div>

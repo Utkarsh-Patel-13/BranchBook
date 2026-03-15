@@ -15,26 +15,29 @@ import type { FastifyInstance } from "fastify";
 import { uuidv7 } from "uuidv7";
 import { z } from "zod";
 
-const CHAT_MODEL_IDS = [
-	"gemini-2.5-pro",
-	"gemini-2.5-flash-lite",
-	"gemini-2.5-flash",
-	"gemini-3-flash-preview",
-	"gemini-3.1-pro-preview",
-] as const;
+const CHAT_PRESET_IDS = ["quick", "deep", "study"] as const;
+type ChatPresetId = (typeof CHAT_PRESET_IDS)[number];
 
-const DEFAULT_CHAT_MODEL = "gemini-2.5-flash-lite";
+const PRESET_CONFIG: Record<ChatPresetId, { model: string; hint: string }> = {
+	quick: {
+		model: "gemini-3.1-flash-lite-preview",
+		hint: "Be brief and direct. Prioritize concise, accurate answers.",
+	},
+	deep: {
+		model: "gemini-3-flash-preview",
+		hint: "Be thorough. Provide detailed analysis and comprehensive explanations.",
+	},
+	study: {
+		model: "gemini-3-flash-preview",
+		hint: "Structure for learning. Use clear explanations with examples and key takeaways.",
+	},
+};
+
+const DEFAULT_CHAT_MODEL = PRESET_CONFIG.quick.model;
 
 const chatOptionsSchema = z
 	.object({
-		model: z
-			.string()
-			.refine((id) =>
-				CHAT_MODEL_IDS.includes(id as (typeof CHAT_MODEL_IDS)[number])
-			)
-			.optional()
-			.default(DEFAULT_CHAT_MODEL),
-		thinking: z.boolean().optional().default(false),
+		preset: z.enum(CHAT_PRESET_IDS).optional().default("quick"),
 		webSearch: z.boolean().optional().default(false),
 	})
 	.optional();
@@ -221,7 +224,6 @@ async function prepareChatRequest(
 	modelId: string;
 	systemPrompt: string;
 	useWebSearch: boolean;
-	useThinking: boolean;
 }> {
 	const userText = incomingMessage.parts
 		.map((p) => (p.type === "text" ? p.text : ""))
@@ -238,9 +240,11 @@ async function prepareChatRequest(
 		parts: [{ type: "text", text: userText, state: "done" }],
 	};
 	const messages: UIMessage[] = [...previousMessages, newUserMessage];
-	const useThinking = options?.thinking ?? false;
 	const useWebSearch = options?.webSearch ?? false;
-	const modelId = options?.model ?? DEFAULT_CHAT_MODEL;
+	const presetId = options?.preset ?? "quick";
+	const preset = PRESET_CONFIG[presetId];
+	const modelId = preset.model;
+
 	let validatedMessages: UIMessage[];
 	try {
 		validatedMessages = await validateUIMessages({ messages });
@@ -251,18 +255,21 @@ async function prepareChatRequest(
 			throw err;
 		}
 	}
+
 	const baseSystem =
 		"You are a helpful assistant in branchbook, a knowledge workspace app. Be concise and accurate.";
-	const systemPrompt = node.inheritedContext
-		? `${node.inheritedContext}\n\n---\n\n${baseSystem}`
-		: baseSystem;
+	const systemParts = [preset.hint, baseSystem];
+	if (node.inheritedContext) {
+		systemParts.unshift(node.inheritedContext, "---");
+	}
+	const systemPrompt = systemParts.join("\n\n");
+
 	return {
 		validatedMessages,
 		previousCount: previousMessages.length,
 		modelId,
 		systemPrompt,
 		useWebSearch,
-		useThinking,
 	};
 }
 
@@ -436,7 +443,6 @@ export const registerChatRoute = (fastify: FastifyInstance): void => {
 			modelId,
 			systemPrompt,
 			useWebSearch,
-			useThinking,
 		} = prepared;
 
 		const modelMessages = await convertToModelMessages(validatedMessages);
@@ -449,16 +455,6 @@ export const registerChatRoute = (fastify: FastifyInstance): void => {
 			system: systemPrompt,
 			messages: modelMessages,
 			...(useWebSearch && { tools }),
-			...(useThinking && {
-				providerOptions: {
-					google: {
-						thinkingConfig: {
-							thinkingBudget: 8192,
-							includeThoughts: true,
-						},
-					},
-				},
-			}),
 		});
 
 		result.consumeStream();
