@@ -37,5 +37,11 @@ COPY --from=builder /app/apps/web/dist ./dist
 COPY apps/web/docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
+RUN groupadd --gid 1001 app && \
+    useradd --uid 1001 --gid app --shell /bin/false --no-create-home app && \
+    chown -R app:app /app
+
+USER app
+
 EXPOSE 3001
 ENTRYPOINT ["/docker-entrypoint.sh"]
