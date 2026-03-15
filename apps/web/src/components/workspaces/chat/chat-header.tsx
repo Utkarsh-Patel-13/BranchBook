@@ -1,45 +1,34 @@
-import {
-	CheckIcon,
-	ChevronDownIcon,
-	GlobeIcon,
-	SparklesIcon,
-} from "lucide-react";
+import { CheckIcon, ChevronDownIcon, SparklesIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
-	DropdownMenuGroup,
-	DropdownMenuItem,
-	DropdownMenuPortal,
 	DropdownMenuRadioGroup,
 	DropdownMenuRadioItem,
-	DropdownMenuSeparator,
-	DropdownMenuSub,
-	DropdownMenuSubContent,
-	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import type { ChatModelItem } from "./chat-models";
-import { CHAT_MODELS, CHAT_MODES, getModeLabel } from "./chat-models";
+import type { ChatPreset } from "./chat-models";
+import { CHAT_PRESETS, getPresetLabel } from "./chat-models";
 
 export function ChatHeader({
-	handleModelChange,
+	handlePresetChange,
 	handleSummarizeToNote,
 	isStreaming,
 	messagesLength,
-	selectedModel,
+	selectedPreset,
 	summarized,
 	summarizing,
 }: {
-	handleModelChange: (value: string | null) => void;
+	handlePresetChange: (id: string) => void;
 	handleSummarizeToNote: () => void;
 	isStreaming: boolean;
 	messagesLength: number;
-	selectedModel: ChatModelItem;
+	selectedPreset: ChatPreset;
 	summarized: boolean;
 	summarizing: boolean;
 }) {
+	const Icon = selectedPreset.icon;
 	return (
 		<header className="sticky top-0 flex min-h-12 shrink-0 items-center justify-between border-b px-4 py-2">
 			<div className="flex items-center gap-2">
@@ -49,49 +38,38 @@ export function ChatHeader({
 						disabled={isStreaming}
 						render={
 							<Button
-								aria-label="Chat mode"
+								aria-label="Response mode"
 								className="min-w-0 border-border/60 font-normal"
 								size="xs"
 								variant="outline"
 							>
-								{getModeLabel(selectedModel.value)}
+								<Icon className="size-3.5" />
+								{getPresetLabel(selectedPreset.id)}
 								<ChevronDownIcon className="size-3.5 opacity-60" />
 							</Button>
 						}
 					/>
 					<DropdownMenuContent align="start" className="min-w-48">
-						<DropdownMenuGroup>
-							<DropdownMenuRadioGroup
-								onValueChange={(value) => handleModelChange(value)}
-								value={selectedModel.value}
-							>
-								{CHAT_MODES.map(({ label, value, icon: Icon }) => (
-									<DropdownMenuRadioItem key={value} value={value}>
-										<Icon className="size-3.5" />
-										{label}
+						<DropdownMenuRadioGroup
+							onValueChange={handlePresetChange}
+							value={selectedPreset.id}
+						>
+							{CHAT_PRESETS.map(
+								({ id, label, description, icon: PresetIcon }) => (
+									<DropdownMenuRadioItem key={id} value={id}>
+										<span className="flex flex-col items-start">
+											<div className="flex flex-row items-center gap-1.5">
+												<PresetIcon className="size-3.5" />
+												{label}
+											</div>
+											<span className="font-normal text-muted-foreground text-xs">
+												{description}
+											</span>
+										</span>
 									</DropdownMenuRadioItem>
-								))}
-							</DropdownMenuRadioGroup>
-						</DropdownMenuGroup>
-						<DropdownMenuSeparator />
-						<DropdownMenuSub>
-							<DropdownMenuSubTrigger>
-								<GlobeIcon className="size-3.5" />
-								Google
-							</DropdownMenuSubTrigger>
-							<DropdownMenuPortal>
-								<DropdownMenuSubContent>
-									{CHAT_MODELS.map((model) => (
-										<DropdownMenuItem
-											key={model.value}
-											onClick={() => handleModelChange(model.value)}
-										>
-											{model.label}
-										</DropdownMenuItem>
-									))}
-								</DropdownMenuSubContent>
-							</DropdownMenuPortal>
-						</DropdownMenuSub>
+								)
+							)}
+						</DropdownMenuRadioGroup>
 					</DropdownMenuContent>
 				</DropdownMenu>
 			</div>
