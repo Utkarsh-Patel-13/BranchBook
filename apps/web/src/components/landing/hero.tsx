@@ -29,7 +29,7 @@ const Hero = () => {
 				</p>
 				<div className="mt-8 flex items-center gap-4">
 					<Button
-						className="inline-flex items-center gap-2 rounded-md bg-foreground px-5 py-2.5 font-medium text-background text-sm transition-colors hover:bg-foreground/90"
+						className="inline-flex items-center gap-2 rounded-md bg-foreground px-5 py-2.5 font-medium text-background text-sm transition-colors hover:cursor-pointer hover:bg-foreground/90"
 						onClick={handleGetStarted}
 						size="lg"
 						type="button"
